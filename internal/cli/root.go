@@ -9,7 +9,7 @@ import (
 	"tina.io/tinacloud-cli/internal/command"
 )
 
-func Root() error {
+func (s *State) Root() error {
 	helpFlag := flag.Bool("h", false, "Show help information and exit")
 	flag.Usage = func() {
 		command.PrintSubCommands("tinacloud-cli", []command.SubCommand{
