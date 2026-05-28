@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"tina.io/tinacloud-cli/internal/cli/auth"
 	"tina.io/tinacloud-cli/internal/command"
 )
 
@@ -28,9 +29,10 @@ func Root() error {
 	}
 
 	cmd, subargs := args[0], args[1:]
-	_ = subargs
 
 	switch cmd {
+	case "auth":
+		return auth.Auth(subargs)
 	default:
 		return fmt.Errorf("unrecognized command %q", cmd)
 	}
