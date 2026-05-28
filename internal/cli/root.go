@@ -10,7 +10,6 @@ import (
 )
 
 func (s *State) Root() error {
-	helpFlag := flag.Bool("h", false, "Show help information and exit")
 	flag.Usage = func() {
 		command.PrintSubCommands("tinacloud-cli", []command.SubCommand{
 			{Name: "auth", Description: "Authenticate with TinaCloud"},
@@ -19,21 +18,20 @@ func (s *State) Root() error {
 		flag.PrintDefaults()
 	}
 
+	helpFlag := flag.Bool("h", false, "Show help information and exit")
 	flag.Parse()
 
 	args := flag.Args()
-
 	if *helpFlag || len(args) == 0 {
 		flag.Usage()
 		return nil
 	}
 
 	cmd, subargs := args[0], args[1:]
-
 	switch cmd {
 	case "auth":
 		return auth.Auth(subargs)
 	default:
-		return fmt.Errorf("unrecognized command %q", cmd)
+		return fmt.Errorf("Unrecognized command %q", cmd)
 	}
 }

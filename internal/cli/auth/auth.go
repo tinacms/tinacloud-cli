@@ -24,7 +24,6 @@ func Auth(args []string) error {
 	}
 
 	helpFlag := flag.Bool("h", false, "Show help information and exit")
-
 	err := flag.Parse(args)
 	if err != nil {
 		return fmt.Errorf("Failed to parse arguments: %w", err)
@@ -48,7 +47,7 @@ func Auth(args []string) error {
 		log.Fatalf("Unrecognized command %q.", cmd)
 	}
 	if err != nil {
-		log.Fatalf("Failed to execute %q: %v", cmd, err)
+		return fmt.Errorf("Failed to execute %q: %w", cmd, err)
 	}
 
 	return nil

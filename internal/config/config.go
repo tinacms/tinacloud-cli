@@ -10,8 +10,14 @@ type CoreConfig struct {
 	Dev bool `env:"DEV, default=true"`
 }
 
+type PosthogConfig struct {
+	ApiKey   string `env:"API_KEY"`
+	Endpoint string `env:"ENDPOINT, default=https://us.i.posthog.com"`
+}
+
 type Config struct {
-	Core CoreConfig `env:""`
+	Core    CoreConfig    `env:""`
+	Posthog PosthogConfig `env:",prefix=POSTHOG_"`
 }
 
 func LoadConfig(ctx context.Context) (*Config, error) {

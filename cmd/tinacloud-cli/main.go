@@ -16,7 +16,7 @@ func main() {
 	}
 	defer func() {
 		if err := state.Close(); err != nil {
-			log.Fatal("failed to destroy cli state:", "err")
+			log.Fatal("failed to destroy cli state:", err)
 		}
 	}()
 

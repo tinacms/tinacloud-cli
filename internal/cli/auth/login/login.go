@@ -14,6 +14,7 @@ func Login(args []string) error {
 		fmt.Fprintln(os.Stderr, "\nFlags:")
 		flag.PrintDefaults()
 	}
+
 	var (
 		help           = flag.Bool("h", false, "Show help information and exit")
 		guess          = flag.Bool("guess", true, "Attempts to write a TinaCloud configuration from information found within the current project")
