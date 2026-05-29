@@ -15,7 +15,7 @@ func Auth(args []string) error {
 			{Name: "login", Description: "Log in to a TinaCloud account"},
 			{Name: "logout", Description: "Log out of a TinaCloud account"},
 			{Name: "switch", Description: "Switch active TinaCloud account"},
-			{Name: "status", Description: "Display active account and authentication status on each know TinaCloud account"},
+			{Name: "status", Description: "Display active account and authentication status on each known TinaCloud account"},
 		})
 		flagSet.PrintDefaults()
 	}
