@@ -1,12 +1,16 @@
-BINARY_NAME		= tinacloud-cli
-CMD				= ./cmd/$(BINARY_NAME)
+NAME	= tinacloud-cli
+CMD		= ./cmd/$(NAME)
 
 ifeq ($(OS),Windows_NT)
-	SHELL := powershell.exe
+	BINARY_NAME	= $(NAME).exe
+	SHELL 		:= powershell.exe
 	.SHELLFLAGS := -Command
-	LOAD_ENV = Get-Content ./.env | ForEach-Object { if ($$_ -match '^([^\#][^=]*)=(.*)$$') { [System.Environment]::SetEnvironmentVariable($$matches[1].Trim(), $$matches[2].Trim(), 'Process') } };
+	LOAD_ENV 	= Get-Content ./.env | ForEach-Object { if ($$_ -match '^([^\#][^=]*)=(.*)$$') { [System.Environment]::SetEnvironmentVariable($$matches[1].Trim(), $$matches[2].Trim(), 'Process') } };
+	CLEAN_BUILD = if (Test-Path ./build) { Remove-Item -Recurse -Force ./build/* }
 else
-	LOAD_ENV = set -a && source ./.env && set +a &&
+	BINARY_NAME	= $(NAME)
+	LOAD_ENV 	= set -a && source ./.env && set +a &&
+	CLEAN_BUILD = rm -rf ./build/*
 endif
 
 .PHONY: fmt build run security vet clean
@@ -20,15 +24,14 @@ build: fmt security vet
 	go build -o ./build/$(BINARY_NAME) $(CMD)
 
 run:
-	go build -o ./build/$(BINARY_NAME) $(CMD)
-	$(LOAD_ENV) ./build/$(BINARY_NAME) $(ARGS)
+	$(LOAD_ENV) go run $(CMD) $(ARGS)
 
 security:
-	gosec $(CMD)
+	gosec ./...
 
 vet:
-	go vet $(CMD)
+	go vet ./...
 
 clean:
 	go clean
-	rm -r ./build/*
+	$(CLEAN_BUILD)

@@ -32,6 +32,6 @@ func (s *State) Root() error {
 	case "auth":
 		return auth.Auth(subargs)
 	default:
-		return fmt.Errorf("Unrecognized command %q", cmd)
+		return fmt.Errorf("Unrecognised command: %q", cmd)
 	}
 }
