@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "google-go-style": {
+      "source": "cicdteam/google-go-style",
+      "sourceType": "github",
+      "skillPath": "plugins/google-go-style/skills/google-go-style/SKILL.md",
+      "computedHash": "297ecdb8683468bfe2948dd960c95fe518f30de0585f4542b1f9b22e5700d6f2"
+    }
+  }
+}
