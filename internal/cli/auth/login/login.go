@@ -16,23 +16,13 @@ func Login(args []string) error {
 	}
 
 	var (
-		help           = flagSet.Bool("h", false, "Show help information and exit")
-		guess          = flagSet.Bool("guess", true, "Attempts to write a TinaCloud configuration from information found within the current project")
+		noGuess        = flagSet.Bool("no-guess", false, "Skips automated attempts to write a TinaCloud configuration from information found within the current project")
 		projectID      = flagSet.String("project-id", "", "The project ID")
 		organisationID = flagSet.String("org-id", "", "The organisation ID")
 	)
+	_ = flagSet.Parse(args)
 
-	err := flagSet.Parse(args)
-	if err != nil {
-		return fmt.Errorf("failed to parse arguments: %w", err)
-	}
-
-	if *help {
-		flagSet.Usage()
-		return nil
-	}
-
-	fmt.Println(*guess, *projectID, *organisationID)
+	fmt.Println(*noGuess, *projectID, *organisationID)
 
 	return nil
 }

@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sethvargo/go-envconfig"
 )
@@ -11,7 +12,7 @@ type CoreConfig struct {
 }
 
 type PosthogConfig struct {
-	ApiKey   string `env:"API_KEY"`
+	APIKey   string `env:"API_KEY"`
 	Endpoint string `env:"ENDPOINT, default=https://us.i.posthog.com"`
 }
 
@@ -20,12 +21,12 @@ type Config struct {
 	Posthog PosthogConfig `env:",prefix=POSTHOG_"`
 }
 
-func LoadConfig(ctx context.Context) (*Config, error) {
+func LoadConfig(ctx context.Context) (Config, error) {
 	var cfg Config
 	err := envconfig.Process(ctx, &cfg)
 	if err != nil {
-		return nil, err
+		return Config{}, fmt.Errorf("failed to process env config: %w", err)
 	}
 
-	return &cfg, nil
+	return cfg, nil
 }

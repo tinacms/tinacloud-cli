@@ -10,7 +10,7 @@ import (
 func main() {
 	ctx := context.Background()
 
-	state, err := cli.Make(ctx)
+	state, err := cli.New(ctx)
 	if err != nil {
 		log.Fatal("failed to create cli state:", err)
 	}

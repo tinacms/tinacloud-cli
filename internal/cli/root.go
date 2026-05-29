@@ -10,20 +10,18 @@ import (
 )
 
 func (s *State) Root() error {
-	flag.Usage = func() {
+	flagSet := flag.NewFlagSet("tinacloud-cli", flag.ExitOnError)
+	flagSet.Usage = func() {
 		command.PrintSubCommands("tinacloud-cli", []command.SubCommand{
 			{Name: "auth", Description: "Authenticate with TinaCloud"},
 		})
-		fmt.Fprintln(os.Stderr, "\nFlags:")
-		flag.PrintDefaults()
+		flagSet.PrintDefaults()
 	}
 
-	help := flag.Bool("h", false, "Show help information and exit")
-	flag.Parse()
-
-	args := flag.Args()
-	if *help || len(args) == 0 {
-		flag.Usage()
+	_ = flagSet.Parse(os.Args[1:])
+	args := flagSet.Args()
+	if len(args) == 0 {
+		flagSet.Usage()
 		return nil
 	}
 
