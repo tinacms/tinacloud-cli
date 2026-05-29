@@ -7,27 +7,28 @@ import (
 )
 
 func Login(args []string) error {
-	flag := flag.NewFlagSet("login", flag.ExitOnError)
-	flag.Usage = func() {
+	flagSet := flag.NewFlagSet("login", flag.ExitOnError)
+	flagSet.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli auth login [flags]")
 		fmt.Fprintln(os.Stderr, "\nLog in to a TinaCloud account")
 		fmt.Fprintln(os.Stderr, "\nFlags:")
-		flag.PrintDefaults()
+		flagSet.PrintDefaults()
 	}
 
 	var (
-		help           = flag.Bool("h", false, "Show help information and exit")
-		guess          = flag.Bool("guess", true, "Attempts to write a TinaCloud configuration from information found within the current project")
-		projectID      = flag.String("project-id", "", "The project ID")
-		organisationID = flag.String("org-id", "", "The organisation ID")
+		help           = flagSet.Bool("h", false, "Show help information and exit")
+		guess          = flagSet.Bool("guess", true, "Attempts to write a TinaCloud configuration from information found within the current project")
+		projectID      = flagSet.String("project-id", "", "The project ID")
+		organisationID = flagSet.String("org-id", "", "The organisation ID")
 	)
-	err := flag.Parse(args)
+
+	err := flagSet.Parse(args)
 	if err != nil {
-		return fmt.Errorf("Failed to parse arguments: %w", err)
+		return fmt.Errorf("failed to parse arguments: %w", err)
 	}
 
 	if *help {
-		flag.Usage()
+		flagSet.Usage()
 		return nil
 	}
 

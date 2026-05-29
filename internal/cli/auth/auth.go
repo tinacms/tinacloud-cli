@@ -11,8 +11,8 @@ import (
 )
 
 func Auth(args []string) error {
-	flag := flag.NewFlagSet("auth", flag.ExitOnError)
-	flag.Usage = func() {
+	flagSet := flag.NewFlagSet("auth", flag.ExitOnError)
+	flagSet.Usage = func() {
 		command.PrintSubCommands("tinacloud-cli auth", []command.SubCommand{
 			{Name: "login", Description: "Log in to a TinaCloud account"},
 			{Name: "logout", Description: "Log out of a TinaCloud account"},
@@ -20,21 +20,21 @@ func Auth(args []string) error {
 			{Name: "status", Description: "Display active account and authentication status on each know TinaCloud account"},
 		})
 		fmt.Fprintln(os.Stderr, "\nFlags:")
-		flag.PrintDefaults()
+		flagSet.PrintDefaults()
 	}
 
-	helpFlag := flag.Bool("h", false, "Show help information and exit")
-	err := flag.Parse(args)
+	help := flagSet.Bool("h", false, "Show help information and exit")
+	err := flagSet.Parse(args)
 	if err != nil {
-		return fmt.Errorf("Failed to parse arguments: %w", err)
+		return fmt.Errorf("failed to parse arguments: %w", err)
 	}
 
-	if *helpFlag || len(args) == 0 {
-		flag.Usage()
+	if *help || len(args) == 0 {
+		flagSet.Usage()
 		os.Exit(1)
 	}
 
-	args = flag.Args()
+	args = flagSet.Args()
 	if len(args) == 0 {
 		log.Fatal("Please specify a subcommand.")
 	}
@@ -44,10 +44,10 @@ func Auth(args []string) error {
 	case "login":
 		err = login.Login(subargs)
 	default:
-		log.Fatalf("Unrecognized command %q.", cmd)
+		log.Fatalf("unrecognized command %q.", cmd)
 	}
 	if err != nil {
-		return fmt.Errorf("Failed to execute %q: %w", cmd, err)
+		return fmt.Errorf("failed to execute %q: %w", cmd, err)
 	}
 
 	return nil

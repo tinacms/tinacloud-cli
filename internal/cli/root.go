@@ -18,11 +18,11 @@ func (s *State) Root() error {
 		flag.PrintDefaults()
 	}
 
-	helpFlag := flag.Bool("h", false, "Show help information and exit")
+	help := flag.Bool("h", false, "Show help information and exit")
 	flag.Parse()
 
 	args := flag.Args()
-	if *helpFlag || len(args) == 0 {
+	if *help || len(args) == 0 {
 		flag.Usage()
 		return nil
 	}
@@ -32,6 +32,6 @@ func (s *State) Root() error {
 	case "auth":
 		return auth.Auth(subargs)
 	default:
-		return fmt.Errorf("Unrecognised command: %q", cmd)
+		return fmt.Errorf("unrecognised command: %q", cmd)
 	}
 }
