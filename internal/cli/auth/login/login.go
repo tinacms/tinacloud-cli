@@ -87,11 +87,12 @@ func Login(args []string, cfg config.Config) error {
 		oauthURL := fmt.Sprintf("%s/oauth/authorize?code_challenge=%s&redirect_uri=http://localhost:%d/callback", cfg.TinaCloud.Endpoint, challenge, port)
 		resp, err := client.Get(oauthURL)
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("failed to authorize with tinacloud: %w", err)
 		}
 
 		redirectURL := resp.Header.Get("location")
 		if redirectURL == "" {
+			// Default to pre-redirect URL if no location header is found
 			redirectURL = oauthURL
 		}
 

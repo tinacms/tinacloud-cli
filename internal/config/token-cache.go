@@ -69,7 +69,7 @@ func TokensFromCache(cfg Config) (TokenCache, error) {
 		return TokenCache{}, fmt.Errorf("failed to read token cache as root: %w", err)
 	}
 
-	const bufSize int = 10240 // 10KB
+	const bufSize int = 102400 // 100KB
 	buf := make([]byte, bufSize)
 	bytes, err := file.Read(buf)
 	if err != nil {
@@ -115,10 +115,10 @@ func TokensFromCache(cfg Config) (TokenCache, error) {
 		}
 
 		err = SaveTokens(TokenCache{
-			IDToken:      tokens.IDToken,
-			AccessToken:  tokens.AccessToken,
-			RefreshToken: tokens.RefreshToken,
-			TokenType:    tokens.TokenType,
+			IDToken:      authTokens.IDToken,
+			AccessToken:  authTokens.AccessToken,
+			RefreshToken: authTokens.RefreshToken,
+			TokenType:    authTokens.TokenType,
 			ExpiresAt:    time.Now().Add(time.Duration(authTokens.ExpiresIn) * time.Second),
 		})
 		if err != nil {
