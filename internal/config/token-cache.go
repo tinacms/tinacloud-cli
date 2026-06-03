@@ -1,0 +1,145 @@
+package config
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"os"
+	"path"
+	"time"
+
+	"tina.io/tinacloud-cli/internal/domain"
+)
+
+type TokenCache struct {
+	IDToken      string    `json:"id_token"`
+	AccessToken  string    `json:"access_token"`
+	RefreshToken string    `json:"refresh_token"`
+	TokenType    string    `json:"token_type"`
+	ExpiresAt    time.Time `json:"expires_at"`
+}
+
+func cachePath() (string, error) {
+	configPath, err := os.UserConfigDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to read config directory as $HOME and/or $XDG_CONFIG_HOME not set: %w", err)
+	}
+
+	return path.Join(configPath, "tinacloud", "cache", "tokens.json"), nil
+}
+
+func SaveTokens(tokens TokenCache) error {
+	configPath, err := cachePath()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve config path: %w", err)
+	}
+
+	err = os.MkdirAll(path.Dir(configPath), 0700)
+	if err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
+	}
+
+	data, err := json.Marshal(tokens) // #nosec G117
+	if err != nil {
+		return fmt.Errorf("failed to marshal auth tokens: %w", err)
+	}
+
+	err = os.WriteFile(configPath, data, 0600)
+	if err != nil {
+		return fmt.Errorf("failed to write tokens to config cache: %w", err)
+	}
+
+	return nil
+}
+
+func TokensFromCache(cfg Config) (TokenCache, error) {
+	configPath, err := cachePath()
+	if err != nil {
+		return TokenCache{}, fmt.Errorf("failed to retrieve config path: %w", err)
+	}
+
+	file, err := os.OpenInRoot(path.Dir(configPath), path.Base(configPath))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return TokenCache{}, errors.New("not logged in")
+		}
+		return TokenCache{}, fmt.Errorf("failed to read token cache as root: %w", err)
+	}
+
+	buf := make([]byte, 10240)
+	bytes, err := file.Read(buf)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return TokenCache{}, errors.New("not logged in")
+		}
+		return TokenCache{}, fmt.Errorf("failed to read token cache: %w", err)
+	}
+
+	fmt.Println(string(buf[:bytes]))
+
+	var tokens TokenCache
+	if err := json.Unmarshal(buf[:bytes], &tokens); err != nil {
+		return TokenCache{}, fmt.Errorf("failed to parse token cache: %w", err)
+	}
+
+	if tokens.ExpiresAt.Before(time.Now()) {
+		fmt.Println("auth token expired, refreshing...")
+		params := url.Values{}
+		params.Set("grant_type", "refresh_token")
+		params.Set("refresh_token", tokens.RefreshToken)
+
+		resp, err := http.PostForm(fmt.Sprintf("%s/oauth/token", cfg.TinaCloud.Endpoint), params)
+		if err != nil {
+			return TokenCache{}, fmt.Errorf("failed to post code to cognito for refresh: %w", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode == http.StatusUnauthorized {
+			return TokenCache{}, fmt.Errorf("failed to authorize user")
+		}
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return TokenCache{}, fmt.Errorf("failed to read auth refresh response: %w", err)
+		}
+
+		if resp.StatusCode > 299 {
+			return TokenCache{}, fmt.Errorf("failed to refresh auth token. receieved response status of '%d': %s", resp.StatusCode, string(body))
+		}
+
+		var authTokens domain.AuthResponse
+		if err := json.Unmarshal(body, &authTokens); err != nil {
+			return TokenCache{}, fmt.Errorf("could not parse tokens: %w", err)
+		}
+
+		err = SaveTokens(TokenCache{
+			IDToken:      tokens.IDToken,
+			AccessToken:  tokens.AccessToken,
+			RefreshToken: tokens.RefreshToken,
+			TokenType:    tokens.TokenType,
+			ExpiresAt:    time.Now().Add(time.Duration(authTokens.ExpiresIn) * time.Second),
+		})
+		if err != nil {
+			return TokenCache{}, fmt.Errorf("failed to save tokens to file: %w", err)
+		}
+		fmt.Println("successfully refreshed auth token")
+	}
+
+	return tokens, nil
+}
+
+func ClearTokens() error {
+	configPath, err := cachePath()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve config path: %w", err)
+	}
+
+	if err := os.Remove(configPath); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to clear token cache: %w", err)
+	}
+
+	return nil
+}

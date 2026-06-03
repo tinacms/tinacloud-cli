@@ -16,9 +16,14 @@ type PosthogConfig struct {
 	Endpoint string `env:"ENDPOINT, default=https://us.i.posthog.com"`
 }
 
+type TinaCloudConfig struct {
+	Endpoint string `env:"ENDPOINT, default=https://identity-v2.tinajs.io"`
+}
+
 type Config struct {
-	Core    CoreConfig    `env:""`
-	Posthog PosthogConfig `env:",prefix=POSTHOG_"`
+	Core      CoreConfig      `env:""`
+	Posthog   PosthogConfig   `env:",prefix=POSTHOG_"`
+	TinaCloud TinaCloudConfig `env:",prefix=TINACLOUD_"`
 }
 
 func LoadConfig(ctx context.Context) (Config, error) {

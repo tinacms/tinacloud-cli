@@ -12,7 +12,7 @@ func main() {
 
 	state, err := cli.New(ctx)
 	if err != nil {
-		log.Fatal("failed to create cli state:", err)
+		log.Fatalf("failed to create cli state: %v", err)
 	}
 	defer func() {
 		if err := state.Close(); err != nil {

@@ -28,7 +28,7 @@ func (s *State) Root() error {
 	cmd, subargs := args[0], args[1:]
 	switch cmd {
 	case "auth":
-		return auth.Auth(subargs)
+		return auth.Auth(subargs, s.config)
 	default:
 		return fmt.Errorf("unrecognised command: %q", cmd)
 	}
