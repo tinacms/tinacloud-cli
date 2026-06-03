@@ -69,7 +69,8 @@ func TokensFromCache(cfg Config) (TokenCache, error) {
 		return TokenCache{}, fmt.Errorf("failed to read token cache as root: %w", err)
 	}
 
-	buf := make([]byte, 10240)
+	const bufSize int = 10240 // 10KB
+	buf := make([]byte, bufSize)
 	bytes, err := file.Read(buf)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -77,8 +78,6 @@ func TokensFromCache(cfg Config) (TokenCache, error) {
 		}
 		return TokenCache{}, fmt.Errorf("failed to read token cache: %w", err)
 	}
-
-	fmt.Println(string(buf[:bytes]))
 
 	var tokens TokenCache
 	if err := json.Unmarshal(buf[:bytes], &tokens); err != nil {
