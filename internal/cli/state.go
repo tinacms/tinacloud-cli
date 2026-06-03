@@ -39,6 +39,10 @@ func New(ctx context.Context) (*State, error) {
 }
 
 func (s *State) Close() error {
+
+	if s.posthog == nil {
+		return nil
+	}
 	err := s.posthog.Close()
 	if err != nil {
 		return fmt.Errorf("failed to close posthog connection: %w", err)
