@@ -114,14 +114,15 @@ func TokensFromCache(cfg Config) (TokenCache, error) {
 			return TokenCache{}, fmt.Errorf("could not parse tokens: %w", err)
 		}
 
-		err = SaveTokens(TokenCache{
+		tokens = TokenCache{
 			IDToken:      authTokens.IDToken,
 			AccessToken:  authTokens.AccessToken,
 			RefreshToken: authTokens.RefreshToken,
 			TokenType:    authTokens.TokenType,
 			ExpiresAt:    time.Now().Add(time.Duration(authTokens.ExpiresIn) * time.Second),
-		})
-		if err != nil {
+		}
+
+		if err := SaveTokens(tokens); err != nil {
 			return TokenCache{}, fmt.Errorf("failed to save tokens to file: %w", err)
 		}
 		fmt.Println("successfully refreshed auth token")

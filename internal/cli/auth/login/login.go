@@ -10,7 +10,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -114,6 +113,7 @@ Please open the following URL to login.
 		if err != nil {
 			return fmt.Errorf("failed to start callback server: %w", err)
 		}
+		defer ln.Close()
 
 		conn, err := ln.Accept()
 		if err != nil {
@@ -128,11 +128,11 @@ Please open the following URL to login.
 
 		// Send message back to client
 		writer := bufio.NewWriter(conn)
-		_, err = writer.WriteString(`HTTP/1.1 200 OK
-Content-Type: text/plain
-Connection: close
-
-You may now close this tab.`)
+		_, err = writer.WriteString("HTTP/1.1 200 OK\r\n" +
+			"Content-Type: text/plain\r\n" +
+			"Connection: close\r\n" +
+			"\r\n" +
+			"You may now close this tab.")
 		if err != nil {
 			return fmt.Errorf("failed to write back to connection: %w", err)
 		}
