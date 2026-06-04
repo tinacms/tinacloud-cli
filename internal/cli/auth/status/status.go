@@ -17,9 +17,13 @@ import (
 func Status(args []string, cfg config.Config) error {
 	flagSet := flag.NewFlagSet("login", flag.ExitOnError)
 	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli auth status")
+		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli auth status [flags]")
 		fmt.Fprintln(os.Stderr, "\nDisplay authentication status and TinaCloud account information")
+		fmt.Fprintln(os.Stderr, "\nFlags:")
+		flag.PrintDefaults()
 	}
+
+	var JSON = flagSet.Bool("json", false, "Print the result as JSON")
 	_ = flagSet.Parse(args)
 
 	tokens, err := auth.TokensFromCache(cfg)
@@ -68,7 +72,11 @@ func Status(args []string, cfg config.Config) error {
 		return fmt.Errorf("failed to unmarshal tina user from get user request: %w", err)
 	}
 
-	fmt.Printf("Currently signed in as %s (%s)\n", user.FullName, user.Email)
+	if *JSON {
+		fmt.Printf(`{ "name": "%s", "email": "%s" }`, user.FullName, user.Email)
+	} else {
+		fmt.Printf("Currently signed in as %s (%s)\n", user.FullName, user.Email)
+	}
 
 	return nil
 }
