@@ -1,4 +1,4 @@
-package config
+package auth
 
 import (
 	"encoding/json"
@@ -11,8 +11,11 @@ import (
 	"path"
 	"time"
 
+	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
 )
+
+var UnathenticatedError = errors.New("not logged in")
 
 type TokenCache struct {
 	IDToken      string    `json:"id_token"`
@@ -55,7 +58,7 @@ func SaveTokens(tokens TokenCache) error {
 	return nil
 }
 
-func TokensFromCache(cfg Config) (TokenCache, error) {
+func TokensFromCache(cfg config.Config) (TokenCache, error) {
 	configPath, err := cachePath()
 	if err != nil {
 		return TokenCache{}, fmt.Errorf("failed to retrieve config path: %w", err)
@@ -64,7 +67,7 @@ func TokensFromCache(cfg Config) (TokenCache, error) {
 	file, err := os.OpenInRoot(path.Dir(configPath), path.Base(configPath))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return TokenCache{}, errors.New("not logged in")
+			return TokenCache{}, UnathenticatedError
 		}
 		return TokenCache{}, fmt.Errorf("failed to read token cache as root: %w", err)
 	}
@@ -74,7 +77,7 @@ func TokensFromCache(cfg Config) (TokenCache, error) {
 	bytes, err := file.Read(buf)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return TokenCache{}, errors.New("not logged in")
+			return TokenCache{}, UnathenticatedError
 		}
 		return TokenCache{}, fmt.Errorf("failed to read token cache: %w", err)
 	}
@@ -82,6 +85,10 @@ func TokensFromCache(cfg Config) (TokenCache, error) {
 	var tokens TokenCache
 	if err := json.Unmarshal(buf[:bytes], &tokens); err != nil {
 		return TokenCache{}, fmt.Errorf("failed to parse token cache: %w", err)
+	}
+
+	if tokens.AccessToken == "" || tokens.RefreshToken == "" {
+		return TokenCache{}, UnathenticatedError
 	}
 
 	if tokens.ExpiresAt.Before(time.Now()) {
@@ -117,7 +124,7 @@ func TokensFromCache(cfg Config) (TokenCache, error) {
 		tokens = TokenCache{
 			IDToken:      authTokens.IDToken,
 			AccessToken:  authTokens.AccessToken,
-			RefreshToken: authTokens.RefreshToken,
+			RefreshToken: tokens.RefreshToken,
 			TokenType:    authTokens.TokenType,
 			ExpiresAt:    time.Now().Add(time.Duration(authTokens.ExpiresIn) * time.Second),
 		}
