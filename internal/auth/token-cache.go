@@ -16,6 +16,7 @@ import (
 )
 
 var ErrUnauthenticated = errors.New("not logged in")
+var ErrUnauthorized = errors.New("no access")
 
 type TokenCache struct {
 	IDToken      string    `json:"id_token"`
@@ -104,7 +105,7 @@ func TokensFromCache(cfg config.Config) (TokenCache, error) {
 		defer resp.Body.Close()
 
 		if resp.StatusCode == http.StatusUnauthorized {
-			return TokenCache{}, fmt.Errorf("failed to authorize user: %w", ErrUnauthenticated)
+			return TokenCache{}, ErrUnauthorized
 		}
 
 		body, err := io.ReadAll(resp.Body)
