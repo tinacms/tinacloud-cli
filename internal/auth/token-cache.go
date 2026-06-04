@@ -104,7 +104,7 @@ func TokensFromCache(cfg config.Config) (TokenCache, error) {
 		defer resp.Body.Close()
 
 		if resp.StatusCode == http.StatusUnauthorized {
-			return TokenCache{}, fmt.Errorf("%w: refresh token rejected", ErrUnauthenticated)
+			return TokenCache{}, fmt.Errorf("failed to authorize user: %w", ErrUnauthenticated)
 		}
 
 		body, err := io.ReadAll(resp.Body)
