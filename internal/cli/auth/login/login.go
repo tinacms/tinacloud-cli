@@ -178,7 +178,7 @@ Attempting to open your default browser. If the browser does not open, open the 
 		}
 
 		if resp.StatusCode > 299 {
-			return fmt.Errorf("failed to verify auth token. receieved response status of '%d': %s", resp.StatusCode, string(body))
+			return fmt.Errorf("failed to verify auth token. received response status of '%d': %s", resp.StatusCode, string(body))
 		}
 
 		if err := json.Unmarshal(body, &tokens); err != nil {

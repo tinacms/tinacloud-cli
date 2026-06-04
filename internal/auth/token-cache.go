@@ -15,7 +15,7 @@ import (
 	"tina.io/tinacloud-cli/internal/domain"
 )
 
-var UnathenticatedError = errors.New("not logged in")
+var ErrUnauthenticated = errors.New("not logged in")
 
 type TokenCache struct {
 	IDToken      string    `json:"id_token"`
@@ -67,7 +67,7 @@ func TokensFromCache(cfg config.Config) (TokenCache, error) {
 	file, err := os.OpenInRoot(path.Dir(configPath), path.Base(configPath))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return TokenCache{}, UnathenticatedError
+			return TokenCache{}, ErrUnauthenticated
 		}
 		return TokenCache{}, fmt.Errorf("failed to read token cache as root: %w", err)
 	}
@@ -77,7 +77,7 @@ func TokensFromCache(cfg config.Config) (TokenCache, error) {
 	bytes, err := file.Read(buf)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return TokenCache{}, UnathenticatedError
+			return TokenCache{}, ErrUnauthenticated
 		}
 		return TokenCache{}, fmt.Errorf("failed to read token cache: %w", err)
 	}
@@ -88,11 +88,11 @@ func TokensFromCache(cfg config.Config) (TokenCache, error) {
 	}
 
 	if tokens.AccessToken == "" || tokens.RefreshToken == "" {
-		return TokenCache{}, UnathenticatedError
+		return TokenCache{}, ErrUnauthenticated
 	}
 
 	if tokens.ExpiresAt.Before(time.Now()) {
-		fmt.Println("auth token expired, refreshing...")
+		fmt.Fprintln(os.Stderr, "auth token expired, refreshing...")
 		params := url.Values{}
 		params.Set("grant_type", "refresh_token")
 		params.Set("refresh_token", tokens.RefreshToken)
@@ -104,7 +104,7 @@ func TokensFromCache(cfg config.Config) (TokenCache, error) {
 		defer resp.Body.Close()
 
 		if resp.StatusCode == http.StatusUnauthorized {
-			return TokenCache{}, fmt.Errorf("failed to authorize user")
+			return TokenCache{}, fmt.Errorf("%w: refresh token rejected", ErrUnauthenticated)
 		}
 
 		body, err := io.ReadAll(resp.Body)
@@ -113,7 +113,7 @@ func TokensFromCache(cfg config.Config) (TokenCache, error) {
 		}
 
 		if resp.StatusCode > 299 {
-			return TokenCache{}, fmt.Errorf("failed to refresh auth token. receieved response status of '%d': %s", resp.StatusCode, string(body))
+			return TokenCache{}, fmt.Errorf("failed to refresh auth token. received response status of '%d': %s", resp.StatusCode, string(body))
 		}
 
 		var authTokens domain.AuthResponse
@@ -132,7 +132,7 @@ func TokensFromCache(cfg config.Config) (TokenCache, error) {
 		if err := SaveTokens(tokens); err != nil {
 			return TokenCache{}, fmt.Errorf("failed to save tokens to file: %w", err)
 		}
-		fmt.Println("successfully refreshed auth token")
+		fmt.Fprintln(os.Stderr, "successfully refreshed auth token")
 	}
 
 	return tokens, nil

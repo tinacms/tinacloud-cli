@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/golang-jwt/jwt/v4"
-	"tina.io/tinacloud-cli/internal/config"
 )
 
 type DecodedAccessToken struct {
@@ -13,7 +12,7 @@ type DecodedAccessToken struct {
 	jwt.RegisteredClaims
 }
 
-func DecodeAccessToken(cfg config.Config, accessToken string) (DecodedAccessToken, error) {
+func DecodeAccessToken(accessToken string) (DecodedAccessToken, error) {
 	parser := jwt.NewParser()
 	token, _, err := parser.ParseUnverified(accessToken, &DecodedAccessToken{})
 	if err != nil {

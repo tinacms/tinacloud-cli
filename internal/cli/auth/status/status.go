@@ -14,28 +14,55 @@ import (
 	"tina.io/tinacloud-cli/internal/domain"
 )
 
-func Status(args []string, cfg config.Config) error {
-	flagSet := flag.NewFlagSet("login", flag.ExitOnError)
+type statusOutput struct {
+	LoggedIn bool   `json:"loggedIn"`
+	Name     string `json:"name,omitempty"`
+	Email    string `json:"email,omitempty"`
+}
+
+func Status(args []string, cfg config.Config) (err error) {
+	flagSet := flag.NewFlagSet("status", flag.ExitOnError)
 	flagSet.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli auth status [flags]")
 		fmt.Fprintln(os.Stderr, "\nDisplay authentication status and TinaCloud account information")
 		fmt.Fprintln(os.Stderr, "\nFlags:")
-		flag.PrintDefaults()
+		flagSet.PrintDefaults()
 	}
 
 	var JSON = flagSet.Bool("json", false, "Print the result as JSON")
 	_ = flagSet.Parse(args)
 
+	// Under --json, surface errors as JSON on stdout. The error is still
+	// returned so the process exits non-zero.
+	defer func() {
+		if err == nil || !*JSON {
+			return
+		}
+		if data, mErr := json.Marshal(struct {
+			Error string `json:"error"`
+		}{err.Error()}); mErr == nil {
+			fmt.Println(string(data))
+		}
+	}()
+
 	tokens, err := auth.TokensFromCache(cfg)
 	if err != nil {
-		if errors.Is(err, auth.UnathenticatedError) {
+		if errors.Is(err, auth.ErrUnauthenticated) {
+			if *JSON {
+				data, err := json.Marshal(statusOutput{LoggedIn: false})
+				if err != nil {
+					return fmt.Errorf("failed to marshal status output: %w", err)
+				}
+				fmt.Println(string(data))
+				return nil
+			}
 			fmt.Println("You are not currently logged in")
 			return nil
 		}
 		return fmt.Errorf("failed to retrieve auth tokens: %w", err)
 	}
 
-	claims, err := auth.DecodeAccessToken(cfg, tokens.AccessToken)
+	claims, err := auth.DecodeAccessToken(tokens.AccessToken)
 	if err != nil {
 		return fmt.Errorf("failed to decode access token: %w", err)
 	}
@@ -56,15 +83,15 @@ func Status(args []string, cfg config.Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to get user information: %w", err)
 	}
+	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read get user information response: %w", err)
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode > 299 {
-		return fmt.Errorf("failed to get user information. receieved response status of '%d': %s", resp.StatusCode, string(body))
+		return fmt.Errorf("failed to get user information. received response status of '%d': %s", resp.StatusCode, string(body))
 	}
 
 	var user domain.TinaCloudUser
@@ -73,10 +100,14 @@ func Status(args []string, cfg config.Config) error {
 	}
 
 	if *JSON {
-		fmt.Printf(`{ "name": "%s", "email": "%s" }`, user.FullName, user.Email)
-	} else {
-		fmt.Printf("Currently signed in as %s (%s)\n", user.FullName, user.Email)
+		data, err := json.Marshal(statusOutput{LoggedIn: true, Name: user.FullName, Email: user.Email})
+		if err != nil {
+			return fmt.Errorf("failed to marshal status output: %w", err)
+		}
+		fmt.Println(string(data))
+		return nil
 	}
 
+	fmt.Printf("Currently signed in as %s (%s)\n", user.FullName, user.Email)
 	return nil
 }
