@@ -10,7 +10,7 @@ import (
 )
 
 func Org(args []string, cfg config.Config) error {
-	flagSet := flag.NewFlagSet("auth", flag.ExitOnError)
+	flagSet := flag.NewFlagSet("org", flag.ExitOnError)
 	flagSet.Usage = func() {
 		command.PrintSubCommands("tinacloud-cli org", []command.SubCommand{
 			{Name: "list", Description: "List organizations"},
