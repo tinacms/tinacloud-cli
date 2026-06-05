@@ -59,6 +59,8 @@ func SaveTokens(tokens TokenCache) error {
 	return nil
 }
 
+type TokenLoader func(config.Config) (TokenCache, error)
+
 func TokensFromCache(cfg config.Config) (TokenCache, error) {
 	configPath, err := cachePath()
 	if err != nil {

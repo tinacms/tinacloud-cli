@@ -32,7 +32,7 @@ func List(args []string, cfg config.Config) error {
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
 	_ = flagSet.Parse(args)
 
-	out, err := runList(cfg)
+	out, err := runList(cfg, auth.TokensFromCache)
 	if *jsonFlag {
 		return command.WriteJSONResult(os.Stdout, out, err)
 	}
@@ -53,8 +53,8 @@ func List(args []string, cfg config.Config) error {
 	return nil
 }
 
-func runList(cfg config.Config) (listJSONOutput, error) {
-	tokens, err := auth.TokensFromCache(cfg)
+func runList(cfg config.Config, loadTokens auth.TokenLoader) (listJSONOutput, error) {
+	tokens, err := loadTokens(cfg)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
 			return listJSONOutput{LoggedIn: false}, nil
