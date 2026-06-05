@@ -59,6 +59,7 @@ func SaveTokens(tokens TokenCache) error {
 	return nil
 }
 
+// TokenLoader loads authentication tokens for commands that need a test double.
 type TokenLoader func(config.Config) (TokenCache, error)
 
 func TokensFromCache(cfg config.Config) (TokenCache, error) {

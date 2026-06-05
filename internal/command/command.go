@@ -11,14 +11,14 @@ type SubCommand struct {
 	Description string
 }
 
-func (sc SubCommand) Fprint(w io.Writer) {
+func (sc SubCommand) fprint(w io.Writer) {
 	fmt.Fprintf(w, "  %-12s %s\n", sc.Name, sc.Description)
 }
 
 func PrintSubCommands(w io.Writer, parent string, cmds []SubCommand) {
 	fmt.Fprintf(w, "Usage: %s <command> [flags]\n\nCommands:\n", parent)
 	for _, cmd := range cmds {
-		cmd.Fprint(w)
+		cmd.fprint(w)
 	}
 }
 
