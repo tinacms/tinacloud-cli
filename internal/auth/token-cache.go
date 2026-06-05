@@ -146,7 +146,7 @@ func ClearTokens() error {
 	}
 
 	if err := os.Remove(configPath); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to clear token cache: %w", err)
+		return fmt.Errorf("failed to delete tokens file: %w", err)
 	}
 
 	return nil

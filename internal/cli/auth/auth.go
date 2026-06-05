@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"tina.io/tinacloud-cli/internal/cli/auth/login"
+	"tina.io/tinacloud-cli/internal/cli/auth/logout"
 	"tina.io/tinacloud-cli/internal/cli/auth/status"
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
@@ -34,6 +35,8 @@ func Auth(args []string, cfg config.Config) error {
 		return login.Login(subargs, cfg)
 	case "status":
 		return status.Status(subargs, cfg)
+	case "logout":
+		return logout.Logout(subargs, cfg)
 	default:
 		return fmt.Errorf("unrecognized command %q", cmd)
 	}
