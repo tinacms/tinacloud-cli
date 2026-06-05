@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"tina.io/tinacloud-cli/internal/cli/auth"
+	"tina.io/tinacloud-cli/internal/cli/org"
 	"tina.io/tinacloud-cli/internal/command"
 )
 
@@ -14,6 +15,7 @@ func (s *State) Root() error {
 	flagSet.Usage = func() {
 		command.PrintSubCommands("tinacloud-cli", []command.SubCommand{
 			{Name: "auth", Description: "Authenticate with TinaCloud"},
+			{Name: "org", Description: "Interact with organizations"},
 		})
 		flagSet.PrintDefaults()
 	}
@@ -29,6 +31,8 @@ func (s *State) Root() error {
 	switch cmd {
 	case "auth":
 		return auth.Auth(subargs, s.config)
+	case "org":
+		return org.Org(subargs, s.config)
 	default:
 		return fmt.Errorf("unrecognised command: %q", cmd)
 	}
