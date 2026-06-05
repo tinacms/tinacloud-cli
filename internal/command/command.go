@@ -30,7 +30,7 @@ func WriteJSONResult(w io.Writer, v any, err error) error {
 		}{err.Error()})
 
 		fmt.Fprintln(w, string(data))
-		return nil
+		return err
 	}
 
 	data, marshalErr := json.Marshal(v)
