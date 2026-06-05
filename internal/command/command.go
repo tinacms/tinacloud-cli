@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 )
 
 type SubCommand struct {
@@ -12,14 +11,14 @@ type SubCommand struct {
 	Description string
 }
 
-func (sc SubCommand) Print() {
-	fmt.Fprintf(os.Stderr, "  %-12s %s\n", sc.Name, sc.Description)
+func (sc SubCommand) Fprint(w io.Writer) {
+	fmt.Fprintf(w, "  %-12s %s\n", sc.Name, sc.Description)
 }
 
-func PrintSubCommands(parent string, cmds []SubCommand) {
-	fmt.Fprintf(os.Stderr, "Usage: %s <command> [flags]\n\nCommands:\n", parent)
+func PrintSubCommands(w io.Writer, parent string, cmds []SubCommand) {
+	fmt.Fprintf(w, "Usage: %s <command> [flags]\n\nCommands:\n", parent)
 	for _, cmd := range cmds {
-		cmd.Print()
+		cmd.Fprint(w)
 	}
 }
 

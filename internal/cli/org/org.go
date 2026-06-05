@@ -3,6 +3,7 @@ package org
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	"tina.io/tinacloud-cli/internal/cli/org/list"
 	"tina.io/tinacloud-cli/internal/command"
@@ -12,7 +13,7 @@ import (
 func Org(args []string, cfg config.Config) error {
 	flagSet := flag.NewFlagSet("org", flag.ExitOnError)
 	flagSet.Usage = func() {
-		command.PrintSubCommands("tinacloud-cli org", []command.SubCommand{
+		command.PrintSubCommands(os.Stderr, "tinacloud-cli org", []command.SubCommand{
 			{Name: "list", Description: "List organizations"},
 		})
 		flagSet.PrintDefaults()

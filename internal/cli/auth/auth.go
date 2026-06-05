@@ -3,6 +3,7 @@ package auth
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	"tina.io/tinacloud-cli/internal/cli/auth/login"
 	"tina.io/tinacloud-cli/internal/cli/auth/logout"
@@ -14,7 +15,7 @@ import (
 func Auth(args []string, cfg config.Config) error {
 	flagSet := flag.NewFlagSet("auth", flag.ExitOnError)
 	flagSet.Usage = func() {
-		command.PrintSubCommands("tinacloud-cli auth", []command.SubCommand{
+		command.PrintSubCommands(os.Stderr, "tinacloud-cli auth", []command.SubCommand{
 			{Name: "login", Description: "Log in to a TinaCloud account"},
 			{Name: "logout", Description: "Log out of a TinaCloud account"},
 			{Name: "status", Description: "Display authentication status and TinaCloud account information"},
