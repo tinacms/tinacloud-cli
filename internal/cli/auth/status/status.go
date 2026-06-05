@@ -82,6 +82,10 @@ func runStatus(cfg config.Config) (statusJSONOutput, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusUnauthorized {
+		return statusJSONOutput{}, auth.ErrUnauthorized
+	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return statusJSONOutput{}, fmt.Errorf("failed to read get user information response: %w", err)

@@ -169,7 +169,7 @@ Attempting to open your default browser. If the browser does not open, open the 
 		defer resp.Body.Close()
 
 		if resp.StatusCode == http.StatusUnauthorized {
-			return fmt.Errorf("failed to authorize user")
+			return auth.ErrUnauthorized
 		}
 
 		body, err := io.ReadAll(resp.Body)
