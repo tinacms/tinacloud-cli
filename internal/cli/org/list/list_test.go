@@ -110,3 +110,21 @@ func TestRunList_APIErrors(t *testing.T) {
 		})
 	}
 }
+
+func TestRunList_TokenLoadError(t *testing.T) {
+	_, err := runList(config.Config{}, stubTokenLoader(auth.TokenCache{}, errors.New("disk failure")))
+	if err == nil {
+		t.Fatal("runList() = nil error, want error for non-auth load failure")
+	}
+}
+
+func TestRunList_MalformedJSON(t *testing.T) {
+	cfg := cfgWithServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("{not json"))
+	})
+
+	_, err := runList(cfg, stubTokenLoader(auth.TokenCache{AccessToken: "access-token"}, nil))
+	if err == nil {
+		t.Fatal("runList() = nil error, want unmarshal error")
+	}
+}

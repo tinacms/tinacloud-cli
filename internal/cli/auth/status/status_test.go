@@ -130,3 +130,30 @@ func TestRunStatus_NoClientID(t *testing.T) {
 		t.Fatal("runStatus() = nil error, want error for missing client ID")
 	}
 }
+
+func TestRunStatus_TokenLoadError(t *testing.T) {
+	_, err := runStatus(config.Config{}, stubTokenLoader(auth.TokenCache{}, errors.New("disk failure")))
+	if err == nil {
+		t.Fatal("runStatus() = nil error, want error for non-auth load failure")
+	}
+}
+
+func TestRunStatus_DecodeError(t *testing.T) {
+	tokens := auth.TokenCache{AccessToken: "not-a-jwt"}
+	_, err := runStatus(config.Config{}, stubTokenLoader(tokens, nil))
+	if err == nil {
+		t.Fatal("runStatus() = nil error, want decode error for malformed token")
+	}
+}
+
+func TestRunStatus_MalformedJSON(t *testing.T) {
+	cfg := cfgWithServer(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("{not json"))
+	})
+
+	tokens := auth.TokenCache{AccessToken: makeJWT(t, "client-123")}
+	_, err := runStatus(cfg, stubTokenLoader(tokens, nil))
+	if err == nil {
+		t.Fatal("runStatus() = nil error, want unmarshal error")
+	}
+}

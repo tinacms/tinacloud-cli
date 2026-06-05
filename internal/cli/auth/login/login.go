@@ -63,6 +63,10 @@ func Login(args []string, cfg config.Config) error {
 	}
 	_ = flagSet.Parse(args)
 
+	return runLogin(cfg, browser.OpenURL)
+}
+
+func runLogin(cfg config.Config, openURL func(string) error) error {
 	verifier, err := generateVerifier()
 	if err != nil {
 		return fmt.Errorf("failed to generate verifier code: %w", err)
@@ -97,7 +101,7 @@ func Login(args []string, cfg config.Config) error {
 		}
 
 		// User can copy string from terminal if this fails
-		_ = browser.OpenURL(redirectURL)
+		_ = openURL(redirectURL)
 
 		fmt.Printf(`TinaCloud SSO login required.
 Attempting to open your default browser. If the browser does not open, open the following URL.
