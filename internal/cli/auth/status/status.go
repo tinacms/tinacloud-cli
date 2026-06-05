@@ -80,6 +80,7 @@ func runStatus(cfg config.Config) (statusJSONOutput, error) {
 	if err != nil {
 		return statusJSONOutput{}, fmt.Errorf("failed to get user information: %w", err)
 	}
+	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
