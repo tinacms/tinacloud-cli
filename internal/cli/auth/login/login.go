@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"time"
 
+	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/browser"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
@@ -77,7 +78,7 @@ func Login(args []string, cfg config.Config) error {
 		// <tinacloud-host>:oauth/authorize will attempt to redirect the client
 		// to the authorization page. instead, we want to catch the redirect
 		// location to display to user.
-		client := &http.Client{
+		client := http.Client{
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				return http.ErrUseLastResponse
 			},
@@ -99,7 +100,7 @@ func Login(args []string, cfg config.Config) error {
 		_ = browser.OpenURL(redirectURL)
 
 		fmt.Printf(`TinaCloud SSO login required.
-Please open the following URL to login.
+Attempting to open your default browser. If the browser does not open, open the following URL.
 
 %s
 
@@ -177,7 +178,7 @@ Please open the following URL to login.
 		}
 
 		if resp.StatusCode > 299 {
-			return fmt.Errorf("failed to verify auth token. receieved response status of '%d': %s", resp.StatusCode, string(body))
+			return fmt.Errorf("failed to verify auth token. received response status of '%d': %s", resp.StatusCode, string(body))
 		}
 
 		if err := json.Unmarshal(body, &tokens); err != nil {
@@ -185,7 +186,11 @@ Please open the following URL to login.
 		}
 	}
 
-	err = config.SaveTokens(config.TokenCache{
+	if tokens.AccessToken == "" || tokens.RefreshToken == "" {
+		return fmt.Errorf("received empty auth tokens from login request")
+	}
+
+	err = auth.SaveTokens(auth.TokenCache{
 		IDToken:      tokens.IDToken,
 		AccessToken:  tokens.AccessToken,
 		RefreshToken: tokens.RefreshToken,

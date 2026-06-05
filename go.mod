@@ -3,6 +3,7 @@ module tina.io/tinacloud-cli
 go 1.26.2
 
 require (
+	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/posthog/posthog-go v1.13.1
 	github.com/sethvargo/go-envconfig v1.3.0
 )

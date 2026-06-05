@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"tina.io/tinacloud-cli/internal/cli/auth/login"
+	"tina.io/tinacloud-cli/internal/cli/auth/status"
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 )
@@ -15,7 +16,7 @@ func Auth(args []string, cfg config.Config) error {
 		command.PrintSubCommands("tinacloud-cli auth", []command.SubCommand{
 			{Name: "login", Description: "Log in to a TinaCloud account"},
 			{Name: "logout", Description: "Log out of a TinaCloud account"},
-			{Name: "status", Description: "Display active account and authentication status on each known TinaCloud account"},
+			{Name: "status", Description: "Display authentication status and TinaCloud account information"},
 		})
 		flagSet.PrintDefaults()
 	}
@@ -31,6 +32,8 @@ func Auth(args []string, cfg config.Config) error {
 	switch cmd {
 	case "login":
 		return login.Login(subargs, cfg)
+	case "status":
+		return status.Status(subargs, cfg)
 	default:
 		return fmt.Errorf("unrecognized command %q", cmd)
 	}
