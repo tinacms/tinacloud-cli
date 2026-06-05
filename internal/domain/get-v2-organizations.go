@@ -13,7 +13,11 @@ type OrganizationWithRole struct {
 func (o OrganizationWithRole) String() string {
 	var output strings.Builder
 
-	fmt.Fprintf(&output, "%s (%s) [Role: %s]", o.Organization.Name, o.Organization.ID, strings.ToTitle(o.Role[0:1])+o.Role[1:])
+	fmt.Fprintf(&output, "%s (%s)", o.Organization.Name, o.Organization.ID)
+	if o.Role != "" {
+		role := strings.ToTitle(o.Role[0:1]) + o.Role[1:]
+		fmt.Fprintf(&output, " [Role: %s]", role)
+	}
 	if o.Organization.BillingEnabled {
 		fmt.Fprint(&output, " [Billing enabled]")
 	} else {
