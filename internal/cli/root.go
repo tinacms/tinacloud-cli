@@ -7,6 +7,7 @@ import (
 
 	"tina.io/tinacloud-cli/internal/cli/auth"
 	"tina.io/tinacloud-cli/internal/cli/org"
+	"tina.io/tinacloud-cli/internal/cli/project"
 	"tina.io/tinacloud-cli/internal/command"
 )
 
@@ -33,6 +34,8 @@ func (s *State) Root() error {
 		return auth.Auth(subargs, s.config)
 	case "org":
 		return org.Org(subargs, s.config)
+	case "project":
+		return project.Project(subargs, s.config)
 	default:
 		return fmt.Errorf("unrecognised command: %q", cmd)
 	}
