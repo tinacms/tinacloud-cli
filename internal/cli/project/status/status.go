@@ -37,7 +37,7 @@ func Status(args []string, cfg config.Config) error {
 		return fmt.Errorf("project ID is required")
 	}
 
-	out, err := runList(cfg, *projectIDFlag)
+	out, err := runStatus(cfg, *projectIDFlag)
 	if *jsonFlag {
 		return command.WriteJSONResult(os.Stdout, out, err)
 	}
@@ -55,7 +55,7 @@ func Status(args []string, cfg config.Config) error {
 	return nil
 }
 
-func runList(cfg config.Config, projectIDFlag string) (statusJSONOutput, error) {
+func runStatus(cfg config.Config, projectIDFlag string) (statusJSONOutput, error) {
 	tokens, err := auth.TokensFromCache(cfg)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
