@@ -8,8 +8,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings"
-	"time"
 
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/command"
@@ -18,8 +16,8 @@ import (
 )
 
 type listJSONOutput struct {
-	LoggedIn bool             `json:"loggedIn"`
-	Projects []domain.Project `json:"projects"`
+	LoggedIn bool                           `json:"loggedIn"`
+	Projects []domain.GetV2ProjectsResponse `json:"projects"`
 }
 
 func List(args []string, cfg config.Config) error {
@@ -96,25 +94,13 @@ func runList(cfg config.Config, orgIDFlag string) (listJSONOutput, error) {
 		return listJSONOutput{}, fmt.Errorf("failed to get projects. received response status of '%d': %s", resp.StatusCode, string(body))
 	}
 
-	var projects []domain.GetV2Projects
+	var projects []domain.GetV2ProjectsResponse
 	if err := json.Unmarshal(body, &projects); err != nil {
 		return listJSONOutput{}, fmt.Errorf("failed to unmarshal projects from get request: %w", err)
 	}
 
-	var sanitised []domain.Project
-	for _, project := range projects {
-		sanitised = append(sanitised, domain.Project{
-			ID:             project.ID,
-			Name:           project.Name,
-			RepoURL:        project.RepoURL,
-			SiteURLs:       strings.Split(project.SiteURLs, ","),
-			DateUpdated:    time.UnixMilli(project.DateUpdated),
-			ContentUpdated: time.UnixMilli(project.ContentUpdated),
-		})
-	}
-
 	return listJSONOutput{
 		LoggedIn: true,
-		Projects: sanitised,
+		Projects: projects,
 	}, nil
 }
