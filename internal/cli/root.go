@@ -17,6 +17,7 @@ func (s *State) Root() error {
 		command.PrintSubCommands("tinacloud-cli", []command.SubCommand{
 			{Name: "auth", Description: "Authenticate with TinaCloud"},
 			{Name: "org", Description: "Interact with organizations"},
+			{Name: "project", Description: "Interact with projects"},
 		})
 		flagSet.PrintDefaults()
 	}
