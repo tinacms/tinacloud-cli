@@ -10,7 +10,7 @@ import (
 )
 
 func Project(args []string, cfg config.Config) error {
-	flagSet := flag.NewFlagSet("org", flag.ExitOnError)
+	flagSet := flag.NewFlagSet("project", flag.ExitOnError)
 	flagSet.Usage = func() {
 		command.PrintSubCommands("tinacloud-cli project", []command.SubCommand{
 			{Name: "list", Description: "List projects"},
