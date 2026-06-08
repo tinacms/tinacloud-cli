@@ -15,16 +15,6 @@ type PostV2ProjectResponse struct {
 	CreatedProject CreatedProject `json:"created_app"`
 }
 
-type Token struct {
-	Data     string   `json:"token"`
-	Name     string   `json:"name"`
-	RepoURL  string   `json:"repoURL"`
-	Branches []string `json:"branches"`
-	// Unix timestamp
-	LastUsed int64    `json:"lastUsed"`
-	Access   []string `json:"access"`
-}
-
 type CreatedProject struct {
 	Tokens    []Token `json:"tokens"`
 	OrgID     string  `json:"orgId"`
