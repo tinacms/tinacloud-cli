@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 
+	"tina.io/tinacloud-cli/internal/cli/project/create"
 	"tina.io/tinacloud-cli/internal/cli/project/list"
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
@@ -14,6 +15,7 @@ func Project(args []string, cfg config.Config) error {
 	flagSet.Usage = func() {
 		command.PrintSubCommands("tinacloud-cli project", []command.SubCommand{
 			{Name: "list", Description: "List projects"},
+			{Name: "create", Description: "Create a new project"},
 		})
 		flagSet.PrintDefaults()
 	}
@@ -29,6 +31,8 @@ func Project(args []string, cfg config.Config) error {
 	switch cmd {
 	case "list":
 		return list.List(subargs, cfg)
+	case "create":
+		return create.Create(subargs, cfg)
 	default:
 		return fmt.Errorf("unrecognized command %q", cmd)
 	}
