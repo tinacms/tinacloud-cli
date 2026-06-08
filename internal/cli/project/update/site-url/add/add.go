@@ -39,23 +39,7 @@ func Add(args []string, cfg config.Config) error {
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
 	_ = flagSet.Parse(args)
 
-	if *projectIDFlag == "" {
-		return fmt.Errorf("project ID is required")
-	}
-
-	if *orgIDFlag == "" {
-		return fmt.Errorf("organization ID is required")
-	}
-
-	if len(siteURLsFlag) == 0 {
-		return fmt.Errorf("must pass at least one site url")
-	}
-	siteURLs, err := utils.CleanSiteURLs(siteURLsFlag)
-	if err != nil {
-		return fmt.Errorf("failed to parse site urls: %w", err)
-	}
-
-	out, err := runAdd(cfg, siteURLs, *orgIDFlag, *projectIDFlag)
+	out, err := runAdd(cfg, siteURLsFlag, *orgIDFlag, *projectIDFlag)
 	if *jsonFlag {
 		return command.WriteJSONResult(os.Stdout, out, err)
 	}
@@ -68,13 +52,28 @@ func Add(args []string, cfg config.Config) error {
 		return nil
 	}
 
-	fmt.Printf("Added site URL(s): %s\n", siteURLs)
-	fmt.Printf("\t- Project site URL(s): %s\n", out.SiteURLs)
+	fmt.Printf("Project site URL(s): %s\n", out.SiteURLs)
 
 	return nil
 }
 
-func runAdd(cfg config.Config, newSiteURLs []string, orgIDFlag, projectIDFlag string) (siteURLAddJSONOutput, error) {
+func runAdd(cfg config.Config, siteURLsFlag domain.UrlsFlag, orgIDFlag, projectIDFlag string) (siteURLAddJSONOutput, error) {
+	if projectIDFlag == "" {
+		return siteURLAddJSONOutput{}, fmt.Errorf("project ID is required")
+	}
+
+	if orgIDFlag == "" {
+		return siteURLAddJSONOutput{}, fmt.Errorf("organization ID is required")
+	}
+
+	if len(siteURLsFlag) == 0 {
+		return siteURLAddJSONOutput{}, fmt.Errorf("must pass at least one site url")
+	}
+	newSiteURLs, err := utils.CleanSiteURLs(siteURLsFlag)
+	if err != nil {
+		return siteURLAddJSONOutput{}, fmt.Errorf("failed to parse site urls: %w", err)
+	}
+
 	tokens, err := auth.TokensFromCache(cfg)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
@@ -118,19 +117,14 @@ func runAdd(cfg config.Config, newSiteURLs []string, orgIDFlag, projectIDFlag st
 		}
 	}
 
-	var siteURLs []string
-	for _, url := range strings.Split(project.SiteURLs, ",") {
-		siteURLs = append(siteURLs, url)
-	}
-	for _, url := range newSiteURLs {
-		siteURLs = append(siteURLs, url)
-	}
+	siteURLs := append(strings.Split(project.SiteURLs, ","), newSiteURLs...)
 
 	seen := map[string]struct{}{}
 	var uniqueSiteURLs []string
 
 	for _, value := range siteURLs {
-		if strings.TrimSpace(value) == "" {
+		value = strings.TrimSpace(value)
+		if value == "" {
 			continue
 		}
 		if _, exists := seen[value]; exists {
@@ -161,7 +155,7 @@ func runAdd(cfg config.Config, newSiteURLs []string, orgIDFlag, projectIDFlag st
 		}
 		req.Header.Set("Authorization", "Bearer "+tokens.AccessToken)
 		req.Header.Set("Accept", "application/json")
-		req.Header.Set("ContentType", "application/json")
+		req.Header.Set("Content-Type", "application/json")
 
 		resp, err := client.Do(req)
 		if err != nil {
