@@ -38,25 +38,6 @@ func Create(args []string, cfg config.Config) error {
 	var siteURLFlag = flagSet.String("site-url", "http://localhost:3000", "Site URL")
 	_ = flagSet.Parse(args)
 
-	if *orgIDFlag == "" {
-		return fmt.Errorf("organization ID is required")
-	}
-
-	if *nameFlag == "" {
-		return fmt.Errorf("project name is required")
-	}
-
-	if *repoURLFlag == "" {
-		return fmt.Errorf("repo url is required")
-	}
-	url, err := url.Parse(*repoURLFlag)
-	if err != nil {
-		return fmt.Errorf("repo url is invalid: %w", err)
-	}
-	if url.Scheme != "https" || url.Host != "github.com" {
-		return errors.New("repo url is invalid: host must be https://github.com")
-	}
-
 	out, err := runCreate(cfg, *orgIDFlag, *nameFlag, *repoURLFlag, *siteURLFlag)
 	if *jsonFlag {
 		return command.WriteJSONResult(os.Stdout, out, err)
@@ -77,6 +58,25 @@ func Create(args []string, cfg config.Config) error {
 }
 
 func runCreate(cfg config.Config, orgIDFlag, nameFlag, repoURLFlag, siteURLFlag string) (createJSONOutput, error) {
+	if orgIDFlag == "" {
+		return createJSONOutput{}, errors.New("organization ID is required")
+	}
+
+	if nameFlag == "" {
+		return createJSONOutput{}, errors.New("project name is required")
+	}
+
+	if repoURLFlag == "" {
+		return createJSONOutput{}, errors.New("repo url is required")
+	}
+	url, err := url.Parse(repoURLFlag)
+	if err != nil {
+		return createJSONOutput{}, fmt.Errorf("repo url is invalid: %w", err)
+	}
+	if url.Scheme != "https" || url.Host != "github.com" {
+		return createJSONOutput{}, errors.New("repo url is invalid: host must be https://github.com")
+	}
+
 	tokens, err := auth.TokensFromCache(cfg)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
