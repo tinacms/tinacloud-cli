@@ -13,7 +13,7 @@ type GetV2ProjectResponse struct {
 	Name      string  `json:"name"`
 	RepoURL   string  `json:"repoUrl"`
 	// Comma deliminated
-	SitURLs           string                     `json:"sitUrl"`
+	SiteURLs          string                     `json:"siteUrl"`
 	Metadata          map[Branch]ProjectMetadata `json:"metadata"`
 	DefaultBranch     Branch                     `json:"defaultBranch"`
 	MediaBranch       Branch                     `json:"mediaBranch"`
@@ -34,7 +34,7 @@ func (p GetV2ProjectResponse) String() string {
 	fmt.Fprintf(&output, "%s (%s)\n", p.Name, p.ProjectID)
 	fmt.Fprintf(&output, "\t- Organization: %s\n", p.OrgID)
 	fmt.Fprintf(&output, "\t- Repo: %s\n", p.RepoURL)
-	fmt.Fprintf(&output, "\t- Site URL(s): %s\n", strings.Split(p.SitURLs, ","))
+	fmt.Fprintf(&output, "\t- Site URL(s): %s\n", strings.Split(p.SiteURLs, ","))
 	// Date[Created|Updated] will always contain a valid date as it records the
 	// project creation date initially.
 	fmt.Fprintf(&output, "\t- Created: %s\n", time.UnixMilli(p.DateCreated).Format(time.RFC822))
