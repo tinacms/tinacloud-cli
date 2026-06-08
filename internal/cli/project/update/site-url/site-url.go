@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"tina.io/tinacloud-cli/internal/cli/project/update/site-url/add"
+	"tina.io/tinacloud-cli/internal/cli/project/update/site-url/remove"
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 )
@@ -17,6 +18,7 @@ func SiteURL(args []string, cfg config.Config) error {
 		fmt.Fprintln(os.Stderr, "\nUpdate a projects site URLs")
 		command.PrintSubCommands("tinacloud-cli project update", []command.SubCommand{
 			{Name: "Add", Description: "Add site URLs"},
+			{Name: "Remove", Description: "Remove site URLs"},
 		})
 	}
 
@@ -31,6 +33,8 @@ func SiteURL(args []string, cfg config.Config) error {
 	switch cmd {
 	case "add":
 		return add.Add(subargs, cfg)
+	case "remove":
+		return remove.Remove(subargs, cfg)
 	default:
 		return fmt.Errorf("unrecognized command %q", cmd)
 	}
