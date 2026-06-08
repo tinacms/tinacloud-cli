@@ -68,8 +68,7 @@ func Remove(args []string, cfg config.Config) error {
 		return nil
 	}
 
-	fmt.Printf("Removed site URL(s): %s\n", siteURLs)
-	fmt.Printf("\t- Project site URL(s): %s\n", out.SiteURLs)
+	fmt.Printf("Project site URL(s): %s\n", out.SiteURLs)
 
 	return nil
 }
@@ -96,7 +95,7 @@ func runRemove(cfg config.Config, removeSiteURLs []string, orgIDFlag, projectIDF
 
 		resp, err := client.Do(req)
 		if err != nil {
-			return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to get projects: %w", err)
+			return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to get project: %w", err)
 		}
 		defer resp.Body.Close()
 
@@ -106,11 +105,11 @@ func runRemove(cfg config.Config, removeSiteURLs []string, orgIDFlag, projectIDF
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to read get projects response: %w", err)
+			return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to read get project response: %w", err)
 		}
 
 		if resp.StatusCode > 299 {
-			return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to get projects. received response status of '%d': %s", resp.StatusCode, string(body))
+			return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to get project. received response status of '%d': %s", resp.StatusCode, string(body))
 		}
 
 		if err := json.Unmarshal(body, &project); err != nil {
