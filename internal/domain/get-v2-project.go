@@ -26,7 +26,10 @@ type GetV2ProjectResponse struct {
 	// Unix timestamp
 	DateUpdated int64 `json:"dateUpdated"`
 	// Unix timestamp
-	ContentUpdated int64 `json:"contentUpdated"`
+	ContentUpdated int64     `json:"contentUpdated"`
+	InstallationID int       `json:"installationId"`
+	PathToTina     string    `json:"pathToTina"`
+	Features       *[]string `json:"features"`
 }
 
 func (p GetV2ProjectResponse) String() string {
