@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"tina.io/tinacloud-cli/internal/cli/auth"
+	"tina.io/tinacloud-cli/internal/cli/configure"
 	"tina.io/tinacloud-cli/internal/cli/org"
 	"tina.io/tinacloud-cli/internal/cli/project"
 	"tina.io/tinacloud-cli/internal/command"
@@ -18,6 +19,7 @@ func (s *State) Root() error {
 			{Name: "auth", Description: "Authenticate with TinaCloud"},
 			{Name: "org", Description: "Interact with organizations"},
 			{Name: "project", Description: "Interact with projects"},
+			{Name: "configure", Description: "Configure a local Tina project"},
 		})
 		flagSet.PrintDefaults()
 	}
@@ -37,6 +39,8 @@ func (s *State) Root() error {
 		return org.Org(subargs, s.config)
 	case "project":
 		return project.Project(subargs, s.config)
+	case "configure":
+		return configure.Configure(subargs)
 	default:
 		return fmt.Errorf("unrecognised command: %q", cmd)
 	}
