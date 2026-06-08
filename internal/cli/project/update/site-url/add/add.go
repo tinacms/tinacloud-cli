@@ -165,7 +165,7 @@ func runAdd(cfg config.Config, newSiteURLs []string, orgIDFlag, projectIDFlag st
 
 		resp, err := client.Do(req)
 		if err != nil {
-			return siteURLAddJSONOutput{}, fmt.Errorf("failed to get projects: %w", err)
+			return siteURLAddJSONOutput{}, fmt.Errorf("failed to update project: %w", err)
 		}
 		defer resp.Body.Close()
 
@@ -175,11 +175,11 @@ func runAdd(cfg config.Config, newSiteURLs []string, orgIDFlag, projectIDFlag st
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return siteURLAddJSONOutput{}, fmt.Errorf("failed to read get projects response: %w", err)
+			return siteURLAddJSONOutput{}, fmt.Errorf("failed to read update project response: %w", err)
 		}
 
 		if resp.StatusCode > 299 {
-			return siteURLAddJSONOutput{}, fmt.Errorf("failed to get projects. received response status of '%d': %s", resp.StatusCode, string(body))
+			return siteURLAddJSONOutput{}, fmt.Errorf("failed to update project. received response status of '%d': %s", resp.StatusCode, string(body))
 		}
 	}
 
