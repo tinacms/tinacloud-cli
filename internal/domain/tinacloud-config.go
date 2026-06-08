@@ -15,6 +15,43 @@ type TinaCloudConfig struct {
 	ProjectID string `json:"project_id"`
 }
 
+func SaveTinaCloudConfig(cwd, tinaDir, orgID, projectID string) error {
+	_, err := os.Stat(path.Join(cwd, tinaDir))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("failed to find 'tina' directory. please ensure you're running this command inside of a tinacms project.")
+		}
+		return fmt.Errorf("failed to check tina directory existence: %w", err)
+	}
+
+	file, err := os.OpenFile(path.Join(cwd, tinaDir, TinaCloudConfigFileName), os.O_RDWR|os.O_CREATE, 0600) // #nosec G304
+	if err != nil {
+		return fmt.Errorf("failed to create/open tinacloud config: %w", err)
+	}
+	defer file.Close()
+
+	config := TinaCloudConfig{
+		OrgID:     orgID,
+		ProjectID: projectID,
+	}
+
+	data, err := json.Marshal(config)
+	if err != nil {
+		return fmt.Errorf("failed to marshal tinacloud config: %w", err)
+	}
+
+	bytes, err := file.Write(data)
+	if err != nil {
+		return fmt.Errorf("failed to write config to tinacloud config: %w", err)
+	}
+	err = file.Truncate(int64(bytes))
+	if err != nil {
+		return fmt.Errorf("failed to truncate after write: %w", err)
+	}
+
+	return nil
+}
+
 // It is up to the caller to validate whether the tokens within the struct are
 // valid
 func TinaCloudConfigFromDisk(cwd, tinaDir string) (TinaCloudConfig, error) {

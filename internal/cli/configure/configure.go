@@ -1,7 +1,6 @@
 package configure
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -33,37 +32,9 @@ func Configure(args []string) error {
 		return fmt.Errorf("failed to get current directory: %w", err)
 	}
 
-	_, err = os.Stat(path.Join(cwd, *tinaDirFlag))
+	err = domain.SaveTinaCloudConfig(cwd, *tinaDirFlag, *orgIDFlag, *projectIDFlag)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return fmt.Errorf("failed to find 'tina' directory. please ensure you're running this command inside of a tinacms project.")
-		}
-		return fmt.Errorf("failed to check tina directory existence: %w", err)
-	}
-
-	file, err := os.OpenFile(path.Join(cwd, *tinaDirFlag, domain.TinaCloudConfigFileName), os.O_RDWR|os.O_CREATE, 0600) // #nosec G304
-	if err != nil {
-		return fmt.Errorf("failed to create/open tinacloud config: %w", err)
-	}
-	defer file.Close()
-
-	config := domain.TinaCloudConfig{
-		OrgID:     *orgIDFlag,
-		ProjectID: *projectIDFlag,
-	}
-
-	data, err := json.Marshal(config)
-	if err != nil {
-		return fmt.Errorf("failed to marshal tinacloud config: %w", err)
-	}
-
-	bytes, err := file.Write(data)
-	if err != nil {
-		return fmt.Errorf("failed to write config to tinacloud config: %w", err)
-	}
-	err = file.Truncate(int64(bytes))
-	if err != nil {
-		return fmt.Errorf("failed to truncate after write: %w", err)
+		return err
 	}
 
 	fmt.Printf("Wrote tinacloud config to %s\n", path.Join(cwd, *tinaDirFlag, domain.TinaCloudConfigFileName))

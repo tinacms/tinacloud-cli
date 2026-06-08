@@ -33,12 +33,13 @@ func Create(args []string, cfg config.Config) error {
 
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
 	var orgIDFlag = flagSet.String("org-id", "", "TinaCloud organization ID")
-	var nameFlag = flagSet.String("name", "", "Project name")
+	var projectNameFlag = flagSet.String("name", "", "Project name")
 	var repoURLFlag = flagSet.String("repo-url", "", "GitHub Repo URL")
 	var siteURLFlag = flagSet.String("site-url", "http://localhost:3000", "Site URL")
+	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
 	_ = flagSet.Parse(args)
 
-	out, err := runCreate(cfg, *orgIDFlag, *nameFlag, *repoURLFlag, *siteURLFlag)
+	out, err := runCreate(cfg, *orgIDFlag, *projectNameFlag, *repoURLFlag, *siteURLFlag, *tinaDirFlag)
 	if *jsonFlag {
 		return command.WriteJSONResult(os.Stdout, out, err)
 	}
@@ -57,19 +58,19 @@ func Create(args []string, cfg config.Config) error {
 	return nil
 }
 
-func runCreate(cfg config.Config, orgIDFlag, nameFlag, repoURLFlag, siteURLFlag string) (createJSONOutput, error) {
-	if orgIDFlag == "" {
+func runCreate(cfg config.Config, orgID, projectName, repoURL, siteURL, tinaDir string) (createJSONOutput, error) {
+	if orgID == "" {
 		return createJSONOutput{}, errors.New("organization ID is required")
 	}
 
-	if nameFlag == "" {
+	if projectName == "" {
 		return createJSONOutput{}, errors.New("project name is required")
 	}
 
-	if repoURLFlag == "" {
+	if repoURL == "" {
 		return createJSONOutput{}, errors.New("repo url is required")
 	}
-	url, err := url.Parse(repoURLFlag)
+	url, err := url.Parse(repoURL)
 	if err != nil {
 		return createJSONOutput{}, fmt.Errorf("repo url is invalid: %w", err)
 	}
@@ -86,9 +87,9 @@ func runCreate(cfg config.Config, orgIDFlag, nameFlag, repoURLFlag, siteURLFlag 
 	}
 
 	createProjectBody := domain.PostV2ProjectsBody{
-		Name:    nameFlag,
-		RepoURL: repoURLFlag,
-		SiteURL: siteURLFlag,
+		Name:    projectName,
+		RepoURL: repoURL,
+		SiteURL: siteURL,
 	}
 
 	postBody, err := json.Marshal(createProjectBody)
@@ -97,7 +98,7 @@ func runCreate(cfg config.Config, orgIDFlag, nameFlag, repoURLFlag, siteURLFlag 
 	}
 
 	client := http.Client{}
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/v2/organizations/%s/apps", cfg.TinaCloud.Endpoint, orgIDFlag), bytes.NewBuffer(postBody))
+	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/v2/organizations/%s/apps", cfg.TinaCloud.Endpoint, orgID), bytes.NewBuffer(postBody))
 	if err != nil {
 		return createJSONOutput{}, fmt.Errorf("failed to initialize request: %w", err)
 	}
@@ -128,6 +129,21 @@ func runCreate(cfg config.Config, orgIDFlag, nameFlag, repoURLFlag, siteURLFlag 
 	if err := json.Unmarshal(responseBody, &projectCreateResponse); err != nil {
 		return createJSONOutput{}, fmt.Errorf("failed to unmarshal created project from post request: %w", err)
 	}
+
+	// If in a tinacms project, write information to <tina-dir>/tinacloud.json
+	// Errors within this should not block a successful return path as this is
+	// optional
+	func() {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return
+		}
+
+		err = domain.SaveTinaCloudConfig(cwd, tinaDir, orgID, projectCreateResponse.CreatedProject.ProjectID)
+		if err != nil {
+			return
+		}
+	}()
 
 	return createJSONOutput{
 		LoggedIn: true,
