@@ -8,5 +8,5 @@ type PutV2ProjectBody struct {
 	ProtectedBranches *[]Branch `json:"protected_branches"`
 	Features          *[]string `json:"features"`
 	// Comma deliminated
-	SitURL string `json:"site_url"`
+	SiteURL string `json:"site_url"`
 }

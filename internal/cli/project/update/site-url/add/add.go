@@ -119,7 +119,7 @@ func runAdd(cfg config.Config, newSiteURLs []string, orgIDFlag, projectIDFlag st
 	}
 
 	var siteURLs []string
-	for _, url := range strings.Split(project.SitURLs, ",") {
+	for _, url := range strings.Split(project.SiteURLs, ",") {
 		siteURLs = append(siteURLs, url)
 	}
 	for _, url := range newSiteURLs {
@@ -149,7 +149,7 @@ func runAdd(cfg config.Config, newSiteURLs []string, orgIDFlag, projectIDFlag st
 			PathToTina:        project.PathToTina,
 			ProtectedBranches: project.ProtectedBranches,
 			Features:          project.Features,
-			SitURL:            strings.Join(uniqueSiteURLs, ","),
+			SiteURL:           strings.Join(uniqueSiteURLs, ","),
 		})
 		if err != nil {
 			return siteURLAddJSONOutput{}, fmt.Errorf("failed to marshal request body: %w", err)
