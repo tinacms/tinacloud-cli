@@ -87,6 +87,7 @@ func driveLogin(t *testing.T, tokenHandler http.HandlerFunc, callbackReq string)
 	dir := t.TempDir()
 	t.Setenv("HOME", dir)            // darwin token cache location
 	t.Setenv("XDG_CONFIG_HOME", dir) // linux token cache location
+	t.Setenv("AppData", dir)         // windows token cache location
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {

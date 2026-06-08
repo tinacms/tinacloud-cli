@@ -16,6 +16,7 @@ func tokenCachePath(t *testing.T) string {
 	dir := t.TempDir()
 	t.Setenv("HOME", dir)            // darwin: $HOME/Library/Application Support
 	t.Setenv("XDG_CONFIG_HOME", dir) // linux: $XDG_CONFIG_HOME
+	t.Setenv("AppData", dir)         // windows: %AppData%
 
 	configDir, err := os.UserConfigDir()
 	if err != nil {
