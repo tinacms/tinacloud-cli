@@ -33,10 +33,6 @@ func List(args []string, cfg config.Config) error {
 	var orgIDFlag = flagSet.String("org-id", "", "TinaCloud organization ID")
 	_ = flagSet.Parse(args)
 
-	if *orgIDFlag == "" {
-		return fmt.Errorf("organization ID is required")
-	}
-
 	out, err := runList(cfg, *orgIDFlag)
 	if *jsonFlag {
 		return command.WriteJSONResult(os.Stdout, out, err)
@@ -59,6 +55,10 @@ func List(args []string, cfg config.Config) error {
 }
 
 func runList(cfg config.Config, orgIDFlag string) (listJSONOutput, error) {
+	if orgIDFlag == "" {
+		return listJSONOutput{}, fmt.Errorf("organization ID is required")
+	}
+
 	tokens, err := auth.TokensFromCache(cfg)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {

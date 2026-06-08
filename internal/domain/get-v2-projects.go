@@ -30,7 +30,7 @@ func (p GetV2ProjectsResponse) String() string {
 	fmt.Fprintf(&output, "\t\t- Last code change: %s", time.UnixMilli(p.DateUpdated).Format(time.RFC822))
 
 	if p.ContentUpdated != 0 {
-		fmt.Fprintf(&output, "\n\t- Last content change: %s", time.UnixMilli(p.ContentUpdated).Format(time.RFC822))
+		fmt.Fprintf(&output, "\n\t\t- Last content change: %s", time.UnixMilli(p.ContentUpdated).Format(time.RFC822))
 	}
 
 	return output.String()
