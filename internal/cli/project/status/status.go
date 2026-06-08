@@ -33,10 +33,6 @@ func Status(args []string, cfg config.Config) error {
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
 	_ = flagSet.Parse(args)
 
-	if *projectIDFlag == "" {
-		return fmt.Errorf("project ID is required")
-	}
-
 	out, err := runStatus(cfg, *projectIDFlag)
 	if *jsonFlag {
 		return command.WriteJSONResult(os.Stdout, out, err)
@@ -56,6 +52,10 @@ func Status(args []string, cfg config.Config) error {
 }
 
 func runStatus(cfg config.Config, projectIDFlag string) (statusJSONOutput, error) {
+	if projectIDFlag == "" {
+		return statusJSONOutput{}, fmt.Errorf("project ID is required")
+	}
+
 	tokens, err := auth.TokensFromCache(cfg)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
