@@ -76,7 +76,7 @@ func (p GetV2ProjectResponse) String() string {
 	if len(p.Tokens) > 0 {
 		fmt.Fprint(&output, "\n\t- Tokens:")
 		for _, token := range p.Tokens {
-			fmt.Fprintf(&output, "\n\t\t- %s: %s (%s)", token.Name, token.Data, strings.Join(token.Access, ", "))
+			fmt.Fprintf(&output, "\n\t\t- %s", token.String())
 		}
 	}
 
