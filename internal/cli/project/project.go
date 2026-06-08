@@ -17,7 +17,7 @@ func Project(args []string, cfg config.Config) error {
 		command.PrintSubCommands("tinacloud-cli project", []command.SubCommand{
 			{Name: "list", Description: "List projects"},
 			{Name: "create", Description: "Create a new project"},
-			{Name: "status", Description: "List a projects status"},
+			{Name: "status", Description: "List a project's status"},
 		})
 		flagSet.PrintDefaults()
 	}
