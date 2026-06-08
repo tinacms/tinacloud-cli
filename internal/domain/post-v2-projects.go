@@ -7,7 +7,7 @@ import (
 
 type PostV2ProjectsBody struct {
 	Name    string `json:"name"`
-	RepoURL string `json:"repo_url" `
+	RepoURL string `json:"repo_url"`
 	SiteURL string `json:"site_url"`
 }
 
@@ -32,7 +32,7 @@ type CreatedProject struct {
 	Name      string  `json:"name"`
 	RepoURL   string  `json:"repoUrl"`
 	// Comma deliminated
-	SitURLs string `json:"sitUrl"`
+	SiteURLs string `json:"siteUrl"`
 }
 
 func (cp CreatedProject) String() string {
@@ -41,7 +41,7 @@ func (cp CreatedProject) String() string {
 	fmt.Fprintf(&output, "%s (%s)\n", cp.Name, cp.ProjectID)
 	fmt.Fprintf(&output, "\t\t- Organization: %s\n", cp.OrgID)
 	fmt.Fprintf(&output, "\t\t- Repo: %s\n", cp.RepoURL)
-	fmt.Fprintf(&output, "\t\t- Site URL(s): %s", strings.Split(cp.SitURLs, ","))
+	fmt.Fprintf(&output, "\t\t- Site URL(s): %s", strings.Split(cp.SiteURLs, ","))
 
 	return output.String()
 }

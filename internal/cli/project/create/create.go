@@ -103,7 +103,7 @@ func runCreate(cfg config.Config, orgIDFlag, nameFlag, repoURLFlag, siteURLFlag 
 	}
 	req.Header.Set("Authorization", "Bearer "+tokens.AccessToken)
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("ContentType", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(req)
 	if err != nil {
