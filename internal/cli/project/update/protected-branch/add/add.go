@@ -59,15 +59,15 @@ func Add(args []string, cfg config.Config) error {
 
 func runAdd(cfg config.Config, newProtectedBranches []string, orgID, projectID string) (protectedBranchAddJSONOutput, error) {
 	if projectID == "" {
-		return protectedBranchAddJSONOutput{}, fmt.Errorf("project ID is required")
+		return protectedBranchAddJSONOutput{}, errors.New("project ID is required")
 	}
 
 	if orgID == "" {
-		return protectedBranchAddJSONOutput{}, fmt.Errorf("organization ID is required")
+		return protectedBranchAddJSONOutput{}, errors.New("organization ID is required")
 	}
 
 	if len(newProtectedBranches) == 0 {
-		return protectedBranchAddJSONOutput{}, fmt.Errorf("must pass at least one protected branch")
+		return protectedBranchAddJSONOutput{}, errors.New("must pass at least one protected branch")
 	}
 
 	tokens, err := auth.TokensFromCache(cfg)
@@ -113,17 +113,15 @@ func runAdd(cfg config.Config, newProtectedBranches []string, orgID, projectID s
 		}
 	}
 
-	if project.Features == nil {
-		return protectedBranchAddJSONOutput{}, errors.New("protected branches are a feature of the editorial workflow, please upgrade your plan to get access")
-	}
-	if !slices.Contains(*project.Features, "editorial-workflow") {
+	if project.Features == nil || !slices.Contains(*project.Features, "editorial-workflow") {
 		return protectedBranchAddJSONOutput{}, errors.New("protected branches are a feature of the editorial workflow, please upgrade your plan to get access")
 	}
 
-	protectedBranches := newProtectedBranches
+	var protectedBranches []string
 	if project.ProtectedBranches != nil {
 		protectedBranches = append(protectedBranches, (*project.ProtectedBranches)...)
 	}
+	protectedBranches = append(protectedBranches, newProtectedBranches...)
 
 	seen := map[string]struct{}{}
 	var uniqueProtectedBranches []string
@@ -165,7 +163,7 @@ func runAdd(cfg config.Config, newProtectedBranches []string, orgID, projectID s
 
 		resp, err := client.Do(req)
 		if err != nil {
-			return protectedBranchAddJSONOutput{}, fmt.Errorf("failed to get projects: %w", err)
+			return protectedBranchAddJSONOutput{}, fmt.Errorf("failed to update project: %w", err)
 		}
 		defer resp.Body.Close()
 
@@ -175,11 +173,11 @@ func runAdd(cfg config.Config, newProtectedBranches []string, orgID, projectID s
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return protectedBranchAddJSONOutput{}, fmt.Errorf("failed to read get projects response: %w", err)
+			return protectedBranchAddJSONOutput{}, fmt.Errorf("failed to read update project response: %w", err)
 		}
 
 		if resp.StatusCode > 299 {
-			return protectedBranchAddJSONOutput{}, fmt.Errorf("failed to get projects. received response status of '%d': %s", resp.StatusCode, string(body))
+			return protectedBranchAddJSONOutput{}, fmt.Errorf("failed to update project. received response status of '%d': %s", resp.StatusCode, string(body))
 		}
 	}
 
