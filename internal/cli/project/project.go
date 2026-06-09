@@ -7,6 +7,7 @@ import (
 	"tina.io/tinacloud-cli/internal/cli/project/create"
 	"tina.io/tinacloud-cli/internal/cli/project/list"
 	"tina.io/tinacloud-cli/internal/cli/project/status"
+	"tina.io/tinacloud-cli/internal/cli/project/update"
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 )
@@ -18,6 +19,7 @@ func Project(args []string, cfg config.Config) error {
 			{Name: "list", Description: "List projects"},
 			{Name: "create", Description: "Create a new project"},
 			{Name: "status", Description: "List a project's status"},
+			{Name: "update", Description: "Update a projects information"},
 		})
 		flagSet.PrintDefaults()
 	}
@@ -37,6 +39,8 @@ func Project(args []string, cfg config.Config) error {
 		return create.Create(subargs, cfg)
 	case "status":
 		return status.Status(subargs, cfg)
+	case "update":
+		return update.Update(subargs, cfg)
 	default:
 		return fmt.Errorf("unrecognized command %q", cmd)
 	}

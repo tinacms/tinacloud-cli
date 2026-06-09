@@ -15,10 +15,10 @@ type GetV2ProjectResponse struct {
 	RepoURL   string  `json:"repoUrl"`
 	// Comma deliminated
 	SiteURLs          string                     `json:"siteUrl"`
-	Metadata          map[Branch]ProjectMetadata `json:"metadata"`
-	DefaultBranch     Branch                     `json:"defaultBranch"`
-	MediaBranch       Branch                     `json:"mediaBranch"`
-	ProtectedBranches *[]Branch                  `json:"protectedBranches"`
+	Metadata          map[string]ProjectMetadata `json:"metadata"`
+	DefaultBranch     string                     `json:"defaultBranch"`
+	MediaBranch       string                     `json:"mediaBranch"`
+	ProtectedBranches *[]string                  `json:"protectedBranches"`
 	Owner             string                     `json:"owner"`
 	Role              string                     `json:"role"`
 	// Unix timestamp
@@ -26,7 +26,10 @@ type GetV2ProjectResponse struct {
 	// Unix timestamp
 	DateUpdated int64 `json:"dateUpdated"`
 	// Unix timestamp
-	ContentUpdated int64 `json:"contentUpdated"`
+	ContentUpdated int64     `json:"contentUpdated"`
+	InstallationID int       `json:"installationId"`
+	PathToTina     string    `json:"pathToTina"`
+	Features       *[]string `json:"features"`
 }
 
 func (p GetV2ProjectResponse) String() string {
@@ -46,7 +49,7 @@ func (p GetV2ProjectResponse) String() string {
 
 	if len(p.Metadata) > 0 {
 		fmt.Fprint(&output, "\n\t- Metadata:")
-		branches := make([]Branch, 0, len(p.Metadata))
+		branches := make([]string, 0, len(p.Metadata))
 		for branch := range p.Metadata {
 			branches = append(branches, branch)
 		}
