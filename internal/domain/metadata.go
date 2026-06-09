@@ -2,8 +2,6 @@ package domain
 
 import "fmt"
 
-type Branch string
-
 type TinaVersion struct {
 	Major string `json:"major"`
 	Minor string `json:"minor"`

@@ -5,7 +5,7 @@ type PutV2ProjectBody struct {
 	RepoURL           string    `json:"repo_url"`
 	InstallationID    int       `json:"installation_id"`
 	PathToTina        string    `json:"path_to_tina"`
-	ProtectedBranches *[]Branch `json:"protected_branches"`
+	ProtectedBranches *[]string `json:"protected_branches"`
 	Features          *[]string `json:"features"`
 	// Comma deliminated
 	SiteURL string `json:"site_url"`
