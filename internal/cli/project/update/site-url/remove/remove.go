@@ -39,23 +39,7 @@ func Remove(args []string, cfg config.Config) error {
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
 	_ = flagSet.Parse(args)
 
-	if *projectIDFlag == "" {
-		return fmt.Errorf("project ID is required")
-	}
-
-	if *orgIDFlag == "" {
-		return fmt.Errorf("organization ID is required")
-	}
-
-	if len(siteURLsFlag) == 0 {
-		return fmt.Errorf("must pass at least one site url")
-	}
-	siteURLs, err := utils.CleanSiteURLs(siteURLsFlag)
-	if err != nil {
-		return fmt.Errorf("failed to parse site urls: %w", err)
-	}
-
-	out, err := runRemove(cfg, siteURLs, *orgIDFlag, *projectIDFlag)
+	out, err := runRemove(cfg, siteURLsFlag, *orgIDFlag, *projectIDFlag)
 	if *jsonFlag {
 		return command.WriteJSONResult(os.Stdout, out, err)
 	}
@@ -73,7 +57,23 @@ func Remove(args []string, cfg config.Config) error {
 	return nil
 }
 
-func runRemove(cfg config.Config, removeSiteURLs []string, orgIDFlag, projectIDFlag string) (siteURLRemoveJSONOutput, error) {
+func runRemove(cfg config.Config, siteURLsFlag domain.UrlsFlag, orgIDFlag, projectIDFlag string) (siteURLRemoveJSONOutput, error) {
+	if projectIDFlag == "" {
+		return siteURLRemoveJSONOutput{}, fmt.Errorf("project ID is required")
+	}
+
+	if orgIDFlag == "" {
+		return siteURLRemoveJSONOutput{}, fmt.Errorf("organization ID is required")
+	}
+
+	if len(siteURLsFlag) == 0 {
+		return siteURLRemoveJSONOutput{}, fmt.Errorf("must pass at least one site url")
+	}
+	removeSiteURLs, err := utils.CleanSiteURLs(siteURLsFlag)
+	if err != nil {
+		return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to parse site urls: %w", err)
+	}
+
 	tokens, err := auth.TokensFromCache(cfg)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
@@ -124,7 +124,8 @@ func runRemove(cfg config.Config, removeSiteURLs []string, orgIDFlag, projectIDF
 
 	var siteURLs []string
 	for _, value := range strings.Split(project.SiteURLs, ",") {
-		if strings.TrimSpace(value) == "" {
+		value = strings.TrimSpace(value)
+		if value == "" {
 			continue
 		}
 		if _, exists := removeSet[value]; exists {
@@ -154,7 +155,7 @@ func runRemove(cfg config.Config, removeSiteURLs []string, orgIDFlag, projectIDF
 		}
 		req.Header.Set("Authorization", "Bearer "+tokens.AccessToken)
 		req.Header.Set("Accept", "application/json")
-		req.Header.Set("ContentType", "application/json")
+		req.Header.Set("Content-Type", "application/json")
 
 		resp, err := client.Do(req)
 		if err != nil {
