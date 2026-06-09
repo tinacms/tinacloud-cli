@@ -64,12 +64,12 @@ func runStatus(cfg config.Config, loadTokens auth.TokenLoader) (statusJSONOutput
 		return statusJSONOutput{}, fmt.Errorf("failed to decode access token: %w", err)
 	}
 
-	if claims.TinaCloudClientID == "" {
-		return statusJSONOutput{}, errors.New("failed to retrieve client id from access token")
+	if claims.TinaCloudUserID == "" {
+		return statusJSONOutput{}, errors.New("failed to retrieve user id from access token")
 	}
 
 	client := http.Client{}
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/users/%s", cfg.TinaCloud.Endpoint, claims.TinaCloudClientID), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/users/%s", cfg.TinaCloud.Endpoint, claims.TinaCloudUserID), nil)
 	if err != nil {
 		return statusJSONOutput{}, fmt.Errorf("failed to initialize request: %w", err)
 	}
