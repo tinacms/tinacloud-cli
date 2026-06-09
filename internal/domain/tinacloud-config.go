@@ -2,6 +2,7 @@ package domain
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -9,6 +10,10 @@ import (
 
 const DefaultTinaDir = "tina"
 const TinaCloudConfigFileName = "tinacloud.json"
+
+// ErrNotTinaProject indicates the tina directory was not found, meaning the
+// command is not being run inside a tinacms project.
+var ErrNotTinaProject = errors.New("not a tinacms project: 'tina' directory not found")
 
 type TinaCloudConfig struct {
 	OrgID     string `json:"org_id"`
@@ -19,16 +24,10 @@ func SaveTinaCloudConfig(cwd, tinaDir, orgID, projectID string) error {
 	_, err := os.Stat(path.Join(cwd, tinaDir))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return fmt.Errorf("failed to find 'tina' directory. please ensure you're running this command inside of a tinacms project.")
+			return ErrNotTinaProject
 		}
 		return fmt.Errorf("failed to check tina directory existence: %w", err)
 	}
-
-	file, err := os.OpenFile(path.Join(cwd, tinaDir, TinaCloudConfigFileName), os.O_RDWR|os.O_CREATE, 0600) // #nosec G304
-	if err != nil {
-		return fmt.Errorf("failed to create/open tinacloud config: %w", err)
-	}
-	defer file.Close()
 
 	config := TinaCloudConfig{
 		OrgID:     orgID,
@@ -40,13 +39,9 @@ func SaveTinaCloudConfig(cwd, tinaDir, orgID, projectID string) error {
 		return fmt.Errorf("failed to marshal tinacloud config: %w", err)
 	}
 
-	bytes, err := file.Write(data)
+	err = os.WriteFile(path.Join(cwd, tinaDir, TinaCloudConfigFileName), data, 0600)
 	if err != nil {
-		return fmt.Errorf("failed to write config to tinacloud config: %w", err)
-	}
-	err = file.Truncate(int64(bytes))
-	if err != nil {
-		return fmt.Errorf("failed to truncate after write: %w", err)
+		return fmt.Errorf("failed to write tinacloud config: %w", err)
 	}
 
 	return nil

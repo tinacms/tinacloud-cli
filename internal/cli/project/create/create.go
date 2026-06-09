@@ -130,20 +130,16 @@ func runCreate(cfg config.Config, orgID, projectName, repoURL, siteURL, tinaDir 
 		return createJSONOutput{}, fmt.Errorf("failed to unmarshal created project from post request: %w", err)
 	}
 
-	// If in a tinacms project, write information to <tina-dir>/tinacloud.json
-	// Errors within this should not block a successful return path as this is
-	// optional
-	func() {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return
-		}
-
+	// If in a tinacms project, write information to <tina-dir>/tinacloud.json.
+	// This is best-effort and must not block a successful return: being outside
+	// a tinacms project is expected and stays silent, but real failures are
+	// surfaced to stderr.
+	if cwd, err := os.Getwd(); err == nil {
 		err = domain.SaveTinaCloudConfig(cwd, tinaDir, orgID, projectCreateResponse.CreatedProject.ProjectID)
-		if err != nil {
-			return
+		if err != nil && !errors.Is(err, domain.ErrNotTinaProject) {
+			fmt.Fprintf(os.Stderr, "warning: project created but failed to write tinacloud config: %v\n", err)
 		}
-	}()
+	}
 
 	return createJSONOutput{
 		LoggedIn: true,
