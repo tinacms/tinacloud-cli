@@ -33,7 +33,7 @@ func Remove(args []string, cfg config.Config) error {
 	}
 
 	var protectedBranchesFlag domain.BranchesFlag
-	flagSet.Var(&protectedBranchesFlag, "branch", "A protected branch to remove to your TinaCloud project")
+	flagSet.Var(&protectedBranchesFlag, "branch", "A protected branch to remove from your TinaCloud project")
 	var projectIDFlag = flagSet.String("project-id", "", "TinaCloud project ID")
 	var orgIDFlag = flagSet.String("org-id", "", "TinaCloud organization ID")
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
@@ -59,15 +59,15 @@ func Remove(args []string, cfg config.Config) error {
 
 func runRemove(cfg config.Config, removeProtectedBranches []string, orgID, projectID string) (protectedBranchRemoveJSONOutput, error) {
 	if projectID == "" {
-		return protectedBranchRemoveJSONOutput{}, fmt.Errorf("project ID is required")
+		return protectedBranchRemoveJSONOutput{}, errors.New("project ID is required")
 	}
 
 	if orgID == "" {
-		return protectedBranchRemoveJSONOutput{}, fmt.Errorf("organization ID is required")
+		return protectedBranchRemoveJSONOutput{}, errors.New("organization ID is required")
 	}
 
 	if len(removeProtectedBranches) == 0 {
-		return protectedBranchRemoveJSONOutput{}, fmt.Errorf("must pass at least one protected branch")
+		return protectedBranchRemoveJSONOutput{}, errors.New("must pass at least one protected branch")
 	}
 
 	tokens, err := auth.TokensFromCache(cfg)
@@ -113,10 +113,7 @@ func runRemove(cfg config.Config, removeProtectedBranches []string, orgID, proje
 		}
 	}
 
-	if project.Features == nil {
-		return protectedBranchRemoveJSONOutput{}, errors.New("protected branches are a feature of the editorial workflow, please upgrade your plan to get access")
-	}
-	if !slices.Contains(*project.Features, "editorial-workflow") {
+	if project.Features == nil || !slices.Contains(*project.Features, "editorial-workflow") {
 		return protectedBranchRemoveJSONOutput{}, errors.New("protected branches are a feature of the editorial workflow, please upgrade your plan to get access")
 	}
 
@@ -129,7 +126,7 @@ func runRemove(cfg config.Config, removeProtectedBranches []string, orgID, proje
 
 	removeSet := map[string]struct{}{}
 	for _, value := range removeProtectedBranches {
-		removeSet[value] = struct{}{}
+		removeSet[strings.TrimSpace(value)] = struct{}{}
 	}
 
 	var protectedBranches []string
@@ -169,7 +166,7 @@ func runRemove(cfg config.Config, removeProtectedBranches []string, orgID, proje
 
 		resp, err := client.Do(req)
 		if err != nil {
-			return protectedBranchRemoveJSONOutput{}, fmt.Errorf("failed to get projects: %w", err)
+			return protectedBranchRemoveJSONOutput{}, fmt.Errorf("failed to update project: %w", err)
 		}
 		defer resp.Body.Close()
 
@@ -179,11 +176,11 @@ func runRemove(cfg config.Config, removeProtectedBranches []string, orgID, proje
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return protectedBranchRemoveJSONOutput{}, fmt.Errorf("failed to read get projects response: %w", err)
+			return protectedBranchRemoveJSONOutput{}, fmt.Errorf("failed to read update project response: %w", err)
 		}
 
 		if resp.StatusCode > 299 {
-			return protectedBranchRemoveJSONOutput{}, fmt.Errorf("failed to get projects. received response status of '%d': %s", resp.StatusCode, string(body))
+			return protectedBranchRemoveJSONOutput{}, fmt.Errorf("failed to update project. received response status of '%d': %s", resp.StatusCode, string(body))
 		}
 	}
 
