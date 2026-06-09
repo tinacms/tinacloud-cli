@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"tina.io/tinacloud-cli/internal/cli/project/update/protected-branch/add"
+	"tina.io/tinacloud-cli/internal/cli/project/update/protected-branch/remove"
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 )
@@ -32,6 +33,8 @@ func ProtectedBranch(args []string, cfg config.Config) error {
 	switch cmd {
 	case "add":
 		return add.Add(subargs, cfg)
+	case "remove":
+		return remove.Remove(subargs, cfg)
 	default:
 		return fmt.Errorf("unrecognized command %q", cmd)
 	}
