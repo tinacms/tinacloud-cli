@@ -32,6 +32,11 @@ go build -o ./build/tinacloud-cli ./cmd/tinacloud-cli
 
 To run security scans and code vets:
 ```bash
-go vet ./cmd/tinacloud-cli
-gosec ./cmd/tinacloud-cli
+go vet ./...
+gosec ./...
+```
+
+To run the tests:
+```bash
+go vet ./...
 ```
