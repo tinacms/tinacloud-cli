@@ -62,7 +62,9 @@ func SaveTokens(tokens TokenCache) error {
 // TokenLoader loads authentication tokens for commands that need a test double.
 type TokenLoader func(config.Config) (TokenCache, error)
 
-func TokensFromCache(cfg config.Config) (TokenCache, error) {
+// PeekTokens reads the cached tokens as-is, without refreshing expired access
+// tokens. Use this when the tokens are about to be invalidated anyway (logout).
+func PeekTokens() (TokenCache, error) {
 	configPath, err := cachePath()
 	if err != nil {
 		return TokenCache{}, fmt.Errorf("failed to retrieve config path: %w", err)
@@ -93,6 +95,15 @@ func TokensFromCache(cfg config.Config) (TokenCache, error) {
 
 	if tokens.AccessToken == "" || tokens.RefreshToken == "" {
 		return TokenCache{}, ErrUnauthenticated
+	}
+
+	return tokens, nil
+}
+
+func TokensFromCache(cfg config.Config) (TokenCache, error) {
+	tokens, err := PeekTokens()
+	if err != nil {
+		return TokenCache{}, err
 	}
 
 	if tokens.ExpiresAt.Before(time.Now()) {

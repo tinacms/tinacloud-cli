@@ -1,6 +1,8 @@
 package logout
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -27,11 +29,27 @@ func tokenCachePath(t *testing.T) string {
 
 func TestLogout(t *testing.T) {
 	tests := []struct {
-		name     string
-		seedFile bool
+		name         string
+		seedFile     bool
+		revokeStatus int
+		wantRevoked  bool
 	}{
-		{name: "removes existing token file", seedFile: true},
-		{name: "succeeds when no token file", seedFile: false},
+		{
+			name:         "revokes token upstream and removes token file",
+			seedFile:     true,
+			revokeStatus: http.StatusOK,
+			wantRevoked:  true,
+		},
+		{
+			name:         "still logs out when upstream revocation fails",
+			seedFile:     true,
+			revokeStatus: http.StatusInternalServerError,
+			wantRevoked:  true,
+		},
+		{
+			name:     "succeeds without revoking when no token file",
+			seedFile: false,
+		},
 	}
 
 	for _, tc := range tests {
@@ -41,17 +59,39 @@ func TestLogout(t *testing.T) {
 				if err := os.MkdirAll(filepath.Dir(tokenPath), 0700); err != nil {
 					t.Fatalf("MkdirAll: %v", err)
 				}
-				if err := os.WriteFile(tokenPath, []byte(`{"access_token":"x"}`), 0600); err != nil {
+				if err := os.WriteFile(tokenPath, []byte(`{"access_token":"access-1","refresh_token":"refresh-1"}`), 0600); err != nil {
 					t.Fatalf("WriteFile: %v", err)
 				}
 			}
 
-			if err := Logout(nil, config.Config{}); err != nil {
+			gotToken := ""
+			revokeCalls := 0
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				revokeCalls++
+				gotToken = r.PostFormValue("token")
+				w.WriteHeader(tc.revokeStatus)
+			}))
+			defer server.Close()
+
+			cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: server.URL}}
+
+			if err := Logout(nil, cfg); err != nil {
 				t.Fatalf("Logout() = %v, want nil error", err)
 			}
 
 			if _, err := os.Stat(tokenPath); !os.IsNotExist(err) {
 				t.Errorf("token file present after Logout, stat err = %v", err)
+			}
+
+			if tc.wantRevoked {
+				if revokeCalls != 1 {
+					t.Errorf("revoke endpoint called %d times, want 1", revokeCalls)
+				}
+				if gotToken != "refresh-1" {
+					t.Errorf("revoked token = %q, want %q", gotToken, "refresh-1")
+				}
+			} else if revokeCalls != 0 {
+				t.Errorf("revoke endpoint called %d times, want 0", revokeCalls)
 			}
 		})
 	}

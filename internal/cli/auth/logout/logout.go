@@ -1,6 +1,7 @@
 package logout
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -17,8 +18,17 @@ func Logout(args []string, cfg config.Config) error {
 	}
 	_ = flagSet.Parse(args)
 
-	err := auth.ClearTokens()
-	if err != nil {
+	// Best-effort upstream revocation: a failure should never block logout.
+	tokens, err := auth.PeekTokens()
+	if err == nil {
+		if err := auth.RevokeToken(cfg, tokens.RefreshToken); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: failed to revoke token upstream, it will expire on its own: %v\n", err)
+		}
+	} else if !errors.Is(err, auth.ErrUnauthenticated) {
+		fmt.Fprintf(os.Stderr, "warning: failed to read token cache for revocation: %v\n", err)
+	}
+
+	if err := auth.ClearTokens(); err != nil {
 		return fmt.Errorf("failed to clear auth tokens: %w", err)
 	}
 
