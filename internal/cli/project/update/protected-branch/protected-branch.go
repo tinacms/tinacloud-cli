@@ -16,7 +16,7 @@ func ProtectedBranch(args []string, cfg config.Config) error {
 	flagSet.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli project update protected-branch")
 		fmt.Fprintln(os.Stderr, "\nUpdate a projects protected branches. This command is only available if your project has access to the editorial workflow feature.")
-		command.PrintSubCommands("tinacloud-cli project update", []command.SubCommand{
+		command.PrintSubCommands(os.Stderr, "tinacloud-cli project update", []command.SubCommand{
 			{Name: "Add", Description: "Add protected branches"},
 			{Name: "Remove", Description: "Remove protected branches"},
 		})

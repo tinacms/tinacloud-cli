@@ -3,6 +3,7 @@ package update
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	protectedbranch "tina.io/tinacloud-cli/internal/cli/project/update/protected-branch"
 	siteurl "tina.io/tinacloud-cli/internal/cli/project/update/site-url"
@@ -13,7 +14,7 @@ import (
 func Update(args []string, cfg config.Config) error {
 	flagSet := flag.NewFlagSet("projectupdate", flag.ExitOnError)
 	flagSet.Usage = func() {
-		command.PrintSubCommands("tinacloud-cli project update", []command.SubCommand{
+		command.PrintSubCommands(os.Stderr, "tinacloud-cli project update", []command.SubCommand{
 			{Name: "site-url", Description: "Update a projects site URLs"},
 			{Name: "protected-branch", Description: "Update a projects protected branches. This command is only available if your project has access to the editorial workflow feature."},
 		})

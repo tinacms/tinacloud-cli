@@ -13,14 +13,14 @@ else
 	CLEAN_BUILD = rm -rf ./build/*
 endif
 
-.PHONY: fmt build run security vet clean
+.PHONY: fmt build run security vet test clean
 
 all: build
 
 fmt:
 	go fmt ./...
 
-build: fmt security vet
+build: fmt security vet test
 	go build -o ./build/$(BINARY_NAME) $(CMD)
 
 run:
@@ -31,6 +31,9 @@ security:
 
 vet:
 	go vet ./...
+
+test:
+	go test ./...
 
 clean:
 	go clean
