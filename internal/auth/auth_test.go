@@ -65,3 +65,22 @@ func TestDecodeAccessToken(t *testing.T) {
 		})
 	}
 }
+
+// TestDecodeAccessToken_WireClaimName pins the literal on-the-wire claim
+// string. The table test above mints and decodes through DecodedAccessToken,
+// so it round-trips under whatever json tag the struct carries — it can't
+// catch a tag drift away from what the identity service emits (#3677).
+func TestDecodeAccessToken_WireClaimName(t *testing.T) {
+	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{"tinacloud_user_id": "user-abc"})
+	token, err := tok.SignedString([]byte("test-secret"))
+	if err != nil {
+		t.Fatalf("mint: %v", err)
+	}
+	got, err := DecodeAccessToken(token)
+	if err != nil {
+		t.Fatalf("DecodeAccessToken() = %v, want nil error", err)
+	}
+	if got.TinaCloudUserID != "user-abc" {
+		t.Errorf("TinaCloudUserID = %q, want %q", got.TinaCloudUserID, "user-abc")
+	}
+}
