@@ -16,7 +16,7 @@ func SiteURL(args []string, cfg config.Config) error {
 	flagSet.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli project update site-url")
 		fmt.Fprintln(os.Stderr, "\nUpdate a projects site URLs")
-		command.PrintSubCommands("tinacloud-cli project update", []command.SubCommand{
+		command.PrintSubCommands(os.Stderr, "tinacloud-cli project update", []command.SubCommand{
 			{Name: "Add", Description: "Add site URLs"},
 			{Name: "Remove", Description: "Remove site URLs"},
 		})

@@ -3,6 +3,7 @@ package project
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	"tina.io/tinacloud-cli/internal/cli/project/create"
 	"tina.io/tinacloud-cli/internal/cli/project/list"
@@ -15,7 +16,7 @@ import (
 func Project(args []string, cfg config.Config) error {
 	flagSet := flag.NewFlagSet("project", flag.ExitOnError)
 	flagSet.Usage = func() {
-		command.PrintSubCommands("tinacloud-cli project", []command.SubCommand{
+		command.PrintSubCommands(os.Stderr, "tinacloud-cli project", []command.SubCommand{
 			{Name: "list", Description: "List projects"},
 			{Name: "create", Description: "Create a new project"},
 			{Name: "status", Description: "List a project's status"},
