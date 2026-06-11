@@ -13,14 +13,20 @@ else
 	CLEAN_BUILD = rm -rf ./build/*
 endif
 
-.PHONY: fmt build run security vet test clean
+.PHONY: fmt fmt-ci build build-ci run security vet test clean
 
 all: build
 
 fmt:
 	go fmt ./...
 
+fmt-ci:
+	@test -z "$$(gofmt -l .)" || (echo "Files need formatting (run 'make fmt'):" && gofmt -l . && exit 1)
+
 build: fmt security vet test
+	go build -o ./build/$(BINARY_NAME) $(CMD)
+
+build-ci:
 	go build -o ./build/$(BINARY_NAME) $(CMD)
 
 run:

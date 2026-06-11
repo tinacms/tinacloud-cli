@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "go run tina.io/tinacloud-cli/tools/precommit",
+            "statusMessage": "Running make pipeline before commit..."
+          }
+        ]
+      }
+    ]
+  }
+}
