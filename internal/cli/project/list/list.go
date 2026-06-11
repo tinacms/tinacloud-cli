@@ -1,18 +1,16 @@
 package list
 
 import (
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/requests"
 )
 
 type listJSONOutput struct {
@@ -54,8 +52,8 @@ func List(args []string, cfg config.Config) error {
 	return nil
 }
 
-func runList(cfg config.Config, orgIDFlag string) (listJSONOutput, error) {
-	if orgIDFlag == "" {
+func runList(cfg config.Config, orgID string) (listJSONOutput, error) {
+	if orgID == "" {
 		return listJSONOutput{}, fmt.Errorf("organization ID is required")
 	}
 
@@ -67,36 +65,9 @@ func runList(cfg config.Config, orgIDFlag string) (listJSONOutput, error) {
 		return listJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
-	client := http.Client{}
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/organizations/%s/apps", cfg.TinaCloud.Endpoint, orgIDFlag), nil)
+	projects, err := requests.GetProjects(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID)
 	if err != nil {
-		return listJSONOutput{}, fmt.Errorf("failed to initialize request: %w", err)
-	}
-	req.Header.Set("Authorization", "Bearer "+tokens.AccessToken)
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return listJSONOutput{}, fmt.Errorf("failed to get projects: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusUnauthorized {
-		return listJSONOutput{}, auth.ErrUnauthorized
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return listJSONOutput{}, fmt.Errorf("failed to read get projects response: %w", err)
-	}
-
-	if resp.StatusCode > 299 {
-		return listJSONOutput{}, fmt.Errorf("failed to get projects. received response status of '%d': %s", resp.StatusCode, string(body))
-	}
-
-	var projects []domain.GetV2ProjectsResponse
-	if err := json.Unmarshal(body, &projects); err != nil {
-		return listJSONOutput{}, fmt.Errorf("failed to unmarshal projects from get request: %w", err)
+		return listJSONOutput{}, err
 	}
 
 	return listJSONOutput{

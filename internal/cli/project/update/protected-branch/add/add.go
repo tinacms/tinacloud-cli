@@ -1,13 +1,9 @@
 package add
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"slices"
 	"strings"
@@ -16,6 +12,7 @@ import (
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/requests"
 )
 
 type protectedBranchAddJSONOutput struct {
@@ -78,39 +75,9 @@ func runAdd(cfg config.Config, newProtectedBranches []string, orgID, projectID s
 		return protectedBranchAddJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
-	client := http.Client{}
-
-	var project domain.GetV2ProjectResponse
-	{
-		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/apps/%s", cfg.TinaCloud.Endpoint, projectID), nil)
-		if err != nil {
-			return protectedBranchAddJSONOutput{}, fmt.Errorf("failed to initialize request: %w", err)
-		}
-		req.Header.Set("Authorization", "Bearer "+tokens.AccessToken)
-		req.Header.Set("Accept", "application/json")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			return protectedBranchAddJSONOutput{}, fmt.Errorf("failed to get projects: %w", err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode == http.StatusUnauthorized {
-			return protectedBranchAddJSONOutput{}, auth.ErrUnauthorized
-		}
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return protectedBranchAddJSONOutput{}, fmt.Errorf("failed to read get projects response: %w", err)
-		}
-
-		if resp.StatusCode > 299 {
-			return protectedBranchAddJSONOutput{}, fmt.Errorf("failed to get projects. received response status of '%d': %s", resp.StatusCode, string(body))
-		}
-
-		if err := json.Unmarshal(body, &project); err != nil {
-			return protectedBranchAddJSONOutput{}, fmt.Errorf("failed to unmarshal project from get request: %w", err)
-		}
+	project, err := requests.GetProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, projectID)
+	if err != nil {
+		return protectedBranchAddJSONOutput{}, err
 	}
 
 	if project.Features == nil || !slices.Contains(*project.Features, "editorial-workflow") {
@@ -139,46 +106,19 @@ func runAdd(cfg config.Config, newProtectedBranches []string, orgID, projectID s
 		uniqueProtectedBranches = append(uniqueProtectedBranches, value)
 	}
 
-	{
-		putBody, err := json.Marshal(domain.PutV2ProjectBody{
-			Name:              project.Name,
-			RepoURL:           project.RepoURL,
-			InstallationID:    project.InstallationID,
-			PathToTina:        project.PathToTina,
-			Features:          project.Features,
-			SiteURL:           project.SiteURLs,
-			ProtectedBranches: &uniqueProtectedBranches,
-		})
-		if err != nil {
-			return protectedBranchAddJSONOutput{}, fmt.Errorf("failed to marshal request body: %w", err)
-		}
+	body := domain.PutV2ProjectBody{
+		Name:              project.Name,
+		RepoURL:           project.RepoURL,
+		InstallationID:    project.InstallationID,
+		PathToTina:        project.PathToTina,
+		Features:          project.Features,
+		SiteURL:           project.SiteURLs,
+		ProtectedBranches: &uniqueProtectedBranches,
+	}
 
-		req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/v2/organizations/%s/apps/%s", cfg.TinaCloud.Endpoint, orgID, projectID), bytes.NewBuffer(putBody))
-		if err != nil {
-			return protectedBranchAddJSONOutput{}, fmt.Errorf("failed to initialize request: %w", err)
-		}
-		req.Header.Set("Authorization", "Bearer "+tokens.AccessToken)
-		req.Header.Set("Accept", "application/json")
-		req.Header.Set("Content-Type", "application/json")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			return protectedBranchAddJSONOutput{}, fmt.Errorf("failed to update project: %w", err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode == http.StatusUnauthorized {
-			return protectedBranchAddJSONOutput{}, auth.ErrUnauthorized
-		}
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return protectedBranchAddJSONOutput{}, fmt.Errorf("failed to read update project response: %w", err)
-		}
-
-		if resp.StatusCode > 299 {
-			return protectedBranchAddJSONOutput{}, fmt.Errorf("failed to update project. received response status of '%d': %s", resp.StatusCode, string(body))
-		}
+	err = requests.PutProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, projectID, body)
+	if err != nil {
+		return protectedBranchAddJSONOutput{}, err
 	}
 
 	return protectedBranchAddJSONOutput{
