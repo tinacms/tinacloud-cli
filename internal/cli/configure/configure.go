@@ -44,6 +44,10 @@ func Configure(args []string, cfg config.Config) error {
 
 	saved, err := runConfigure(cfg, cwd, *orgIDFlag, *projectIDFlag, *tinaDirFlag, auth.TokensFromCache)
 	if err != nil {
+		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
+			fmt.Println("You are not currently logged in")
+			return nil
+		}
 		return err
 	}
 
@@ -67,7 +71,7 @@ func runConfigure(cfg config.Config, cwd, orgID, projectID, tinaDir string, load
 	tokens, err := loadTokens(cfg)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
-			return false, nil
+			return false, err
 		}
 		return false, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
