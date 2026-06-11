@@ -65,11 +65,11 @@ func runAdd(cfg config.Config, newSiteURLs domain.UrlsFlag, orgID, projectID, ti
 		}
 
 		if projectID == "" {
-			return siteURLAddJSONOutput{}, fmt.Errorf("project ID is required")
+			return siteURLAddJSONOutput{}, errors.New("project ID is required")
 		}
 
 		if orgID == "" {
-			return siteURLAddJSONOutput{}, fmt.Errorf("organization ID is required")
+			return siteURLAddJSONOutput{}, errors.New("organization ID is required")
 		}
 	}
 

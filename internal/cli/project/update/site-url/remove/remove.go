@@ -65,11 +65,11 @@ func runRemove(cfg config.Config, removeSiteURLs domain.UrlsFlag, orgID, project
 		}
 
 		if projectID == "" {
-			return siteURLRemoveJSONOutput{}, fmt.Errorf("project ID is required")
+			return siteURLRemoveJSONOutput{}, errors.New("project ID is required")
 		}
 
 		if orgID == "" {
-			return siteURLRemoveJSONOutput{}, fmt.Errorf("organization ID is required")
+			return siteURLRemoveJSONOutput{}, errors.New("organization ID is required")
 		}
 	}
 

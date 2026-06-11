@@ -59,7 +59,7 @@ func runStatus(cfg config.Config, projectID, tinaDir string) (statusJSONOutput, 
 		}
 
 		if projectID == "" {
-			return statusJSONOutput{}, fmt.Errorf("project ID is required")
+			return statusJSONOutput{}, errors.New("project ID is required")
 		}
 	}
 
