@@ -7,6 +7,8 @@ import (
 	"tina.io/tinacloud-cli/internal/cli"
 )
 
+var version = "undefined"
+
 func main() {
 	ctx := context.Background()
 
@@ -20,7 +22,7 @@ func main() {
 		}
 	}()
 
-	if err := state.Root(); err != nil {
+	if err := state.Root(version); err != nil {
 		log.Fatal(err)
 	}
 }
