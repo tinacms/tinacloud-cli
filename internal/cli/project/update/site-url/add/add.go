@@ -34,9 +34,10 @@ func Add(args []string, cfg config.Config) error {
 	var projectIDFlag = flagSet.String("project-id", "", "TinaCloud project ID")
 	var orgIDFlag = flagSet.String("org-id", "", "TinaCloud organization ID")
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
+	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
 	_ = flagSet.Parse(args)
 
-	out, err := runAdd(cfg, siteURLsFlag, *orgIDFlag, *projectIDFlag)
+	out, err := runAdd(cfg, siteURLsFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
 	if *jsonFlag {
 		return command.WriteJSONResult(os.Stdout, out, err)
 	}
@@ -54,13 +55,29 @@ func Add(args []string, cfg config.Config) error {
 	return nil
 }
 
-func runAdd(cfg config.Config, newSiteURLs domain.UrlsFlag, orgID, projectID string) (siteURLAddJSONOutput, error) {
-	if projectID == "" {
-		return siteURLAddJSONOutput{}, fmt.Errorf("project ID is required")
+func runAdd(cfg config.Config, newSiteURLs domain.UrlsFlag, orgID, projectID, tinaDir string) (siteURLAddJSONOutput, error) {
+	bothProvided := projectID != "" && orgID != ""
+	bothEmpty := projectID == "" && orgID == ""
+
+	if !bothProvided && !bothEmpty {
+		return siteURLAddJSONOutput{}, errors.New("misconfigured flag usage: either provide both --org-id and --project-id, or neither to default to your tinacloud.json")
 	}
 
-	if orgID == "" {
-		return siteURLAddJSONOutput{}, fmt.Errorf("organization ID is required")
+	if bothEmpty {
+		if cwd, err := os.Getwd(); err == nil {
+			if tinacloudConfig, err := domain.TinaCloudConfigFromDisk(cwd, tinaDir); err == nil {
+				projectID = tinacloudConfig.ProjectID
+				orgID = tinacloudConfig.OrgID
+			}
+		}
+
+		if projectID == "" {
+			return siteURLAddJSONOutput{}, errors.New("project ID is missing from the config; please re-run the configure command")
+		}
+
+		if orgID == "" {
+			return siteURLAddJSONOutput{}, errors.New("organization ID is missing from the config; please re-run the configure command")
+		}
 	}
 
 	if len(newSiteURLs) == 0 {

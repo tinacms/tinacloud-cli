@@ -29,9 +29,10 @@ func Status(args []string, cfg config.Config) error {
 
 	var projectIDFlag = flagSet.String("project-id", "", "TinaCloud project ID")
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
+	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
 	_ = flagSet.Parse(args)
 
-	out, err := runStatus(cfg, *projectIDFlag)
+	out, err := runStatus(cfg, *projectIDFlag, *tinaDirFlag)
 	if *jsonFlag {
 		return command.WriteJSONResult(os.Stdout, out, err)
 	}
@@ -49,9 +50,17 @@ func Status(args []string, cfg config.Config) error {
 	return nil
 }
 
-func runStatus(cfg config.Config, projectID string) (statusJSONOutput, error) {
+func runStatus(cfg config.Config, projectID, tinaDir string) (statusJSONOutput, error) {
 	if projectID == "" {
-		return statusJSONOutput{}, fmt.Errorf("project ID is required")
+		if cwd, err := os.Getwd(); err == nil {
+			if tinacloudConfig, err := domain.TinaCloudConfigFromDisk(cwd, tinaDir); err == nil {
+				projectID = tinacloudConfig.ProjectID
+			}
+		}
+
+		if projectID == "" {
+			return statusJSONOutput{}, errors.New("project ID is required")
+		}
 	}
 
 	tokens, err := auth.TokensFromCache(cfg)
