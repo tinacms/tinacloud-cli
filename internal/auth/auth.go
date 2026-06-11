@@ -8,7 +8,7 @@ import (
 )
 
 type DecodedAccessToken struct {
-	TinaCloudClientID string `json:"tinacloud_client_id"`
+	TinaCloudUserID string `json:"tinacloud_user_id"`
 	jwt.RegisteredClaims
 }
 

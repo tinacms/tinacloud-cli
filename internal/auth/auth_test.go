@@ -18,25 +18,25 @@ func TestDecodeAccessToken(t *testing.T) {
 	}
 
 	tests := []struct {
-		name         string
-		token        string
-		wantClientID string
-		wantErr      bool
+		name       string
+		token      string
+		wantUserID string
+		wantErr    bool
 	}{
 		{
-			name: "valid token with tinacloud_client_id",
+			name: "valid token with tinacloud_user_id",
 			token: makeJWT(t, &DecodedAccessToken{
-				TinaCloudClientID: "client-abc",
-				RegisteredClaims:  jwt.RegisteredClaims{Subject: "user-1"},
+				TinaCloudUserID:  "user-abc",
+				RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"},
 			}),
-			wantClientID: "client-abc",
+			wantUserID: "user-abc",
 		},
 		{
-			name: "valid token without tinacloud_client_id",
+			name: "valid token without tinacloud_user_id",
 			token: makeJWT(t, &DecodedAccessToken{
 				RegisteredClaims: jwt.RegisteredClaims{Subject: "user-2"},
 			}),
-			wantClientID: "",
+			wantUserID: "",
 		},
 		{
 			name:    "malformed token",
@@ -59,9 +59,28 @@ func TestDecodeAccessToken(t *testing.T) {
 			if err != nil {
 				t.Fatalf("DecodeAccessToken(%q) = %v, want nil error", tc.token, err)
 			}
-			if got.TinaCloudClientID != tc.wantClientID {
-				t.Errorf("DecodeAccessToken(%q).TinaCloudClientID = %q, want %q", tc.token, got.TinaCloudClientID, tc.wantClientID)
+			if got.TinaCloudUserID != tc.wantUserID {
+				t.Errorf("DecodeAccessToken(%q).TinaCloudUserID = %q, want %q", tc.token, got.TinaCloudUserID, tc.wantUserID)
 			}
 		})
+	}
+}
+
+// TestDecodeAccessToken_WireClaimName pins the literal on-the-wire claim
+// string. The table test above mints and decodes through DecodedAccessToken,
+// so it round-trips under whatever json tag the struct carries — it can't
+// catch a tag drift away from what the identity service emits (#3677).
+func TestDecodeAccessToken_WireClaimName(t *testing.T) {
+	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{"tinacloud_user_id": "user-abc"})
+	token, err := tok.SignedString([]byte("test-secret"))
+	if err != nil {
+		t.Fatalf("mint: %v", err)
+	}
+	got, err := DecodeAccessToken(token)
+	if err != nil {
+		t.Fatalf("DecodeAccessToken() = %v, want nil error", err)
+	}
+	if got.TinaCloudUserID != "user-abc" {
+		t.Errorf("TinaCloudUserID = %q, want %q", got.TinaCloudUserID, "user-abc")
 	}
 }
