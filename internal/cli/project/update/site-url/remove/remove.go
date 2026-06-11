@@ -1,13 +1,9 @@
 package remove
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"strings"
 
@@ -15,6 +11,7 @@ import (
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/requests"
 	"tina.io/tinacloud-cli/internal/utils"
 )
 
@@ -57,19 +54,19 @@ func Remove(args []string, cfg config.Config) error {
 	return nil
 }
 
-func runRemove(cfg config.Config, siteURLsFlag domain.UrlsFlag, orgIDFlag, projectIDFlag string) (siteURLRemoveJSONOutput, error) {
-	if projectIDFlag == "" {
+func runRemove(cfg config.Config, removeSiteURLs domain.UrlsFlag, orgID, projectID string) (siteURLRemoveJSONOutput, error) {
+	if projectID == "" {
 		return siteURLRemoveJSONOutput{}, fmt.Errorf("project ID is required")
 	}
 
-	if orgIDFlag == "" {
+	if orgID == "" {
 		return siteURLRemoveJSONOutput{}, fmt.Errorf("organization ID is required")
 	}
 
-	if len(siteURLsFlag) == 0 {
+	if len(removeSiteURLs) == 0 {
 		return siteURLRemoveJSONOutput{}, fmt.Errorf("must pass at least one site url")
 	}
-	removeSiteURLs, err := utils.CleanSiteURLs(siteURLsFlag)
+	removeSiteURLs, err := utils.CleanSiteURLs(removeSiteURLs)
 	if err != nil {
 		return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to parse site urls: %w", err)
 	}
@@ -82,39 +79,9 @@ func runRemove(cfg config.Config, siteURLsFlag domain.UrlsFlag, orgIDFlag, proje
 		return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
-	client := http.Client{}
-
-	var project domain.GetV2ProjectResponse
-	{
-		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/apps/%s", cfg.TinaCloud.Endpoint, projectIDFlag), nil)
-		if err != nil {
-			return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to initialize request: %w", err)
-		}
-		req.Header.Set("Authorization", "Bearer "+tokens.AccessToken)
-		req.Header.Set("Accept", "application/json")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to get project: %w", err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode == http.StatusUnauthorized {
-			return siteURLRemoveJSONOutput{}, auth.ErrUnauthorized
-		}
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to read get project response: %w", err)
-		}
-
-		if resp.StatusCode > 299 {
-			return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to get project. received response status of '%d': %s", resp.StatusCode, string(body))
-		}
-
-		if err := json.Unmarshal(body, &project); err != nil {
-			return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to unmarshal project from get request: %w", err)
-		}
+	project, err := requests.GetProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, projectID)
+	if err != nil {
+		return siteURLRemoveJSONOutput{}, err
 	}
 
 	removeSet := map[string]struct{}{}
@@ -122,7 +89,7 @@ func runRemove(cfg config.Config, siteURLsFlag domain.UrlsFlag, orgIDFlag, proje
 		removeSet[value] = struct{}{}
 	}
 
-	var siteURLs []string
+	var uniqueSiteURLs []string
 	for _, value := range strings.Split(project.SiteURLs, ",") {
 		value = strings.TrimSpace(value)
 		if value == "" {
@@ -132,53 +99,26 @@ func runRemove(cfg config.Config, siteURLsFlag domain.UrlsFlag, orgIDFlag, proje
 			continue
 		}
 
-		siteURLs = append(siteURLs, value)
+		uniqueSiteURLs = append(uniqueSiteURLs, value)
 	}
 
-	{
-		putBody, err := json.Marshal(domain.PutV2ProjectBody{
-			Name:              project.Name,
-			RepoURL:           project.RepoURL,
-			InstallationID:    project.InstallationID,
-			PathToTina:        project.PathToTina,
-			ProtectedBranches: project.ProtectedBranches,
-			Features:          project.Features,
-			SiteURL:           strings.Join(siteURLs, ","),
-		})
-		if err != nil {
-			return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to marshal request body: %w", err)
-		}
+	body := domain.PutV2ProjectBody{
+		Name:              project.Name,
+		RepoURL:           project.RepoURL,
+		InstallationID:    project.InstallationID,
+		PathToTina:        project.PathToTina,
+		ProtectedBranches: project.ProtectedBranches,
+		Features:          project.Features,
+		SiteURL:           strings.Join(uniqueSiteURLs, ","),
+	}
 
-		req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/v2/organizations/%s/apps/%s", cfg.TinaCloud.Endpoint, orgIDFlag, projectIDFlag), bytes.NewBuffer(putBody))
-		if err != nil {
-			return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to initialize request: %w", err)
-		}
-		req.Header.Set("Authorization", "Bearer "+tokens.AccessToken)
-		req.Header.Set("Accept", "application/json")
-		req.Header.Set("Content-Type", "application/json")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to update project: %w", err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode == http.StatusUnauthorized {
-			return siteURLRemoveJSONOutput{}, auth.ErrUnauthorized
-		}
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to read update project response: %w", err)
-		}
-
-		if resp.StatusCode > 299 {
-			return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to update project. received response status of '%d': %s", resp.StatusCode, string(body))
-		}
+	err = requests.PutProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, projectID, body)
+	if err != nil {
+		return siteURLRemoveJSONOutput{}, err
 	}
 
 	return siteURLRemoveJSONOutput{
 		LoggedIn: true,
-		SiteURLs: siteURLs,
+		SiteURLs: uniqueSiteURLs,
 	}, nil
 }

@@ -1,12 +1,10 @@
 package configure
 
 import (
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"path"
 	"strings"
@@ -16,6 +14,7 @@ import (
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/requests"
 )
 
 type projectOption struct {
@@ -76,75 +75,19 @@ func runConfigure(cfg config.Config, cwd, orgID, projectID, tinaDir string, load
 		return false, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
-	client := http.Client{}
-
-	var organizations []domain.OrganizationWithRole
-	{
-		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/organizations", cfg.TinaCloud.Endpoint), nil)
-		if err != nil {
-			return false, fmt.Errorf("failed to initialize request: %w", err)
-		}
-		req.Header.Set("Authorization", "Bearer "+tokens.AccessToken)
-		req.Header.Set("Accept", "application/json")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			return false, fmt.Errorf("failed to get organizations: %w", err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode == http.StatusUnauthorized {
-			return false, auth.ErrUnauthorized
-		}
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return false, fmt.Errorf("failed to read get organizations response: %w", err)
-		}
-
-		if resp.StatusCode > 299 {
-			return false, fmt.Errorf("failed to get organizations. received response status of '%d': %s", resp.StatusCode, string(body))
-		}
-
-		if err := json.Unmarshal(body, &organizations); err != nil {
-			return false, fmt.Errorf("failed to unmarshal organizations from get request: %w", err)
-		}
+	organizations, err := requests.GetOrganizations(cfg.TinaCloud.Endpoint, tokens.AccessToken)
+	if err != nil {
+		return false, err
 	}
 
 	var projectOptions []projectOption
 	for _, org := range organizations {
-		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/organizations/%s/apps", cfg.TinaCloud.Endpoint, org.Organization.ID), nil)
+		projects, err := requests.GetProjects(cfg.TinaCloud.Endpoint, tokens.AccessToken, org.Organization.ID)
 		if err != nil {
-			return false, fmt.Errorf("failed to initialize request: %w", err)
-		}
-		req.Header.Set("Authorization", "Bearer "+tokens.AccessToken)
-		req.Header.Set("Accept", "application/json")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			return false, fmt.Errorf("failed to get projects: %w", err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode == http.StatusUnauthorized {
-			return false, auth.ErrUnauthorized
+			return false, err
 		}
 
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return false, fmt.Errorf("failed to read get projects response: %w", err)
-		}
-
-		if resp.StatusCode > 299 {
-			return false, fmt.Errorf("failed to get projects. received response status of '%d': %s", resp.StatusCode, string(body))
-		}
-
-		var projectsResponse []domain.GetV2ProjectsResponse
-		if err := json.Unmarshal(body, &projectsResponse); err != nil {
-			return false, fmt.Errorf("failed to unmarshal projects from get request: %w", err)
-		}
-
-		for _, project := range projectsResponse {
+		for _, project := range projects {
 			projectOptions = append(
 				projectOptions,
 				projectOption{
