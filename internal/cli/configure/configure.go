@@ -185,7 +185,7 @@ func runConfigure(cfg config.Config, cwd, orgID, projectID, tinaDir string, load
 			if confirmed {
 				return true, domain.SaveTinaCloudConfig(cwd, tinaDir, option.org.ID, option.project.ID)
 			}
-			break
+			continue
 		}
 	}
 
