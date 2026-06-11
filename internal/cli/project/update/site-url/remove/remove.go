@@ -34,9 +34,10 @@ func Remove(args []string, cfg config.Config) error {
 	var projectIDFlag = flagSet.String("project-id", "", "TinaCloud project ID")
 	var orgIDFlag = flagSet.String("org-id", "", "TinaCloud organization ID")
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
+	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
 	_ = flagSet.Parse(args)
 
-	out, err := runRemove(cfg, siteURLsFlag, *orgIDFlag, *projectIDFlag)
+	out, err := runRemove(cfg, siteURLsFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
 	if *jsonFlag {
 		return command.WriteJSONResult(os.Stdout, out, err)
 	}
@@ -54,13 +55,22 @@ func Remove(args []string, cfg config.Config) error {
 	return nil
 }
 
-func runRemove(cfg config.Config, removeSiteURLs domain.UrlsFlag, orgID, projectID string) (siteURLRemoveJSONOutput, error) {
-	if projectID == "" {
-		return siteURLRemoveJSONOutput{}, fmt.Errorf("project ID is required")
-	}
+func runRemove(cfg config.Config, removeSiteURLs domain.UrlsFlag, orgID, projectID, tinaDir string) (siteURLRemoveJSONOutput, error) {
+	if projectID == "" || orgID == "" {
+		if cwd, err := os.Getwd(); err == nil {
+			if tinacloudConfig, err := domain.TinaCloudConfigFromDisk(cwd, tinaDir); err == nil {
+				projectID = tinacloudConfig.ProjectID
+				orgID = tinacloudConfig.OrgID
+			}
+		}
 
-	if orgID == "" {
-		return siteURLRemoveJSONOutput{}, fmt.Errorf("organization ID is required")
+		if projectID == "" {
+			return siteURLRemoveJSONOutput{}, fmt.Errorf("project ID is required")
+		}
+
+		if orgID == "" {
+			return siteURLRemoveJSONOutput{}, fmt.Errorf("organization ID is required")
+		}
 	}
 
 	if len(removeSiteURLs) == 0 {

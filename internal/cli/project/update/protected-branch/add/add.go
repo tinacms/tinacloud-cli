@@ -34,9 +34,10 @@ func Add(args []string, cfg config.Config) error {
 	var projectIDFlag = flagSet.String("project-id", "", "TinaCloud project ID")
 	var orgIDFlag = flagSet.String("org-id", "", "TinaCloud organization ID")
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
+	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
 	_ = flagSet.Parse(args)
 
-	out, err := runAdd(cfg, protectedBranchesFlag, *orgIDFlag, *projectIDFlag)
+	out, err := runAdd(cfg, protectedBranchesFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
 	if *jsonFlag {
 		return command.WriteJSONResult(os.Stdout, out, err)
 	}
@@ -54,13 +55,22 @@ func Add(args []string, cfg config.Config) error {
 	return nil
 }
 
-func runAdd(cfg config.Config, newProtectedBranches []string, orgID, projectID string) (protectedBranchAddJSONOutput, error) {
-	if projectID == "" {
-		return protectedBranchAddJSONOutput{}, errors.New("project ID is required")
-	}
+func runAdd(cfg config.Config, newProtectedBranches []string, orgID, projectID, tinaDir string) (protectedBranchAddJSONOutput, error) {
+	if projectID == "" || orgID == "" {
+		if cwd, err := os.Getwd(); err == nil {
+			if tinacloudConfig, err := domain.TinaCloudConfigFromDisk(cwd, tinaDir); err == nil {
+				projectID = tinacloudConfig.ProjectID
+				orgID = tinacloudConfig.OrgID
+			}
+		}
 
-	if orgID == "" {
-		return protectedBranchAddJSONOutput{}, errors.New("organization ID is required")
+		if projectID == "" {
+			return protectedBranchAddJSONOutput{}, errors.New("project ID is required")
+		}
+
+		if orgID == "" {
+			return protectedBranchAddJSONOutput{}, errors.New("organization ID is required")
+		}
 	}
 
 	if len(newProtectedBranches) == 0 {

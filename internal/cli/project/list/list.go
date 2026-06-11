@@ -29,9 +29,10 @@ func List(args []string, cfg config.Config) error {
 
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
 	var orgIDFlag = flagSet.String("org-id", "", "TinaCloud organization ID")
+	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
 	_ = flagSet.Parse(args)
 
-	out, err := runList(cfg, *orgIDFlag)
+	out, err := runList(cfg, *orgIDFlag, *tinaDirFlag)
 	if *jsonFlag {
 		return command.WriteJSONResult(os.Stdout, out, err)
 	}
@@ -52,9 +53,17 @@ func List(args []string, cfg config.Config) error {
 	return nil
 }
 
-func runList(cfg config.Config, orgID string) (listJSONOutput, error) {
+func runList(cfg config.Config, orgID, tinaDir string) (listJSONOutput, error) {
 	if orgID == "" {
-		return listJSONOutput{}, fmt.Errorf("organization ID is required")
+		if cwd, err := os.Getwd(); err == nil {
+			if tinacloudConfig, err := domain.TinaCloudConfigFromDisk(cwd, tinaDir); err == nil {
+				orgID = tinacloudConfig.OrgID
+			}
+		}
+
+		if orgID == "" {
+			return listJSONOutput{}, errors.New("organization ID is required")
+		}
 	}
 
 	tokens, err := auth.TokensFromCache(cfg)

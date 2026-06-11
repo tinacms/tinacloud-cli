@@ -57,7 +57,15 @@ func Create(args []string, cfg config.Config) error {
 
 func runCreate(cfg config.Config, orgID, projectName, repoURL, siteURL, tinaDir string) (createJSONOutput, error) {
 	if orgID == "" {
-		return createJSONOutput{}, errors.New("organization ID is required")
+		if cwd, err := os.Getwd(); err == nil {
+			if tinacloudConfig, err := domain.TinaCloudConfigFromDisk(cwd, tinaDir); err == nil {
+				orgID = tinacloudConfig.OrgID
+			}
+		}
+
+		if orgID == "" {
+			return createJSONOutput{}, errors.New("organization ID is required")
+		}
 	}
 
 	if projectName == "" {
