@@ -56,7 +56,14 @@ func Add(args []string, cfg config.Config) error {
 }
 
 func runAdd(cfg config.Config, newProtectedBranches []string, orgID, projectID, tinaDir string) (protectedBranchAddJSONOutput, error) {
-	if projectID == "" || orgID == "" {
+	bothProvided := projectID != "" && orgID != ""
+	bothEmpty := projectID == "" && orgID == ""
+
+	if !bothProvided && !bothEmpty {
+		return protectedBranchAddJSONOutput{}, errors.New("misconfigured flag usage: either provide both --org-id and --project-id, or neither to default to your tinacloud.json")
+	}
+
+	if bothEmpty {
 		if cwd, err := os.Getwd(); err == nil {
 			if tinacloudConfig, err := domain.TinaCloudConfigFromDisk(cwd, tinaDir); err == nil {
 				projectID = tinacloudConfig.ProjectID
@@ -65,11 +72,11 @@ func runAdd(cfg config.Config, newProtectedBranches []string, orgID, projectID, 
 		}
 
 		if projectID == "" {
-			return protectedBranchAddJSONOutput{}, errors.New("project ID is required")
+			return protectedBranchAddJSONOutput{}, errors.New("project ID is missing from the config; please re-run the configure command")
 		}
 
 		if orgID == "" {
-			return protectedBranchAddJSONOutput{}, errors.New("organization ID is required")
+			return protectedBranchAddJSONOutput{}, errors.New("organization ID is missing from the config; please re-run the configure command")
 		}
 	}
 

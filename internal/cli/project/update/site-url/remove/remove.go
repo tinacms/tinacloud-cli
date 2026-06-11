@@ -56,7 +56,14 @@ func Remove(args []string, cfg config.Config) error {
 }
 
 func runRemove(cfg config.Config, removeSiteURLs domain.UrlsFlag, orgID, projectID, tinaDir string) (siteURLRemoveJSONOutput, error) {
-	if projectID == "" || orgID == "" {
+	bothProvided := projectID != "" && orgID != ""
+	bothEmpty := projectID == "" && orgID == ""
+
+	if !bothProvided && !bothEmpty {
+		return siteURLRemoveJSONOutput{}, errors.New("misconfigured flag usage: either provide both --org-id and --project-id, or neither to default to your tinacloud.json")
+	}
+
+	if bothEmpty {
 		if cwd, err := os.Getwd(); err == nil {
 			if tinacloudConfig, err := domain.TinaCloudConfigFromDisk(cwd, tinaDir); err == nil {
 				projectID = tinacloudConfig.ProjectID
@@ -65,11 +72,11 @@ func runRemove(cfg config.Config, removeSiteURLs domain.UrlsFlag, orgID, project
 		}
 
 		if projectID == "" {
-			return siteURLRemoveJSONOutput{}, errors.New("project ID is required")
+			return siteURLRemoveJSONOutput{}, errors.New("project ID is missing from the config; please re-run the configure command")
 		}
 
 		if orgID == "" {
-			return siteURLRemoveJSONOutput{}, errors.New("organization ID is required")
+			return siteURLRemoveJSONOutput{}, errors.New("organization ID is missing from the config; please re-run the configure command")
 		}
 	}
 
