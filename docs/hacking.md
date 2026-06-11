@@ -16,8 +16,8 @@ go run ./cmd/tinacloud-cli
 
 <details>
 <summary>Note: Passing arguments via the Makefile</summary>
-Makefiles are unable to pass command-line arguments through. To get around
-this, you can do the following: `make run ARGS="<arg1> <arg2> ..."`
+Makefiles are unable to pass command-line arguments through. <br>To get around
+this, you can do the following: <code>make run ARGS="arg1 arg2 ..."</code>
 </details>
 
 To format:
