@@ -264,7 +264,7 @@ func repoSlugFromGitConfig(cwd string) (string, error) {
 
 	body, err := io.ReadAll(file)
 	if err != nil {
-		return "", fmt.Errorf("failed to read tinacloud tokens: %w", err)
+		return "", fmt.Errorf("failed to read git config: %w", err)
 	}
 
 	lines := strings.Split(string(body), "\n")
