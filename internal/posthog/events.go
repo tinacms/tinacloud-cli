@@ -5,16 +5,16 @@ import (
 )
 
 const (
-	CLIStartedEvent             string = "cli-started"
-	UserSignInInitiatedEvent    string = "user-sign-in-initiated"
-	UserSignInSuccessEvent      string = "user-sign-in-success"
-	UserLoggedOutEvent          string = "user-logged-out"
-	UserConfiguredEvent         string = "user-configured"
-	ProjectCreatedEvent         string = "project-created"
-	SiteURLAddedEvent           string = "site-url-added"
-	SiteURLRemovedEvent         string = "site-url-removed"
-	ProtectedBranchAddedEvent   string = "protected-branch-added"
-	ProtectedBranchRemovedEvent string = "protected-branch-removed"
+	CLIStartedEvent             string = "tinacloud-cli-started"
+	UserSignInInitiatedEvent    string = "tinacloud-cli-user-sign-in-initiated"
+	UserSignInSuccessEvent      string = "tinacloud-cli-user-sign-in-success"
+	UserLoggedOutEvent          string = "tinacloud-cli-user-logged-out"
+	UserConfiguredEvent         string = "tinacloud-cli-user-configured"
+	ProjectCreatedEvent         string = "tinacloud-cli-project-created"
+	SiteURLAddedEvent           string = "tinacloud-cli-site-url-added"
+	SiteURLRemovedEvent         string = "tinacloud-cli-site-url-removed"
+	ProtectedBranchAddedEvent   string = "tinacloud-cli-protected-branch-added"
+	ProtectedBranchRemovedEvent string = "tinacloud-cli-protected-branch-removed"
 )
 
 const (
