@@ -66,10 +66,11 @@ func distinctID() string {
 }
 
 // Track enqueues a telemetry event, attaching the persistent distinct
-// ID. It is a no-op when telemetry is disabled (no PostHog API key)
-// and never returns an error: telemetry must not affect command flow.
+// ID. It is a no-op in dev mode or when telemetry is disabled (no
+// PostHog API key) and never returns an error: telemetry must not
+// affect command flow.
 func (s *State) Track(event posthog.Capture) {
-	if s.posthog == nil {
+	if s.posthog == nil || s.config.Core.Dev {
 		return
 	}
 
