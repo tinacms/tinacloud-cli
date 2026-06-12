@@ -4,51 +4,100 @@ import (
 	ph "github.com/posthog/posthog-go"
 )
 
-// Event names. Past-tense, snake_case.
 const (
-	EventCLIStarted     = "cli_started"
-	EventUserLoggedIn   = "user_logged_in"
-	EventUserLoggedOut  = "user_logged_out"
-	EventProjectCreated = "project_created"
-	EventCommandFailed  = "command_failed"
-	EventProtectedBranchAdded = "protected_branch_added"
-	EventProtectedBranchRemoved = "protected_branch_removed"
+	CLIStartedEvent             string = "cli-started"
+	UserSignInInitiatedEvent    string = "user-sign-in-initiated"
+	UserSignInSuccessEvent      string = "user-sign-in-success"
+	UserLoggedOutEvent          string = "user-logged-out"
+	UserConfiguredEvent         string = "user-configured"
+	ProjectCreatedEvent         string = "project-created"
+	SiteURLAddedEvent           string = "site-url-added"
+	SiteURLRemovedEvent         string = "site-url-removed"
+	ProtectedBranchAddedEvent   string = "protected-branch-added"
+	ProtectedBranchRemovedEvent string = "protected-branch-removed"
+)
+
+const (
+	ConfigMethodManualSelect   string = "manual-select"
+	ConfigMethodAutoDetect     string = "auto-detect"
+	ConfigMethodOnlyOneProject string = "only-one-project"
 )
 
 func CLIStarted(command, version string) ph.Capture {
 	return ph.Capture{
-		Event: EventCLIStarted,
+		Event: CLIStartedEvent,
 		Properties: ph.NewProperties().
 			Set("command", command).
 			Set("version", version),
 	}
 }
 
-func UserLoggedIn() ph.Capture {
+func UserSignInInitiated() ph.Capture {
 	return ph.Capture{
-		Event: EventUserLoggedIn,
+		Event: UserSignInInitiatedEvent,
+	}
+}
+
+func UserSignInSuccess() ph.Capture {
+	return ph.Capture{
+		Event: UserSignInSuccessEvent,
 	}
 }
 
 func UserLoggedOut() ph.Capture {
 	return ph.Capture{
-		Event: EventUserLoggedOut,
+		Event: UserLoggedOutEvent,
 	}
 }
 
-func ProjectCreated(orgID string) ph.Capture {
+func UserConfigured(method string) ph.Capture {
 	return ph.Capture{
-		Event: EventProjectCreated,
+		Event: UserConfiguredEvent,
 		Properties: ph.NewProperties().
-			Set("org_id", orgID),
+			Set("configuration_method", method),
 	}
 }
 
-func CommandFailed(command, errorKind string) ph.Capture {
+func ProjectCreated(orgID, projectID, name, repoURL, siteURL string) ph.Capture {
 	return ph.Capture{
-		Event: EventCommandFailed,
+		Event: ProjectCreatedEvent,
 		Properties: ph.NewProperties().
-			Set("command", command).
-			Set("error_kind", errorKind),
+			Set("org_id", orgID).
+			Set("project_id", projectID).
+			Set("name", name).
+			Set("repo_url", repoURL).
+			Set("site_url", siteURL),
+	}
+}
+
+func SiteURLAdded(urls []string) ph.Capture {
+	return ph.Capture{
+		Event: SiteURLAddedEvent,
+		Properties: ph.NewProperties().
+			Set("urls", urls),
+	}
+}
+
+func SiteURLRemoved(urls []string) ph.Capture {
+	return ph.Capture{
+		Event: SiteURLRemovedEvent,
+		Properties: ph.NewProperties().
+			Set("urls", urls),
+	}
+}
+
+func ProtectedBranchAdded(branches []string) ph.Capture {
+	return ph.Capture{
+		Event: ProtectedBranchAddedEvent,
+		Properties: ph.NewProperties().
+			Set("branches", branches),
+	}
+}
+
+func ProtectedBranchRemoved(branches []string) ph.Capture {
+	return ph.Capture{
+		Event: ProtectedBranchRemovedEvent,
+		Properties: ph.NewProperties().
+			Set("branches", branches),
 	}
 }
