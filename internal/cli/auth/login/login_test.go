@@ -16,6 +16,7 @@ import (
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/posthog"
 )
 
 func TestGenerateChallenge(t *testing.T) {
@@ -66,7 +67,7 @@ func TestLogin_AuthorizeRequestFails(t *testing.T) {
 	cfg := config.Config{}
 	cfg.TinaCloud.Endpoint = "http://127.0.0.1:1"
 
-	err := Login(nil, cfg)
+	err := Login(nil, cfg, posthog.NoopTracker)
 	if err == nil {
 		t.Fatal("Login() = nil error, want error when authorize request fails")
 	}
@@ -120,7 +121,7 @@ func driveLogin(t *testing.T, tokenHandler http.HandlerFunc, callbackReq string)
 
 	cfg := config.Config{}
 	cfg.TinaCloud.Endpoint = srv.URL
-	return runLogin(cfg, fakeOpener)
+	return runLogin(cfg, fakeOpener, posthog.NoopTracker)
 }
 
 // deliverCallback connects to the local callback server and sends request,

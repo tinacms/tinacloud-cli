@@ -37,7 +37,7 @@ func (s *State) Root() error {
 	cmd, subargs := args[0], args[1:]
 	switch cmd {
 	case "auth":
-		return auth.Auth(subargs, s.config)
+		return auth.Auth(subargs, s.config, s.Track)
 	case "org":
 		return org.Org(subargs, s.config)
 	case "project":

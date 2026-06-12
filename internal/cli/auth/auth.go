@@ -10,9 +10,10 @@ import (
 	"tina.io/tinacloud-cli/internal/cli/auth/status"
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
+	"tina.io/tinacloud-cli/internal/posthog"
 )
 
-func Auth(args []string, cfg config.Config) error {
+func Auth(args []string, cfg config.Config, track posthog.Tracker) error {
 	flagSet := flag.NewFlagSet("auth", flag.ExitOnError)
 	flagSet.Usage = func() {
 		command.PrintSubCommands(os.Stderr, "tinacloud-cli auth", []command.SubCommand{
@@ -33,7 +34,7 @@ func Auth(args []string, cfg config.Config) error {
 	cmd, subargs := args[0], args[1:]
 	switch cmd {
 	case "login":
-		return login.Login(subargs, cfg)
+		return login.Login(subargs, cfg, track)
 	case "status":
 		return status.Status(subargs, cfg)
 	case "logout":
