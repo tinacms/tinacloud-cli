@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"tina.io/tinacloud-cli/internal/config"
+	"tina.io/tinacloud-cli/internal/posthog"
 )
 
 // tokenCachePath redirects the user config dir to a temp dir and returns the
@@ -75,7 +76,7 @@ func TestLogout(t *testing.T) {
 
 			cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: server.URL}}
 
-			if err := Logout(nil, cfg); err != nil {
+			if err := Logout(nil, cfg, posthog.NoopTracker); err != nil {
 				t.Fatalf("Logout() = %v, want nil error", err)
 			}
 

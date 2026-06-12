@@ -8,9 +8,10 @@ import (
 
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
+	"tina.io/tinacloud-cli/internal/posthog"
 )
 
-func Logout(args []string, cfg config.Config) error {
+func Logout(args []string, cfg config.Config, track posthog.Tracker) error {
 	flagSet := flag.NewFlagSet("logout", flag.ExitOnError)
 	flagSet.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli auth logout")
@@ -31,6 +32,8 @@ func Logout(args []string, cfg config.Config) error {
 	if err := auth.ClearTokens(); err != nil {
 		return fmt.Errorf("failed to clear auth tokens: %w", err)
 	}
+
+	track(posthog.UserLoggedOut())
 
 	fmt.Println("Successfully signed out of your TinaCloud account")
 	return nil

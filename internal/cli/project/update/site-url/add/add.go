@@ -15,6 +15,7 @@ import (
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/posthog"
 	"tina.io/tinacloud-cli/internal/utils"
 )
 
@@ -23,7 +24,7 @@ type siteURLAddJSONOutput struct {
 	SiteURLs []string `json:"site_urls"`
 }
 
-func Add(args []string, cfg config.Config) error {
+func Add(args []string, cfg config.Config, track posthog.Tracker) error {
 	flagSet := flag.NewFlagSet("projectupdatesiteurladd", flag.ExitOnError)
 	flagSet.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli project update site-url add [flags]")
@@ -40,6 +41,9 @@ func Add(args []string, cfg config.Config) error {
 	_ = flagSet.Parse(args)
 
 	out, err := runAdd(cfg, siteURLsFlag, *orgIDFlag, *projectIDFlag)
+	if err == nil && out.LoggedIn {
+		track(posthog.SiteURLAdded(siteURLsFlag))
+	}
 	if *jsonFlag {
 		return command.WriteJSONResult(os.Stdout, out, err)
 	}

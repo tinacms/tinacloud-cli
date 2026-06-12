@@ -7,9 +7,10 @@ import (
 	"path"
 
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/posthog"
 )
 
-func Configure(args []string) error {
+func Configure(args []string, track posthog.Tracker) error {
 	flagSet := flag.NewFlagSet("configure", flag.ExitOnError)
 	flagSet.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli configure [flags]")
@@ -36,6 +37,10 @@ func Configure(args []string) error {
 	if err != nil {
 		return err
 	}
+
+	// Both IDs are passed explicitly today; auto-detect and
+	// only-one-project flows don't exist yet.
+	track(posthog.UserConfigured(posthog.ConfigMethodManualSelect))
 
 	fmt.Printf("Wrote tinacloud config to %s\n", path.Join(cwd, *tinaDirFlag, domain.TinaCloudConfigFileName))
 

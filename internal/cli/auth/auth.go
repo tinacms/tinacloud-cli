@@ -38,7 +38,7 @@ func Auth(args []string, cfg config.Config, track posthog.Tracker) error {
 	case "status":
 		return status.Status(subargs, cfg)
 	case "logout":
-		return logout.Logout(subargs, cfg)
+		return logout.Logout(subargs, cfg, track)
 	default:
 		return fmt.Errorf("unrecognized command %q", cmd)
 	}
