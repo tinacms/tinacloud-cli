@@ -2,15 +2,19 @@ package cli
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/posthog/posthog-go"
+	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
 )
 
 type State struct {
-	config  config.Config
-	posthog posthog.Client
+	config     config.Config
+	posthog    posthog.Client
+	distinctID string
 }
 
 func New(ctx context.Context) (*State, error) {
@@ -31,11 +35,41 @@ func New(ctx context.Context) (*State, error) {
 	}
 
 	state := &State{
-		config:  cfg,
-		posthog: ph,
+		config:     cfg,
+		posthog:    ph,
+		distinctID: distinctID(),
 	}
 
 	return state, nil
+}
+
+// distinctID returns the authenticated user's TinaCloud ID when
+// logged in; otherwise a random per-invocation ID, so unauthenticated
+// usage is not trackable across runs.
+func distinctID() string {
+	if tokens, err := auth.PeekTokens(); err == nil {
+		if claims, err := auth.DecodeAccessToken(tokens.AccessToken); err == nil && claims.TinaCloudClientID != "" {
+			return claims.TinaCloudClientID
+		}
+	}
+
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return "anonymous"
+	}
+	return "anon-" + hex.EncodeToString(b)
+}
+
+// Track enqueues a telemetry event, attaching the persistent distinct
+// ID. It is a no-op when telemetry is disabled (no PostHog API key)
+// and never returns an error: telemetry must not affect command flow.
+func (s *State) Track(event posthog.Capture) {
+	if s.posthog == nil {
+		return
+	}
+
+	event.DistinctId = s.distinctID
+	_ = s.posthog.Enqueue(event)
 }
 
 func (s *State) Close() error {
