@@ -12,12 +12,12 @@ import (
 	"tina.io/tinacloud-cli/internal/config"
 )
 
-func makeJWT(t *testing.T, clientID string) string {
+func makeJWT(t *testing.T, userID string) string {
 	t.Helper()
 
 	claims := &auth.DecodedAccessToken{
-		TinaCloudClientID: clientID,
-		RegisteredClaims:  jwt.RegisteredClaims{},
+		TinaCloudUserID:  userID,
+		RegisteredClaims: jwt.RegisteredClaims{},
 	}
 	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signed, err := tok.SignedString([]byte("test-secret"))
@@ -55,13 +55,13 @@ func TestRunStatus_Unauthenticated(t *testing.T) {
 }
 
 func TestRunStatus_Success(t *testing.T) {
-	accessToken := makeJWT(t, "client-123")
+	accessToken := makeJWT(t, "user-123")
 	cfg := cfgWithServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		if r.URL.Path != "/v2/users/client-123" {
+		if r.URL.Path != "/v2/users/user-123" {
 			http.NotFound(w, r)
 			return
 		}
@@ -108,7 +108,7 @@ func TestRunStatus_APIErrors(t *testing.T) {
 				w.WriteHeader(tc.statusCode)
 			})
 
-			tokens := auth.TokenCache{AccessToken: makeJWT(t, "client-123")}
+			tokens := auth.TokenCache{AccessToken: makeJWT(t, "user-123")}
 			_, err := runStatus(cfg, stubTokenLoader(tokens, nil))
 			if tc.wantErr != nil {
 				if !errors.Is(err, tc.wantErr) {
@@ -123,11 +123,11 @@ func TestRunStatus_APIErrors(t *testing.T) {
 	}
 }
 
-func TestRunStatus_NoClientID(t *testing.T) {
+func TestRunStatus_NoUserID(t *testing.T) {
 	tokens := auth.TokenCache{AccessToken: makeJWT(t, "")}
 	_, err := runStatus(config.Config{}, stubTokenLoader(tokens, nil))
 	if err == nil {
-		t.Fatal("runStatus() = nil error, want error for missing client ID")
+		t.Fatal("runStatus() = nil error, want error for missing user ID")
 	}
 }
 
@@ -151,7 +151,7 @@ func TestRunStatus_MalformedJSON(t *testing.T) {
 		_, _ = w.Write([]byte("{not json"))
 	})
 
-	tokens := auth.TokenCache{AccessToken: makeJWT(t, "client-123")}
+	tokens := auth.TokenCache{AccessToken: makeJWT(t, "user-123")}
 	_, err := runStatus(cfg, stubTokenLoader(tokens, nil))
 	if err == nil {
 		t.Fatal("runStatus() = nil error, want unmarshal error")

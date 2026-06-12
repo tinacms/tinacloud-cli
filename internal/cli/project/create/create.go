@@ -1,13 +1,9 @@
 package create
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
-	"io"
-	"net/http"
 	"net/url"
 	"os"
 
@@ -16,6 +12,7 @@ import (
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
 	"tina.io/tinacloud-cli/internal/posthog"
+	"tina.io/tinacloud-cli/internal/requests"
 )
 
 type createJSONOutput struct {
@@ -64,7 +61,15 @@ func Create(args []string, cfg config.Config, track posthog.Tracker) error {
 
 func runCreate(cfg config.Config, orgID, projectName, repoURL, siteURL, tinaDir string) (createJSONOutput, error) {
 	if orgID == "" {
-		return createJSONOutput{}, errors.New("organization ID is required")
+		if cwd, err := os.Getwd(); err == nil {
+			if tinacloudConfig, err := domain.TinaCloudConfigFromDisk(cwd, tinaDir); err == nil {
+				orgID = tinacloudConfig.OrgID
+			}
+		}
+
+		if orgID == "" {
+			return createJSONOutput{}, errors.New("organization ID is required")
+		}
 	}
 
 	if projectName == "" {
@@ -90,48 +95,15 @@ func runCreate(cfg config.Config, orgID, projectName, repoURL, siteURL, tinaDir 
 		return createJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
-	createProjectBody := domain.PostV2ProjectsBody{
+	body := domain.PostV2ProjectsBody{
 		Name:    projectName,
 		RepoURL: repoURL,
 		SiteURL: siteURL,
 	}
 
-	postBody, err := json.Marshal(createProjectBody)
+	resp, err := requests.CreateProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, body)
 	if err != nil {
-		return createJSONOutput{}, fmt.Errorf("failed to marshal request body: %w", err)
-	}
-
-	client := http.Client{}
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/v2/organizations/%s/apps", cfg.TinaCloud.Endpoint, orgID), bytes.NewBuffer(postBody))
-	if err != nil {
-		return createJSONOutput{}, fmt.Errorf("failed to initialize request: %w", err)
-	}
-	req.Header.Set("Authorization", "Bearer "+tokens.AccessToken)
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return createJSONOutput{}, fmt.Errorf("failed to create project: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusUnauthorized {
-		return createJSONOutput{}, auth.ErrUnauthorized
-	}
-
-	responseBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return createJSONOutput{}, fmt.Errorf("failed to read create project response: %w", err)
-	}
-
-	if resp.StatusCode > 299 {
-		return createJSONOutput{}, fmt.Errorf("failed to create project. received response status of '%d': %s", resp.StatusCode, string(responseBody))
-	}
-
-	var projectCreateResponse domain.PostV2ProjectResponse
-	if err := json.Unmarshal(responseBody, &projectCreateResponse); err != nil {
-		return createJSONOutput{}, fmt.Errorf("failed to unmarshal created project from post request: %w", err)
+		return createJSONOutput{}, err
 	}
 
 	// If in a tinacms project, write information to <tina-dir>/tinacloud.json.
@@ -139,7 +111,7 @@ func runCreate(cfg config.Config, orgID, projectName, repoURL, siteURL, tinaDir 
 	// a tinacms project is expected and stays silent, but real failures are
 	// surfaced to stderr.
 	if cwd, err := os.Getwd(); err == nil {
-		err = domain.SaveTinaCloudConfig(cwd, tinaDir, orgID, projectCreateResponse.CreatedProject.ProjectID)
+		err = domain.SaveTinaCloudConfig(cwd, tinaDir, orgID, resp.CreatedProject.ProjectID)
 		if err != nil && !errors.Is(err, domain.ErrNotTinaProject) {
 			fmt.Fprintf(os.Stderr, "warning: project created but failed to write tinacloud config: %v\n", err)
 		}
@@ -147,6 +119,6 @@ func runCreate(cfg config.Config, orgID, projectName, repoURL, siteURL, tinaDir 
 
 	return createJSONOutput{
 		LoggedIn: true,
-		Project:  projectCreateResponse.CreatedProject,
+		Project:  resp.CreatedProject,
 	}, nil
 }

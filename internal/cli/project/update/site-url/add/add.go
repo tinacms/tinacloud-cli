@@ -1,13 +1,9 @@
 package add
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"strings"
 
@@ -16,6 +12,7 @@ import (
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
 	"tina.io/tinacloud-cli/internal/posthog"
+	"tina.io/tinacloud-cli/internal/requests"
 	"tina.io/tinacloud-cli/internal/utils"
 )
 
@@ -38,9 +35,10 @@ func Add(args []string, cfg config.Config, track posthog.Tracker) error {
 	var projectIDFlag = flagSet.String("project-id", "", "TinaCloud project ID")
 	var orgIDFlag = flagSet.String("org-id", "", "TinaCloud organization ID")
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
+	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
 	_ = flagSet.Parse(args)
 
-	out, err := runAdd(cfg, siteURLsFlag, *orgIDFlag, *projectIDFlag)
+	out, err := runAdd(cfg, siteURLsFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
 	if err == nil && out.LoggedIn {
 		track(posthog.SiteURLAdded(siteURLsFlag))
 	}
@@ -61,19 +59,35 @@ func Add(args []string, cfg config.Config, track posthog.Tracker) error {
 	return nil
 }
 
-func runAdd(cfg config.Config, siteURLsFlag domain.UrlsFlag, orgIDFlag, projectIDFlag string) (siteURLAddJSONOutput, error) {
-	if projectIDFlag == "" {
-		return siteURLAddJSONOutput{}, fmt.Errorf("project ID is required")
+func runAdd(cfg config.Config, newSiteURLs domain.UrlsFlag, orgID, projectID, tinaDir string) (siteURLAddJSONOutput, error) {
+	bothProvided := projectID != "" && orgID != ""
+	bothEmpty := projectID == "" && orgID == ""
+
+	if !bothProvided && !bothEmpty {
+		return siteURLAddJSONOutput{}, errors.New("misconfigured flag usage: either provide both --org-id and --project-id, or neither to default to your tinacloud.json")
 	}
 
-	if orgIDFlag == "" {
-		return siteURLAddJSONOutput{}, fmt.Errorf("organization ID is required")
+	if bothEmpty {
+		if cwd, err := os.Getwd(); err == nil {
+			if tinacloudConfig, err := domain.TinaCloudConfigFromDisk(cwd, tinaDir); err == nil {
+				projectID = tinacloudConfig.ProjectID
+				orgID = tinacloudConfig.OrgID
+			}
+		}
+
+		if projectID == "" {
+			return siteURLAddJSONOutput{}, errors.New("project ID is missing from the config; please re-run the configure command")
+		}
+
+		if orgID == "" {
+			return siteURLAddJSONOutput{}, errors.New("organization ID is missing from the config; please re-run the configure command")
+		}
 	}
 
-	if len(siteURLsFlag) == 0 {
+	if len(newSiteURLs) == 0 {
 		return siteURLAddJSONOutput{}, fmt.Errorf("must pass at least one site url")
 	}
-	newSiteURLs, err := utils.CleanSiteURLs(siteURLsFlag)
+	newSiteURLs, err := utils.CleanSiteURLs(newSiteURLs)
 	if err != nil {
 		return siteURLAddJSONOutput{}, fmt.Errorf("failed to parse site urls: %w", err)
 	}
@@ -86,39 +100,9 @@ func runAdd(cfg config.Config, siteURLsFlag domain.UrlsFlag, orgIDFlag, projectI
 		return siteURLAddJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
-	client := http.Client{}
-
-	var project domain.GetV2ProjectResponse
-	{
-		req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/apps/%s", cfg.TinaCloud.Endpoint, projectIDFlag), nil)
-		if err != nil {
-			return siteURLAddJSONOutput{}, fmt.Errorf("failed to initialize request: %w", err)
-		}
-		req.Header.Set("Authorization", "Bearer "+tokens.AccessToken)
-		req.Header.Set("Accept", "application/json")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			return siteURLAddJSONOutput{}, fmt.Errorf("failed to get projects: %w", err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode == http.StatusUnauthorized {
-			return siteURLAddJSONOutput{}, auth.ErrUnauthorized
-		}
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return siteURLAddJSONOutput{}, fmt.Errorf("failed to read get projects response: %w", err)
-		}
-
-		if resp.StatusCode > 299 {
-			return siteURLAddJSONOutput{}, fmt.Errorf("failed to get projects. received response status of '%d': %s", resp.StatusCode, string(body))
-		}
-
-		if err := json.Unmarshal(body, &project); err != nil {
-			return siteURLAddJSONOutput{}, fmt.Errorf("failed to unmarshal project from get request: %w", err)
-		}
+	project, err := requests.GetProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, projectID)
+	if err != nil {
+		return siteURLAddJSONOutput{}, err
 	}
 
 	siteURLs := append(strings.Split(project.SiteURLs, ","), newSiteURLs...)
@@ -139,46 +123,19 @@ func runAdd(cfg config.Config, siteURLsFlag domain.UrlsFlag, orgIDFlag, projectI
 		uniqueSiteURLs = append(uniqueSiteURLs, value)
 	}
 
-	{
-		putBody, err := json.Marshal(domain.PutV2ProjectBody{
-			Name:              project.Name,
-			RepoURL:           project.RepoURL,
-			InstallationID:    project.InstallationID,
-			PathToTina:        project.PathToTina,
-			ProtectedBranches: project.ProtectedBranches,
-			Features:          project.Features,
-			SiteURL:           strings.Join(uniqueSiteURLs, ","),
-		})
-		if err != nil {
-			return siteURLAddJSONOutput{}, fmt.Errorf("failed to marshal request body: %w", err)
-		}
+	body := domain.PutV2ProjectBody{
+		Name:              project.Name,
+		RepoURL:           project.RepoURL,
+		InstallationID:    project.InstallationID,
+		PathToTina:        project.PathToTina,
+		ProtectedBranches: project.ProtectedBranches,
+		Features:          project.Features,
+		SiteURL:           strings.Join(uniqueSiteURLs, ","),
+	}
 
-		req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/v2/organizations/%s/apps/%s", cfg.TinaCloud.Endpoint, orgIDFlag, projectIDFlag), bytes.NewBuffer(putBody))
-		if err != nil {
-			return siteURLAddJSONOutput{}, fmt.Errorf("failed to initialize request: %w", err)
-		}
-		req.Header.Set("Authorization", "Bearer "+tokens.AccessToken)
-		req.Header.Set("Accept", "application/json")
-		req.Header.Set("Content-Type", "application/json")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			return siteURLAddJSONOutput{}, fmt.Errorf("failed to update project: %w", err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode == http.StatusUnauthorized {
-			return siteURLAddJSONOutput{}, auth.ErrUnauthorized
-		}
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return siteURLAddJSONOutput{}, fmt.Errorf("failed to read update project response: %w", err)
-		}
-
-		if resp.StatusCode > 299 {
-			return siteURLAddJSONOutput{}, fmt.Errorf("failed to update project. received response status of '%d': %s", resp.StatusCode, string(body))
-		}
+	err = requests.PutProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, projectID, body)
+	if err != nil {
+		return siteURLAddJSONOutput{}, err
 	}
 
 	return siteURLAddJSONOutput{

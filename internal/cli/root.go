@@ -43,7 +43,7 @@ func (s *State) Root() error {
 	case "project":
 		return project.Project(subargs, s.config, s.Track)
 	case "configure":
-		return configure.Configure(subargs, s.Track)
+		return configure.Configure(subargs, s.config, s.Track)
 	default:
 		return fmt.Errorf("unrecognised command: %q", cmd)
 	}

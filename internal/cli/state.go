@@ -49,8 +49,8 @@ func New(ctx context.Context) (*State, error) {
 func distinctID() string {
 	if tokens, err := auth.PeekTokens(); err == nil {
 		if claims, err := auth.DecodeAccessToken(tokens.AccessToken); err == nil {
-			if claims.TinaCloudClientID != "" {
-				return claims.TinaCloudClientID
+			if claims.TinaCloudUserID != "" {
+				return claims.TinaCloudUserID
 			}
 			if claims.Subject != "" {
 				return claims.Subject
