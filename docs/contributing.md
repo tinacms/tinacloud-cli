@@ -1,7 +1,7 @@
 # Contributing guide
 
 ## Pre-commit / PR
-Before commiting / creating a PR, it's highly advised to run some pre-check
+Before committing / creating a PR, it's highly advised to run some pre-check
 commands:
 - Ensure the code is formatted: `make fmt`
 - Scan for known security issues: `make security` - while `gosec` can flag
