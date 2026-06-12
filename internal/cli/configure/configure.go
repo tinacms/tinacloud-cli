@@ -65,8 +65,7 @@ func runConfigure(cfg config.Config, cwd, orgID, projectID, tinaDir string, load
 		if orgID == "" || projectID == "" {
 			return false, fmt.Errorf("both --org-id and --project-id must be passed")
 		}
-		track(posthog.UserConfigured(posthog.ConfigMethodManualSelect))
-		return true, domain.SaveTinaCloudConfig(cwd, tinaDir, orgID, projectID)
+		return saveAndTrack(cwd, tinaDir, orgID, projectID, posthog.ConfigMethodManualSelect, track)
 	}
 
 	tokens, err := loadTokens(cfg)
@@ -110,8 +109,7 @@ func runConfigure(cfg config.Config, cwd, orgID, projectID, tinaDir string, load
 		}
 
 		if confirmed {
-			track(posthog.UserConfigured(posthog.ConfigMethodOnlyOneProject))
-			return true, domain.SaveTinaCloudConfig(cwd, tinaDir, org.ID, project.ID)
+			return saveAndTrack(cwd, tinaDir, org.ID, project.ID, posthog.ConfigMethodOnlyOneProject, track)
 		}
 		return false, nil
 	}
@@ -133,8 +131,7 @@ func runConfigure(cfg config.Config, cwd, orgID, projectID, tinaDir string, load
 			}
 
 			if confirmed {
-				track(posthog.UserConfigured(posthog.ConfigMethodAutoDetect))
-				return true, domain.SaveTinaCloudConfig(cwd, tinaDir, option.org.ID, option.project.ID)
+				return saveAndTrack(cwd, tinaDir, option.org.ID, option.project.ID, posthog.ConfigMethodAutoDetect, track)
 			}
 			continue
 		}
@@ -163,11 +160,21 @@ func runConfigure(cfg config.Config, cwd, orgID, projectID, tinaDir string, load
 	}
 
 	if confirmed {
-		track(posthog.UserConfigured(posthog.ConfigMethodManualSelect))
-		return true, domain.SaveTinaCloudConfig(cwd, tinaDir, org.ID, project.ID)
+		return saveAndTrack(cwd, tinaDir, org.ID, project.ID, posthog.ConfigMethodManualSelect, track)
 	}
 
 	return false, nil
+}
+
+// saveAndTrack writes the tinacloud config and reports the
+// user-configured event only after the save has succeeded.
+func saveAndTrack(cwd, tinaDir, orgID, projectID, method string, track posthog.Tracker) (bool, error) {
+	if err := domain.SaveTinaCloudConfig(cwd, tinaDir, orgID, projectID); err != nil {
+		return false, err
+	}
+
+	track(posthog.UserConfigured(method))
+	return true, nil
 }
 
 func confirmPrompt(prompt string) (bool, error) {

@@ -66,8 +66,9 @@ func (s *State) Root(version string) error {
 }
 
 // commandPath reduces the invocation to its command and subcommand
-// (e.g. "project list"), excluding flag values so user-supplied data
-// never reaches telemetry.
+// (e.g. "project list") so the property stays low-cardinality; flag
+// values are deliberately excluded here (full argv is reported
+// separately on command failures).
 func commandPath(args []string) string {
 	parts := make([]string, 0, 2)
 	for _, arg := range args {
