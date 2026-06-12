@@ -1,5 +1,7 @@
 NAME	= tinacloud-cli
 CMD		= ./cmd/$(NAME)
+VERSION	= $(shell cat .version)
+FLAGS	= -ldflags="-X main.version=$(VERSION)"
 
 ifeq ($(OS),Windows_NT)
 	BINARY_NAME	= $(NAME).exe
@@ -24,10 +26,10 @@ fmt-ci:
 	@test -z "$$(gofmt -l .)" || (echo "Files need formatting (run 'make fmt'):" && gofmt -l . && exit 1)
 
 build: fmt security vet test
-	go build -o ./build/$(BINARY_NAME) $(CMD)
+	go build $(FLAGS) -o ./build/$(BINARY_NAME) $(CMD)
 
 build-ci:
-	go build -o ./build/$(BINARY_NAME) $(CMD)
+	go build $(FLAGS) -o ./build/$(BINARY_NAME) $(CMD)
 
 run:
 	$(LOAD_ENV) go run $(CMD) $(ARGS)

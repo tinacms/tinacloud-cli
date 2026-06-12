@@ -7,6 +7,8 @@ import (
 	"tina.io/tinacloud-cli/internal/cli"
 )
 
+var version = "undefined"
+
 func main() {
 	ctx := context.Background()
 
@@ -15,7 +17,7 @@ func main() {
 		log.Fatalf("failed to create cli state: %v", err)
 	}
 
-	rootErr := state.Root()
+	rootErr := state.Root(version)
 
 	if err := state.Close(); err != nil {
 		log.Fatalf("failed to destroy cli state: %v", err)
