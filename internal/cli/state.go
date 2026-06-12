@@ -48,8 +48,13 @@ func New(ctx context.Context) (*State, error) {
 // usage is not trackable across runs.
 func distinctID() string {
 	if tokens, err := auth.PeekTokens(); err == nil {
-		if claims, err := auth.DecodeAccessToken(tokens.AccessToken); err == nil && claims.TinaCloudClientID != "" {
-			return claims.TinaCloudClientID
+		if claims, err := auth.DecodeAccessToken(tokens.AccessToken); err == nil {
+			if claims.TinaCloudClientID != "" {
+				return claims.TinaCloudClientID
+			}
+			if claims.Subject != "" {
+				return claims.Subject
+			}
 		}
 	}
 
