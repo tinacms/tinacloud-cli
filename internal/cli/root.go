@@ -12,7 +12,7 @@ import (
 	"tina.io/tinacloud-cli/internal/command"
 )
 
-func (s *State) Root() error {
+func (s *State) Root(version string) error {
 	flagSet := flag.NewFlagSet("tinacloud-cli", flag.ExitOnError)
 	flagSet.Usage = func() {
 		command.PrintSubCommands(os.Stderr, "tinacloud-cli", []command.SubCommand{
@@ -21,10 +21,19 @@ func (s *State) Root() error {
 			{Name: "project", Description: "Interact with projects"},
 			{Name: "configure", Description: "Configure a local Tina project"},
 		})
+		fmt.Fprint(os.Stderr, "\nFlags:\n")
 		flagSet.PrintDefaults()
 	}
 
+	versionFlag := flagSet.Bool("version", false, "Print the current installed version")
+	flagSet.BoolVar(versionFlag, "v", false, "Alias of -version")
 	_ = flagSet.Parse(os.Args[1:])
+
+	if *versionFlag {
+		fmt.Println(version)
+		return nil
+	}
+
 	args := flagSet.Args()
 	if len(args) == 0 {
 		flagSet.Usage()
