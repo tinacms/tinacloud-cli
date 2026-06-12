@@ -23,12 +23,11 @@ const (
 	ConfigMethodOnlyOneProject string = "only-one-project"
 )
 
-func CLIStarted(command, version string) ph.Capture {
+func CLIStarted(command string) ph.Capture {
 	return ph.Capture{
 		Event: CLIStartedEvent,
 		Properties: ph.NewProperties().
-			Set("command", command).
-			Set("version", version),
+			Set("command", command),
 	}
 }
 
