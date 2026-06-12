@@ -35,18 +35,25 @@ func (s *State) Root() error {
 	}
 
 	cmd, subargs := args[0], args[1:]
+	var err error
 	switch cmd {
 	case "auth":
-		return auth.Auth(subargs, s.config, s.Track)
+		err = auth.Auth(subargs, s.config, s.Track)
 	case "org":
-		return org.Org(subargs, s.config)
+		err = org.Org(subargs, s.config)
 	case "project":
-		return project.Project(subargs, s.config, s.Track)
+		err = project.Project(subargs, s.config, s.Track)
 	case "configure":
-		return configure.Configure(subargs, s.config, s.Track)
+		err = configure.Configure(subargs, s.config, s.Track)
 	default:
-		return fmt.Errorf("unrecognised command: %q", cmd)
+		err = fmt.Errorf("unrecognised command: %q", cmd)
 	}
+
+	if err != nil {
+		s.Track(events.CommandFailed(commandPath(args), err.Error(), args))
+	}
+
+	return err
 }
 
 // commandPath reduces the invocation to its command and subcommand

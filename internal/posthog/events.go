@@ -15,6 +15,7 @@ const (
 	SiteURLRemovedEvent         string = "tinacloud-cli-site-url-removed"
 	ProtectedBranchAddedEvent   string = "tinacloud-cli-protected-branch-added"
 	ProtectedBranchRemovedEvent string = "tinacloud-cli-protected-branch-removed"
+	CommandFailedEvent          string = "tinacloud-cli-command-failed"
 )
 
 const (
@@ -22,6 +23,16 @@ const (
 	ConfigMethodAutoDetect     string = "auto-detect"
 	ConfigMethodOnlyOneProject string = "only-one-project"
 )
+
+func CommandFailed(command, errMsg string, args []string) ph.Capture {
+	return ph.Capture{
+		Event: CommandFailedEvent,
+		Properties: ph.NewProperties().
+			Set("command", command).
+			Set("error", errMsg).
+			Set("args", args),
+	}
+}
 
 func CLIStarted(command string) ph.Capture {
 	return ph.Capture{
