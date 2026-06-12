@@ -80,6 +80,116 @@ func TestPeekTokens(t *testing.T) {
 	})
 }
 
+func TestSaveAndClearTokens(t *testing.T) {
+	tokenPath := tokenCachePath(t)
+
+	want := TokenCache{AccessToken: "access-1", RefreshToken: "refresh-1"}
+	if err := SaveTokens(want); err != nil {
+		t.Fatalf("SaveTokens() = %v, want nil error", err)
+	}
+
+	got, err := PeekTokens()
+	if err != nil {
+		t.Fatalf("PeekTokens() = %v, want nil error", err)
+	}
+	if got.AccessToken != want.AccessToken || got.RefreshToken != want.RefreshToken {
+		t.Errorf("PeekTokens() = %+v, want %+v", got, want)
+	}
+
+	if err := ClearTokens(); err != nil {
+		t.Fatalf("ClearTokens() = %v, want nil error", err)
+	}
+	if _, err := os.Stat(tokenPath); !os.IsNotExist(err) {
+		t.Errorf("os.Stat(%q) = %v, want not-exist error", tokenPath, err)
+	}
+
+	// ClearTokens is idempotent: removing an absent file is not an error.
+	if err := ClearTokens(); err != nil {
+		t.Errorf("ClearTokens() on missing file = %v, want nil error", err)
+	}
+}
+
+func TestTokensFromCache(t *testing.T) {
+	t.Run("returns unexpired tokens without refreshing", func(t *testing.T) {
+		tokenPath := tokenCachePath(t)
+		future := time.Now().Add(time.Hour).UTC().Format(time.RFC3339)
+		seedTokenCache(t, tokenPath, `{"access_token":"access-1","refresh_token":"refresh-1","expires_at":"`+future+`"}`)
+
+		// Endpoint points nowhere reachable; an unwanted refresh would fail.
+		cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: "http://127.0.0.1:1"}}
+		tokens, err := TokensFromCache(cfg)
+		if err != nil {
+			t.Fatalf("TokensFromCache() = %v, want nil error", err)
+		}
+		if tokens.AccessToken != "access-1" {
+			t.Errorf("AccessToken = %q, want %q", tokens.AccessToken, "access-1")
+		}
+	})
+
+	t.Run("refreshes expired tokens and saves the result", func(t *testing.T) {
+		tokenPath := tokenCachePath(t)
+		expired := time.Now().Add(-time.Hour).UTC().Format(time.RFC3339)
+		seedTokenCache(t, tokenPath, `{"access_token":"old-access","refresh_token":"refresh-1","expires_at":"`+expired+`"}`)
+
+		var gotPath, gotGrant, gotRefresh string
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			gotPath = r.URL.Path
+			gotGrant = r.PostFormValue("grant_type")
+			gotRefresh = r.PostFormValue("refresh_token")
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"id_token":"new-id","access_token":"new-access","token_type":"Bearer","expires_in":3600}`))
+		}))
+		defer server.Close()
+
+		cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: server.URL}}
+		tokens, err := TokensFromCache(cfg)
+		if err != nil {
+			t.Fatalf("TokensFromCache() = %v, want nil error", err)
+		}
+		if gotPath != "/oauth/token" {
+			t.Errorf("request path = %q, want %q", gotPath, "/oauth/token")
+		}
+		if gotGrant != "refresh_token" {
+			t.Errorf("grant_type = %q, want %q", gotGrant, "refresh_token")
+		}
+		if gotRefresh != "refresh-1" {
+			t.Errorf("refresh_token = %q, want %q", gotRefresh, "refresh-1")
+		}
+		if tokens.AccessToken != "new-access" {
+			t.Errorf("AccessToken = %q, want %q", tokens.AccessToken, "new-access")
+		}
+		// The refresh token is preserved from the cache, not the response.
+		if tokens.RefreshToken != "refresh-1" {
+			t.Errorf("RefreshToken = %q, want %q", tokens.RefreshToken, "refresh-1")
+		}
+
+		// The refreshed tokens are persisted back to the cache.
+		saved, err := PeekTokens()
+		if err != nil {
+			t.Fatalf("PeekTokens() = %v, want nil error", err)
+		}
+		if saved.AccessToken != "new-access" {
+			t.Errorf("persisted AccessToken = %q, want %q", saved.AccessToken, "new-access")
+		}
+	})
+
+	t.Run("returns ErrUnauthorized when refresh is rejected", func(t *testing.T) {
+		tokenPath := tokenCachePath(t)
+		expired := time.Now().Add(-time.Hour).UTC().Format(time.RFC3339)
+		seedTokenCache(t, tokenPath, `{"access_token":"old-access","refresh_token":"refresh-1","expires_at":"`+expired+`"}`)
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusUnauthorized)
+		}))
+		defer server.Close()
+
+		cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: server.URL}}
+		if _, err := TokensFromCache(cfg); !errors.Is(err, ErrUnauthorized) {
+			t.Fatalf("TokensFromCache() = %v, want ErrUnauthorized", err)
+		}
+	})
+}
+
 func TestRevokeToken(t *testing.T) {
 	t.Run("posts refresh token to revoke endpoint", func(t *testing.T) {
 		var gotPath, gotToken string
