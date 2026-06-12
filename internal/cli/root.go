@@ -26,6 +26,7 @@ func (s *State) Root(version string) error {
 	}
 
 	versionFlag := flagSet.Bool("version", false, "Print the current installed version")
+	flagSet.BoolVar(versionFlag, "v", false, "Alias of -version")
 	_ = flagSet.Parse(os.Args[1:])
 
 	if *versionFlag {
