@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path"
 )
@@ -48,22 +49,20 @@ func SaveTinaCloudConfig(cwd, tinaDir, orgID, projectID string) error {
 }
 
 // It is up to the caller to validate whether the tokens within the struct are
-// valid
+// valid.
 func TinaCloudConfigFromDisk(cwd, tinaDir string) (TinaCloudConfig, error) {
 	file, err := os.OpenInRoot(path.Join(cwd, tinaDir), TinaCloudConfigFileName)
 	if err != nil {
 		return TinaCloudConfig{}, fmt.Errorf("failed to open tinacloud config: %w", err)
 	}
 
-	const bufSize int = 10240 // 10KB
-	buf := make([]byte, bufSize)
-	bytes, err := file.Read(buf)
+	bytes, err := io.ReadAll(file)
 	if err != nil {
 		return TinaCloudConfig{}, fmt.Errorf("failed to read tinacloud tokens: %w", err)
 	}
 
 	var config TinaCloudConfig
-	err = json.Unmarshal(buf[:bytes], &config)
+	err = json.Unmarshal(bytes, &config)
 	if err != nil {
 		return TinaCloudConfig{}, fmt.Errorf("failed to parse tinacloud config")
 	}
