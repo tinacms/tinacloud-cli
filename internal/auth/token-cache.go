@@ -79,9 +79,6 @@ func PeekTokens() (TokenCache, error) {
 
 	bytes, err := io.ReadAll(file)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return TokenCache{}, ErrUnauthenticated
-		}
 		return TokenCache{}, fmt.Errorf("failed to read token cache: %w", err)
 	}
 
