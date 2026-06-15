@@ -1,0 +1,122 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: 'Version bump type'
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release-it:
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      # using an app token to ensure the release publishes events
+      - name: Generate a token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: generate-token
+        with:
+          # uses https://github.com/organizations/tinacms/settings/apps/release-bot-allow-prs-and-push
+          client-id: ${{ secrets.BOT_CLIENT_ID }}
+          private-key: ${{ secrets.BOT_APP_SECRET }}
+
+      - name: Checkout code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+          fetch-depth: 0
+          fetch-tags: true
+          ref: ${{ github.ref_name }}
+
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+
+      - name: Setup git credentials
+        run: |
+          git config --global user.email "bot@tina.io"
+          git config --global user.name "Tina Release Bot"
+
+      - name: Determine next version
+        id: version
+        run: |
+          CURRENT_RELEASE="$(tr -d '[:space:]' < .version)"
+
+          if [[ ! "$CURRENT_RELEASE" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "Invalid .version: $CURRENT_RELEASE"
+            exit 1
+          fi
+
+          MAJOR="${BASH_REMATCH[1]}"
+          MINOR="${BASH_REMATCH[2]}"
+          PATCH="${BASH_REMATCH[3]}"
+
+          case "${{ inputs.version_bump }}" in
+            major)
+              NEXT_RELEASE="v$((MAJOR + 1)).0.0"
+              ;;
+            minor)
+              NEXT_RELEASE="v${MAJOR}.$((MINOR + 1)).0"
+              ;;
+            patch)
+              NEXT_RELEASE="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+              ;;
+            *)
+              echo "Invalid version_bump: ${{ inputs.version_bump }}"
+              exit 1
+              ;;
+          esac
+
+          echo "last_release=$CURRENT_RELEASE" >> "$GITHUB_OUTPUT"
+          echo "next_release=$NEXT_RELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Update version in .version
+        run: |
+          if git rev-parse "refs/tags/$NEXT_RELEASE" >/dev/null 2>&1; then
+            echo "Tag already exists: $NEXT_RELEASE"
+            exit 1
+          fi
+          echo "$NEXT_RELEASE" > .version
+          git add .version
+          git commit -m "chore: release $NEXT_RELEASE [skip ci]"
+        env:
+          NEXT_RELEASE: ${{ steps.version.outputs.next_release }}
+
+      - name: Package release assets
+        run: make package
+
+      - name: Push commit
+        id: push
+        run: |
+          git push origin HEAD:${{ github.ref_name }}
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Create release
+        run: |
+          gh release create "$NEW_TAG" build/*.tar.gz build/*.zip \
+            --target "${{ steps.push.outputs.sha }}" \
+            --title "Release $NEW_TAG" \
+            --generate-notes \
+            --latest=true
+
+          echo "### New release" >> "$GITHUB_STEP_SUMMARY"
+          echo "Version: ${{ steps.version.outputs.next_release }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Release URL: <https://github.com/${{ github.repository }}/releases/tag/$NEW_TAG>" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+          NEW_TAG: ${{ steps.version.outputs.next_release }}

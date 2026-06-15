@@ -2,6 +2,7 @@ NAME	= tinacloud-cli
 CMD		= ./cmd/$(NAME)
 VERSION	= $(shell cat .version)
 FLAGS	= -ldflags="-X main.version=$(VERSION)"
+RELEASE_FLAGS = -trimpath -buildvcs=false -ldflags="-s -w -X main.version=$(VERSION)"
 
 ifeq ($(OS),Windows_NT)
 	BINARY_NAME	= $(NAME).exe
@@ -15,7 +16,7 @@ else
 	CLEAN_BUILD = rm -rf ./build/*
 endif
 
-.PHONY: fmt fmt-ci build build-ci run security vet test clean
+.PHONY: fmt fmt-ci build build-ci package run security vet test clean
 
 all: build
 
@@ -30,6 +31,22 @@ build: fmt security vet test
 
 build-ci:
 	go build $(FLAGS) -o ./build/$(BINARY_NAME) $(CMD)
+
+package:
+	mkdir -p ./build/dist
+	env GOOS=darwin GOARCH=amd64 go build $(RELEASE_FLAGS) -o ./build/dist/$(NAME) $(CMD)
+	tar -czf ./build/$(NAME)-darwin-x86_64.tar.gz -C ./build/dist $(NAME)
+	env GOOS=darwin GOARCH=arm64 go build $(RELEASE_FLAGS) -o ./build/dist/$(NAME) $(CMD)
+	tar -czf ./build/$(NAME)-darwin-aarch64.tar.gz -C ./build/dist $(NAME)
+	env GOOS=linux GOARCH=amd64 go build $(RELEASE_FLAGS) -o ./build/dist/$(NAME) $(CMD)
+	tar -czf ./build/$(NAME)-linux-x86_64.tar.gz -C ./build/dist $(NAME)
+	env GOOS=linux GOARCH=arm64 go build $(RELEASE_FLAGS) -o ./build/dist/$(NAME) $(CMD)
+	tar -czf ./build/$(NAME)-linux-aarch64.tar.gz -C ./build/dist $(NAME)
+	env GOOS=windows GOARCH=amd64 go build $(RELEASE_FLAGS) -o ./build/dist/$(NAME).exe $(CMD)
+	zip -j ./build/$(NAME)-windows-x86_64.zip ./build/dist/$(NAME).exe
+	env GOOS=windows GOARCH=arm64 go build $(RELEASE_FLAGS) -o ./build/dist/$(NAME).exe $(CMD)
+	zip -j ./build/$(NAME)-windows-aarch64.zip ./build/dist/$(NAME).exe
+	rm -rf ./build/dist
 
 run:
 	$(LOAD_ENV) go run $(CMD) $(ARGS)
