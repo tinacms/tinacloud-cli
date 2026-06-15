@@ -70,15 +70,11 @@ func (s *State) Root(version string) error {
 // values are deliberately excluded here (full argv is reported
 // separately on command failures).
 func commandPath(args []string) string {
-	parts := make([]string, 0, 2)
-	for _, arg := range args {
-		if strings.HasPrefix(arg, "-") {
-			break
-		}
-		parts = append(parts, arg)
-		if len(parts) == 2 {
-			break
-		}
+	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
+		return ""
 	}
-	return strings.Join(parts, " ")
+	if len(args) == 1 || strings.HasPrefix(args[1], "-") {
+		return args[0]
+	}
+	return args[0] + " " + args[1]
 }

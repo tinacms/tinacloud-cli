@@ -52,9 +52,6 @@ func distinctID() string {
 			if claims.TinaCloudUserID != "" {
 				return claims.TinaCloudUserID
 			}
-			if claims.Subject != "" {
-				return claims.Subject
-			}
 		}
 	}
 
