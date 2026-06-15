@@ -11,6 +11,7 @@ import (
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/posthog"
 	"tina.io/tinacloud-cli/internal/requests"
 )
 
@@ -19,7 +20,7 @@ type createJSONOutput struct {
 	Project  domain.CreatedProject `json:"project"`
 }
 
-func Create(args []string, cfg config.Config) error {
+func Create(args []string, cfg config.Config, track posthog.Tracker) error {
 	flagSet := flag.NewFlagSet("projectcreate", flag.ExitOnError)
 	flagSet.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli project create [flags]")
@@ -37,6 +38,9 @@ func Create(args []string, cfg config.Config) error {
 	_ = flagSet.Parse(args)
 
 	out, err := runCreate(cfg, *orgIDFlag, *projectNameFlag, *repoURLFlag, *siteURLFlag, *tinaDirFlag)
+	if err == nil && out.LoggedIn {
+		track(posthog.ProjectCreated(out.Project.OrgID, out.Project.ProjectID, out.Project.Name, out.Project.RepoURL, out.Project.SiteURLs))
+	}
 	if *jsonFlag {
 		return command.WriteJSONResult(os.Stdout, out, err)
 	}

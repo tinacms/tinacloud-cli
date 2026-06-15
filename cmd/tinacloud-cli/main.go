@@ -16,13 +16,14 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to create cli state: %v", err)
 	}
-	defer func() {
-		if err := state.Close(); err != nil {
-			log.Fatalf("failed to destroy cli state: %v", err)
-		}
-	}()
 
-	if err := state.Root(version); err != nil {
-		log.Fatal(err)
+	rootErr := state.Root(version)
+
+	if err := state.Close(); err != nil {
+		log.Fatalf("failed to destroy cli state: %v", err)
+	}
+
+	if rootErr != nil {
+		log.Fatal(rootErr)
 	}
 }

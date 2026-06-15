@@ -9,9 +9,10 @@ import (
 	siteurl "tina.io/tinacloud-cli/internal/cli/project/update/site-url"
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
+	"tina.io/tinacloud-cli/internal/posthog"
 )
 
-func Update(args []string, cfg config.Config) error {
+func Update(args []string, cfg config.Config, track posthog.Tracker) error {
 	flagSet := flag.NewFlagSet("projectupdate", flag.ExitOnError)
 	flagSet.Usage = func() {
 		command.PrintSubCommands(os.Stderr, "tinacloud-cli project update", []command.SubCommand{
@@ -31,9 +32,9 @@ func Update(args []string, cfg config.Config) error {
 	cmd, subargs := args[0], args[1:]
 	switch cmd {
 	case "site-url":
-		return siteurl.SiteURL(subargs, cfg)
+		return siteurl.SiteURL(subargs, cfg, track)
 	case "protected-branch":
-		return protectedbranch.ProtectedBranch(subargs, cfg)
+		return protectedbranch.ProtectedBranch(subargs, cfg, track)
 	default:
 		return fmt.Errorf("unrecognized command %q", cmd)
 	}

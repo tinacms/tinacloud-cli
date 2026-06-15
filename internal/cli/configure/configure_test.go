@@ -9,9 +9,11 @@ import (
 	"strings"
 	"testing"
 
+	ph "github.com/posthog/posthog-go"
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/posthog"
 )
 
 // stubLoader returns a TokenLoader that yields the given tokens and error.
@@ -88,7 +90,7 @@ func TestRunConfigureFlags(t *testing.T) {
 			return auth.TokenCache{}, errors.New("unexpected")
 		}
 
-		saved, err := runConfigure(config.Config{}, cwd, "org-1", "project-1", "tina", loader)
+		saved, err := runConfigure(config.Config{}, cwd, "org-1", "project-1", "tina", loader, posthog.NoopTracker)
 		if err != nil {
 			t.Fatalf("runConfigure() = %v, want nil error", err)
 		}
@@ -106,7 +108,7 @@ func TestRunConfigureFlags(t *testing.T) {
 	})
 
 	t.Run("errors when only one id is passed", func(t *testing.T) {
-		saved, err := runConfigure(config.Config{}, t.TempDir(), "org-1", "", "tina", stubLoader(auth.TokenCache{}, nil))
+		saved, err := runConfigure(config.Config{}, t.TempDir(), "org-1", "", "tina", stubLoader(auth.TokenCache{}, nil), posthog.NoopTracker)
 		if err == nil {
 			t.Fatal("runConfigure() = nil error, want error")
 		}
@@ -117,13 +119,54 @@ func TestRunConfigureFlags(t *testing.T) {
 }
 
 func TestRunConfigureUnauthenticated(t *testing.T) {
-	saved, err := runConfigure(config.Config{}, t.TempDir(), "", "", "tina", stubLoader(auth.TokenCache{}, auth.ErrUnauthenticated))
+	saved, err := runConfigure(config.Config{}, t.TempDir(), "", "", "tina", stubLoader(auth.TokenCache{}, auth.ErrUnauthenticated), posthog.NoopTracker)
 	if !errors.Is(err, auth.ErrUnauthenticated) {
 		t.Fatalf("runConfigure() = %v, want ErrUnauthenticated", err)
 	}
 	if saved {
 		t.Error("runConfigure() saved = true, want false")
 	}
+}
+
+// TestRunConfigureTracking verifies the event is emitted only after a successful save.
+func TestRunConfigureTracking(t *testing.T) {
+	t.Run("emits user-configured after a successful save", func(t *testing.T) {
+		cwd := t.TempDir()
+		if err := os.Mkdir(path.Join(cwd, "tina"), 0700); err != nil {
+			t.Fatalf("Mkdir: %v", err)
+		}
+
+		var got []ph.Capture
+		track := func(c ph.Capture) { got = append(got, c) }
+
+		if _, err := runConfigure(config.Config{}, cwd, "org-1", "project-1", "tina", nil, track); err != nil {
+			t.Fatalf("runConfigure() = %v, want nil error", err)
+		}
+
+		if len(got) != 1 {
+			t.Fatalf("tracked %d events, want 1", len(got))
+		}
+		if got[0].Event != posthog.UserConfiguredEvent {
+			t.Errorf("event = %q, want %q", got[0].Event, posthog.UserConfiguredEvent)
+		}
+		if method := got[0].Properties["configuration_method"]; method != posthog.ConfigMethodManualSelect {
+			t.Errorf("configuration_method = %v, want %q", method, posthog.ConfigMethodManualSelect)
+		}
+	})
+
+	t.Run("does not emit when the save fails", func(t *testing.T) {
+		// A missing tina dir makes the save fail, so nothing should be tracked.
+		var got []ph.Capture
+		track := func(c ph.Capture) { got = append(got, c) }
+
+		if _, err := runConfigure(config.Config{}, t.TempDir(), "org-1", "project-1", "tina", nil, track); err == nil {
+			t.Fatal("runConfigure() = nil error, want error")
+		}
+
+		if len(got) != 0 {
+			t.Errorf("tracked %d events, want 0", len(got))
+		}
+	})
 }
 
 func TestRunConfigureBackend(t *testing.T) {
@@ -134,7 +177,7 @@ func TestRunConfigureBackend(t *testing.T) {
 		defer server.Close()
 
 		cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: server.URL}}
-		if _, err := runConfigure(cfg, t.TempDir(), "", "", "tina", stubLoader(auth.TokenCache{AccessToken: "tok"}, nil)); err == nil {
+		if _, err := runConfigure(cfg, t.TempDir(), "", "", "tina", stubLoader(auth.TokenCache{AccessToken: "tok"}, nil), posthog.NoopTracker); err == nil {
 			t.Fatal("runConfigure() = nil error, want error")
 		}
 	})
@@ -153,7 +196,7 @@ func TestRunConfigureBackend(t *testing.T) {
 		defer server.Close()
 
 		cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: server.URL}}
-		_, err := runConfigure(cfg, t.TempDir(), "", "", "tina", stubLoader(auth.TokenCache{AccessToken: "tok"}, nil))
+		_, err := runConfigure(cfg, t.TempDir(), "", "", "tina", stubLoader(auth.TokenCache{AccessToken: "tok"}, nil), posthog.NoopTracker)
 		if err == nil || !strings.Contains(err.Error(), "account has no projects") {
 			t.Fatalf("runConfigure() = %v, want \"account has no projects\" error", err)
 		}

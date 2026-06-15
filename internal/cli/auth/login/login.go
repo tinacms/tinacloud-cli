@@ -21,6 +21,7 @@ import (
 	"tina.io/tinacloud-cli/internal/browser"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/posthog"
 )
 
 func generateVerifier() (string, error) {
@@ -55,7 +56,7 @@ func callbackPort() (int, error) {
 	return port, nil
 }
 
-func Login(args []string, cfg config.Config) error {
+func Login(args []string, cfg config.Config, track posthog.Tracker, identify posthog.Identifier) error {
 	flagSet := flag.NewFlagSet("login", flag.ExitOnError)
 	flagSet.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli auth login")
@@ -63,10 +64,10 @@ func Login(args []string, cfg config.Config) error {
 	}
 	_ = flagSet.Parse(args)
 
-	return runLogin(cfg, browser.OpenURL)
+	return runLogin(cfg, browser.OpenURL, track, identify)
 }
 
-func runLogin(cfg config.Config, openURL func(string) error) error {
+func runLogin(cfg config.Config, openURL func(string) error, track posthog.Tracker, identify posthog.Identifier) error {
 	verifier, err := generateVerifier()
 	if err != nil {
 		return fmt.Errorf("failed to generate verifier code: %w", err)
@@ -102,6 +103,7 @@ func runLogin(cfg config.Config, openURL func(string) error) error {
 
 		// User can copy string from terminal if this fails
 		_ = openURL(redirectURL)
+		track(posthog.UserSignInInitiated())
 
 		fmt.Printf(`TinaCloud SSO login required.
 Attempting to open your default browser. If the browser does not open, open the following URL.
@@ -204,6 +206,13 @@ Attempting to open your default browser. If the browser does not open, open the 
 	if err != nil {
 		return fmt.Errorf("failed to save tokens to file: %w", err)
 	}
+
+	// Attribute the pre-login sign-in events to the now-authenticated user (best-effort).
+	if claims, err := auth.DecodeAccessToken(tokens.AccessToken); err == nil {
+		identify(claims.TinaCloudUserID)
+	}
+
+	track(posthog.UserSignInSuccess())
 
 	fmt.Println("Successfully logged into your TinaCloud account!")
 

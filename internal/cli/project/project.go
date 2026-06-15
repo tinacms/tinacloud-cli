@@ -11,9 +11,10 @@ import (
 	"tina.io/tinacloud-cli/internal/cli/project/update"
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
+	"tina.io/tinacloud-cli/internal/posthog"
 )
 
-func Project(args []string, cfg config.Config) error {
+func Project(args []string, cfg config.Config, track posthog.Tracker) error {
 	flagSet := flag.NewFlagSet("project", flag.ExitOnError)
 	flagSet.Usage = func() {
 		command.PrintSubCommands(os.Stderr, "tinacloud-cli project", []command.SubCommand{
@@ -37,11 +38,11 @@ func Project(args []string, cfg config.Config) error {
 	case "list":
 		return list.List(subargs, cfg)
 	case "create":
-		return create.Create(subargs, cfg)
+		return create.Create(subargs, cfg, track)
 	case "status":
 		return status.Status(subargs, cfg)
 	case "update":
-		return update.Update(subargs, cfg)
+		return update.Update(subargs, cfg, track)
 	default:
 		return fmt.Errorf("unrecognized command %q", cmd)
 	}

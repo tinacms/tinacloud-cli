@@ -14,6 +14,7 @@ import (
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/posthog"
 	"tina.io/tinacloud-cli/internal/requests"
 )
 
@@ -22,7 +23,7 @@ type projectOption struct {
 	org     domain.Organization
 }
 
-func Configure(args []string, cfg config.Config) error {
+func Configure(args []string, cfg config.Config, track posthog.Tracker) error {
 	flagSet := flag.NewFlagSet("configure", flag.ExitOnError)
 	flagSet.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli configure [flags]")
@@ -41,7 +42,7 @@ func Configure(args []string, cfg config.Config) error {
 		return fmt.Errorf("failed to get current directory: %w", err)
 	}
 
-	saved, err := runConfigure(cfg, cwd, *orgIDFlag, *projectIDFlag, *tinaDirFlag, auth.TokensFromCache)
+	saved, err := runConfigure(cfg, cwd, *orgIDFlag, *projectIDFlag, *tinaDirFlag, auth.TokensFromCache, track)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
 			fmt.Println("You are not currently logged in")
@@ -59,12 +60,12 @@ func Configure(args []string, cfg config.Config) error {
 	return nil
 }
 
-func runConfigure(cfg config.Config, cwd, orgID, projectID, tinaDir string, loadTokens auth.TokenLoader) (bool, error) {
+func runConfigure(cfg config.Config, cwd, orgID, projectID, tinaDir string, loadTokens auth.TokenLoader, track posthog.Tracker) (bool, error) {
 	if orgID != "" || projectID != "" {
 		if orgID == "" || projectID == "" {
 			return false, fmt.Errorf("both --org-id and --project-id must be passed")
 		}
-		return true, domain.SaveTinaCloudConfig(cwd, tinaDir, orgID, projectID)
+		return saveAndTrack(cwd, tinaDir, orgID, projectID, posthog.ConfigMethodManualSelect, track)
 	}
 
 	tokens, err := loadTokens(cfg)
@@ -108,7 +109,7 @@ func runConfigure(cfg config.Config, cwd, orgID, projectID, tinaDir string, load
 		}
 
 		if confirmed {
-			return true, domain.SaveTinaCloudConfig(cwd, tinaDir, org.ID, project.ID)
+			return saveAndTrack(cwd, tinaDir, org.ID, project.ID, posthog.ConfigMethodOnlyOneProject, track)
 		}
 		return false, nil
 	}
@@ -130,7 +131,7 @@ func runConfigure(cfg config.Config, cwd, orgID, projectID, tinaDir string, load
 			}
 
 			if confirmed {
-				return true, domain.SaveTinaCloudConfig(cwd, tinaDir, option.org.ID, option.project.ID)
+				return saveAndTrack(cwd, tinaDir, option.org.ID, option.project.ID, posthog.ConfigMethodAutoDetect, track)
 			}
 			continue
 		}
@@ -159,10 +160,20 @@ func runConfigure(cfg config.Config, cwd, orgID, projectID, tinaDir string, load
 	}
 
 	if confirmed {
-		return true, domain.SaveTinaCloudConfig(cwd, tinaDir, org.ID, project.ID)
+		return saveAndTrack(cwd, tinaDir, org.ID, project.ID, posthog.ConfigMethodManualSelect, track)
 	}
 
 	return false, nil
+}
+
+// saveAndTrack writes the config, then emits the user-configured event only on success.
+func saveAndTrack(cwd, tinaDir, orgID, projectID string, method posthog.ConfigMethod, track posthog.Tracker) (bool, error) {
+	if err := domain.SaveTinaCloudConfig(cwd, tinaDir, orgID, projectID); err != nil {
+		return false, err
+	}
+
+	track(posthog.UserConfigured(method))
+	return true, nil
 }
 
 func confirmPrompt(prompt string) (bool, error) {
