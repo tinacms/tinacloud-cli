@@ -59,11 +59,10 @@ func SaveTokens(tokens TokenCache) error {
 	return nil
 }
 
-// TokenLoader loads authentication tokens for commands that need a test double.
+// Load authentication tokens.
 type TokenLoader func(config.Config) (TokenCache, error)
 
-// PeekTokens reads the cached tokens as-is, without refreshing expired access
-// tokens. Use this when the tokens are about to be invalidated anyway (logout).
+// Read cached tokens without refreshing expired access tokens.
 func PeekTokens() (TokenCache, error) {
 	configPath, err := cachePath()
 	if err != nil {
@@ -78,18 +77,13 @@ func PeekTokens() (TokenCache, error) {
 		return TokenCache{}, fmt.Errorf("failed to read token cache as root: %w", err)
 	}
 
-	const bufSize int = 102400 // 100KB
-	buf := make([]byte, bufSize)
-	bytes, err := file.Read(buf)
+	bytes, err := io.ReadAll(file)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return TokenCache{}, ErrUnauthenticated
-		}
 		return TokenCache{}, fmt.Errorf("failed to read token cache: %w", err)
 	}
 
 	var tokens TokenCache
-	if err := json.Unmarshal(buf[:bytes], &tokens); err != nil {
+	if err := json.Unmarshal(bytes, &tokens); err != nil {
 		return TokenCache{}, fmt.Errorf("failed to parse token cache: %w", err)
 	}
 
