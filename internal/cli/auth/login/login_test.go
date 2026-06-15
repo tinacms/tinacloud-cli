@@ -21,8 +21,7 @@ import (
 	"tina.io/tinacloud-cli/internal/posthog"
 )
 
-// captureTracker records emitted telemetry events and identify calls for
-// assertions.
+// captureTracker records emitted events and identify calls for assertions.
 type captureTracker struct {
 	events     []ph.Capture
 	identified []string
@@ -42,9 +41,7 @@ func (c *captureTracker) count(event string) int {
 	return n
 }
 
-// fakeAccessToken is a JWT carrying fakeUserID so runLogin can decode it and
-// identify the user. ParseUnverified ignores the signature, so the secret is
-// irrelevant.
+// fakeAccessToken is a JWT carrying fakeUserID; the signature is unverified, so the secret is irrelevant.
 const fakeUserID = "user-abc"
 
 var fakeAccessToken = func() string {

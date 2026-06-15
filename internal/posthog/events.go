@@ -18,10 +18,13 @@ const (
 	CommandFailedEvent          string = "tinacloud-cli-command-failed"
 )
 
+// ConfigMethod describes how a project was chosen during configure.
+type ConfigMethod string
+
 const (
-	ConfigMethodManualSelect   string = "manual-select"
-	ConfigMethodAutoDetect     string = "auto-detect"
-	ConfigMethodOnlyOneProject string = "only-one-project"
+	ConfigMethodManualSelect   ConfigMethod = "manual-select"
+	ConfigMethodAutoDetect     ConfigMethod = "auto-detect"
+	ConfigMethodOnlyOneProject ConfigMethod = "only-one-project"
 )
 
 func CommandFailed(command, errMsg string, args []string) ph.Capture {
@@ -60,7 +63,7 @@ func UserLoggedOut() ph.Capture {
 	}
 }
 
-func UserConfigured(method string) ph.Capture {
+func UserConfigured(method ConfigMethod) ph.Capture {
 	return ph.Capture{
 		Event: UserConfiguredEvent,
 		Properties: ph.NewProperties().

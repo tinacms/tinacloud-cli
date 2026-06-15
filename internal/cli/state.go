@@ -39,8 +39,7 @@ func New(ctx context.Context) (*State, error) {
 		posthog: ph,
 	}
 
-	// Resolve the distinct ID only when telemetry will be sent; in dev mode or
-	// without an API key it is never used, so skip the token lookup entirely.
+	// Resolve the distinct ID only when telemetry is on; it is unused otherwise.
 	if state.telemetryEnabled() {
 		state.distinctID = resolveDistinctID()
 	}
@@ -48,9 +47,7 @@ func New(ctx context.Context) (*State, error) {
 	return state, nil
 }
 
-// resolveDistinctID returns the authenticated user's TinaCloud ID when
-// logged in; otherwise a random per-invocation ID, so unauthenticated
-// usage is not trackable across runs.
+// resolveDistinctID returns the logged-in user's TinaCloud ID, or a random per-invocation ID when anonymous.
 func resolveDistinctID() string {
 	if tokens, err := auth.PeekTokens(); err == nil {
 		if claims, err := auth.DecodeAccessToken(tokens.AccessToken); err == nil {
@@ -67,16 +64,11 @@ func resolveDistinctID() string {
 	return "anon-" + hex.EncodeToString(b)
 }
 
-// telemetryEnabled reports whether events should actually be sent: a PostHog
-// client must be configured and dev mode must be off.
 func (s *State) telemetryEnabled() bool {
 	return s.posthog != nil && !s.config.Core.Dev
 }
 
-// Track enqueues a telemetry event, attaching the persistent distinct
-// ID. It is a no-op in dev mode or when telemetry is disabled (no
-// PostHog API key) and never returns an error: telemetry must not
-// affect command flow.
+// Track enqueues a telemetry event with the distinct ID. No-op when telemetry is off; never errors so it can't affect command flow.
 func (s *State) Track(event posthog.Capture) {
 	if !s.telemetryEnabled() {
 		return
@@ -86,10 +78,7 @@ func (s *State) Track(event posthog.Capture) {
 	_ = s.posthog.Enqueue(event)
 }
 
-// Identify links the current anonymous distinct ID to the authenticated user,
-// so events emitted before login (e.g. sign-in) are attributed to them. Like
-// Track, it is a no-op in dev mode or when telemetry is disabled and never
-// returns an error.
+// Identify links the anonymous distinct ID to the authenticated user so pre-login events are attributed to them.
 func (s *State) Identify(userID string) {
 	if !s.telemetryEnabled() || userID == "" || userID == s.distinctID {
 		return

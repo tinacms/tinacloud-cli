@@ -166,9 +166,8 @@ func runConfigure(cfg config.Config, cwd, orgID, projectID, tinaDir string, load
 	return false, nil
 }
 
-// saveAndTrack writes the tinacloud config and reports the
-// user-configured event only after the save has succeeded.
-func saveAndTrack(cwd, tinaDir, orgID, projectID, method string, track posthog.Tracker) (bool, error) {
+// saveAndTrack writes the config, then emits the user-configured event only on success.
+func saveAndTrack(cwd, tinaDir, orgID, projectID string, method posthog.ConfigMethod, track posthog.Tracker) (bool, error) {
 	if err := domain.SaveTinaCloudConfig(cwd, tinaDir, orgID, projectID); err != nil {
 		return false, err
 	}

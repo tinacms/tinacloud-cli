@@ -207,9 +207,7 @@ Attempting to open your default browser. If the browser does not open, open the 
 		return fmt.Errorf("failed to save tokens to file: %w", err)
 	}
 
-	// Attribute the pre-login sign-in events (sent under the anonymous ID) to
-	// the now-authenticated user. Best-effort: a decode failure must not block
-	// login.
+	// Attribute the pre-login sign-in events to the now-authenticated user (best-effort).
 	if claims, err := auth.DecodeAccessToken(tokens.AccessToken); err == nil {
 		identify(claims.TinaCloudUserID)
 	}

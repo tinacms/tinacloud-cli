@@ -7,8 +7,7 @@ import (
 	"tina.io/tinacloud-cli/internal/config"
 )
 
-// captureClient records enqueued messages. It embeds posthog.Client so it only
-// has to implement Enqueue; Track and Identify call nothing else.
+// captureClient records enqueued messages; it embeds posthog.Client so only Enqueue needs implementing.
 type captureClient struct {
 	posthog.Client
 	events  []posthog.Capture

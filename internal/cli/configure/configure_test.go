@@ -128,8 +128,7 @@ func TestRunConfigureUnauthenticated(t *testing.T) {
 	}
 }
 
-// TestRunConfigureTracking verifies the user-configured event is emitted only
-// after the config write succeeds (see saveAndTrack).
+// TestRunConfigureTracking verifies the event is emitted only after a successful save.
 func TestRunConfigureTracking(t *testing.T) {
 	t.Run("emits user-configured after a successful save", func(t *testing.T) {
 		cwd := t.TempDir()
@@ -156,8 +155,7 @@ func TestRunConfigureTracking(t *testing.T) {
 	})
 
 	t.Run("does not emit when the save fails", func(t *testing.T) {
-		// A missing tina directory makes SaveTinaCloudConfig fail, so no event
-		// should be tracked.
+		// A missing tina dir makes the save fail, so nothing should be tracked.
 		var got []ph.Capture
 		track := func(c ph.Capture) { got = append(got, c) }
 

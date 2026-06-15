@@ -65,10 +65,7 @@ func (s *State) Root(version string) error {
 	return err
 }
 
-// commandPath reduces the invocation to its command and subcommand
-// (e.g. "project list") so the property stays low-cardinality; flag
-// values are deliberately excluded here (full argv is reported
-// separately on command failures).
+// commandPath returns the command and subcommand (e.g. "project list"), dropping flag values so events group by command rather than by arbitrary user input.
 func commandPath(args []string) string {
 	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
 		return ""
