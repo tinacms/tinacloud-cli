@@ -101,11 +101,15 @@ jobs:
         run: make package
 
       - name: Push commit
-        run: git push origin HEAD:${{ github.ref_name }}
+        id: push
+        run: |
+          git push origin HEAD:${{ github.ref_name }}
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Create release
         run: |
           gh release create "$NEW_TAG" build/*.tar.gz build/*.zip \
+            --target "${{ steps.push.outputs.sha }}" \
             --title "Release $NEW_TAG" \
             --generate-notes \
             --latest=true
