@@ -56,7 +56,7 @@ func callbackPort() (int, error) {
 	return port, nil
 }
 
-func Login(args []string, cfg config.Config, track posthog.Tracker) error {
+func Login(args []string, cfg config.Config, track posthog.Tracker, identify posthog.Identifier) error {
 	flagSet := flag.NewFlagSet("login", flag.ExitOnError)
 	flagSet.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli auth login")
@@ -64,10 +64,10 @@ func Login(args []string, cfg config.Config, track posthog.Tracker) error {
 	}
 	_ = flagSet.Parse(args)
 
-	return runLogin(cfg, browser.OpenURL, track)
+	return runLogin(cfg, browser.OpenURL, track, identify)
 }
 
-func runLogin(cfg config.Config, openURL func(string) error, track posthog.Tracker) error {
+func runLogin(cfg config.Config, openURL func(string) error, track posthog.Tracker, identify posthog.Identifier) error {
 	verifier, err := generateVerifier()
 	if err != nil {
 		return fmt.Errorf("failed to generate verifier code: %w", err)
@@ -205,6 +205,13 @@ Attempting to open your default browser. If the browser does not open, open the 
 	})
 	if err != nil {
 		return fmt.Errorf("failed to save tokens to file: %w", err)
+	}
+
+	// Attribute the pre-login sign-in events (sent under the anonymous ID) to
+	// the now-authenticated user. Best-effort: a decode failure must not block
+	// login.
+	if claims, err := auth.DecodeAccessToken(tokens.AccessToken); err == nil {
+		identify(claims.TinaCloudUserID)
 	}
 
 	track(posthog.UserSignInSuccess())

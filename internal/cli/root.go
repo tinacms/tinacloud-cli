@@ -47,7 +47,7 @@ func (s *State) Root(version string) error {
 	var err error
 	switch cmd {
 	case "auth":
-		err = auth.Auth(subargs, s.config, s.Track)
+		err = auth.Auth(subargs, s.config, s.Track, s.Identify)
 	case "org":
 		err = org.Org(subargs, s.config)
 	case "project":

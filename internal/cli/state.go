@@ -35,18 +35,23 @@ func New(ctx context.Context) (*State, error) {
 	}
 
 	state := &State{
-		config:     cfg,
-		posthog:    ph,
-		distinctID: distinctID(),
+		config:  cfg,
+		posthog: ph,
+	}
+
+	// Resolve the distinct ID only when telemetry will be sent; in dev mode or
+	// without an API key it is never used, so skip the token lookup entirely.
+	if state.telemetryEnabled() {
+		state.distinctID = resolveDistinctID()
 	}
 
 	return state, nil
 }
 
-// distinctID returns the authenticated user's TinaCloud ID when
+// resolveDistinctID returns the authenticated user's TinaCloud ID when
 // logged in; otherwise a random per-invocation ID, so unauthenticated
 // usage is not trackable across runs.
-func distinctID() string {
+func resolveDistinctID() string {
 	if tokens, err := auth.PeekTokens(); err == nil {
 		if claims, err := auth.DecodeAccessToken(tokens.AccessToken); err == nil {
 			if claims.TinaCloudUserID != "" {
@@ -62,17 +67,38 @@ func distinctID() string {
 	return "anon-" + hex.EncodeToString(b)
 }
 
+// telemetryEnabled reports whether events should actually be sent: a PostHog
+// client must be configured and dev mode must be off.
+func (s *State) telemetryEnabled() bool {
+	return s.posthog != nil && !s.config.Core.Dev
+}
+
 // Track enqueues a telemetry event, attaching the persistent distinct
 // ID. It is a no-op in dev mode or when telemetry is disabled (no
 // PostHog API key) and never returns an error: telemetry must not
 // affect command flow.
 func (s *State) Track(event posthog.Capture) {
-	if s.posthog == nil || s.config.Core.Dev {
+	if !s.telemetryEnabled() {
 		return
 	}
 
 	event.DistinctId = s.distinctID
 	_ = s.posthog.Enqueue(event)
+}
+
+// Identify links the current anonymous distinct ID to the authenticated user,
+// so events emitted before login (e.g. sign-in) are attributed to them. Like
+// Track, it is a no-op in dev mode or when telemetry is disabled and never
+// returns an error.
+func (s *State) Identify(userID string) {
+	if !s.telemetryEnabled() || userID == "" || userID == s.distinctID {
+		return
+	}
+
+	_ = s.posthog.Enqueue(posthog.Alias{
+		DistinctId: userID,
+		Alias:      s.distinctID,
+	})
 }
 
 func (s *State) Close() error {

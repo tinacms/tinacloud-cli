@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	jwt "github.com/golang-jwt/jwt/v4"
 	ph "github.com/posthog/posthog-go"
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
@@ -20,10 +21,16 @@ import (
 	"tina.io/tinacloud-cli/internal/posthog"
 )
 
-// captureTracker records emitted telemetry events for assertions.
-type captureTracker struct{ events []ph.Capture }
+// captureTracker records emitted telemetry events and identify calls for
+// assertions.
+type captureTracker struct {
+	events     []ph.Capture
+	identified []string
+}
 
 func (c *captureTracker) track(event ph.Capture) { c.events = append(c.events, event) }
+
+func (c *captureTracker) identify(userID string) { c.identified = append(c.identified, userID) }
 
 func (c *captureTracker) count(event string) int {
 	n := 0
@@ -34,6 +41,17 @@ func (c *captureTracker) count(event string) int {
 	}
 	return n
 }
+
+// fakeAccessToken is a JWT carrying fakeUserID so runLogin can decode it and
+// identify the user. ParseUnverified ignores the signature, so the secret is
+// irrelevant.
+const fakeUserID = "user-abc"
+
+var fakeAccessToken = func() string {
+	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{"tinacloud_user_id": fakeUserID})
+	signed, _ := tok.SignedString([]byte("test-secret"))
+	return signed
+}()
 
 func TestGenerateChallenge(t *testing.T) {
 	verifier := "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
@@ -83,7 +101,7 @@ func TestLogin_AuthorizeRequestFails(t *testing.T) {
 	cfg := config.Config{}
 	cfg.TinaCloud.Endpoint = "http://127.0.0.1:1"
 
-	err := Login(nil, cfg, posthog.NoopTracker)
+	err := Login(nil, cfg, posthog.NoopTracker, posthog.NoopIdentifier)
 	if err == nil {
 		t.Fatal("Login() = nil error, want error when authorize request fails")
 	}
@@ -138,7 +156,7 @@ func driveLogin(t *testing.T, tokenHandler http.HandlerFunc, callbackReq string)
 	cfg := config.Config{}
 	cfg.TinaCloud.Endpoint = srv.URL
 	tracker := &captureTracker{}
-	return tracker, runLogin(cfg, fakeOpener, tracker.track)
+	return tracker, runLogin(cfg, fakeOpener, tracker.track, tracker.identify)
 }
 
 // deliverCallback connects to the local callback server and sends request,
@@ -165,7 +183,7 @@ func deliverCallback(host, request string) {
 func fakeTokenHandler(w http.ResponseWriter, _ *http.Request) {
 	_ = json.NewEncoder(w).Encode(domain.AuthResponse{
 		IDToken:      "id-token",
-		AccessToken:  "access-token",
+		AccessToken:  fakeAccessToken,
 		RefreshToken: "refresh-token",
 		TokenType:    "Bearer",
 		ExpiresIn:    3600,
@@ -181,13 +199,16 @@ func TestLogin_Success(t *testing.T) {
 	if n := tracker.count(posthog.UserSignInSuccessEvent); n != 1 {
 		t.Errorf("UserSignInSuccess emitted %d times, want 1", n)
 	}
+	if want := []string{fakeUserID}; len(tracker.identified) != 1 || tracker.identified[0] != fakeUserID {
+		t.Errorf("identified = %v, want %v", tracker.identified, want)
+	}
 
 	tokens, err := auth.TokensFromCache(config.Config{})
 	if err != nil {
 		t.Fatalf("TokensFromCache() = %v, want nil error", err)
 	}
-	if tokens.AccessToken != "access-token" {
-		t.Errorf("saved AccessToken = %q, want %q", tokens.AccessToken, "access-token")
+	if tokens.AccessToken != fakeAccessToken {
+		t.Errorf("saved AccessToken = %q, want %q", tokens.AccessToken, fakeAccessToken)
 	}
 	if tokens.RefreshToken != "refresh-token" {
 		t.Errorf("saved RefreshToken = %q, want %q", tokens.RefreshToken, "refresh-token")
@@ -254,6 +275,9 @@ func TestLogin_Errors(t *testing.T) {
 			}
 			if n := tracker.count(posthog.UserSignInSuccessEvent); n != 0 {
 				t.Errorf("UserSignInSuccess emitted %d times on a failed login, want 0", n)
+			}
+			if len(tracker.identified) != 0 {
+				t.Errorf("identified %v on a failed login, want none", tracker.identified)
 			}
 		})
 	}
