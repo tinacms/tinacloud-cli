@@ -13,11 +13,27 @@ import (
 	"testing"
 	"time"
 
+	ph "github.com/posthog/posthog-go"
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
 	"tina.io/tinacloud-cli/internal/posthog"
 )
+
+// captureTracker records emitted telemetry events for assertions.
+type captureTracker struct{ events []ph.Capture }
+
+func (c *captureTracker) track(event ph.Capture) { c.events = append(c.events, event) }
+
+func (c *captureTracker) count(event string) int {
+	n := 0
+	for _, e := range c.events {
+		if e.Event == event {
+			n++
+		}
+	}
+	return n
+}
 
 func TestGenerateChallenge(t *testing.T) {
 	verifier := "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
@@ -82,7 +98,7 @@ const validCallback = "GET /callback?code=test-code HTTP/1.1\r\nHost: localhost\
 // driveLogin runs runLogin against a fake TinaCloud server with a fake browser
 // opener. tokenHandler serves /oauth/token; callbackReq is the raw HTTP request
 // delivered to the local callback server in place of a real browser redirect.
-func driveLogin(t *testing.T, tokenHandler http.HandlerFunc, callbackReq string) error {
+func driveLogin(t *testing.T, tokenHandler http.HandlerFunc, callbackReq string) (*captureTracker, error) {
 	t.Helper()
 
 	dir := t.TempDir()
@@ -121,7 +137,8 @@ func driveLogin(t *testing.T, tokenHandler http.HandlerFunc, callbackReq string)
 
 	cfg := config.Config{}
 	cfg.TinaCloud.Endpoint = srv.URL
-	return runLogin(cfg, fakeOpener, posthog.NoopTracker)
+	tracker := &captureTracker{}
+	return tracker, runLogin(cfg, fakeOpener, tracker.track)
 }
 
 // deliverCallback connects to the local callback server and sends request,
@@ -156,8 +173,13 @@ func fakeTokenHandler(w http.ResponseWriter, _ *http.Request) {
 }
 
 func TestLogin_Success(t *testing.T) {
-	if err := driveLogin(t, fakeTokenHandler, validCallback); err != nil {
+	tracker, err := driveLogin(t, fakeTokenHandler, validCallback)
+	if err != nil {
 		t.Fatalf("Login() = %v, want nil error", err)
+	}
+
+	if n := tracker.count(posthog.UserSignInSuccessEvent); n != 1 {
+		t.Errorf("UserSignInSuccess emitted %d times, want 1", n)
 	}
 
 	tokens, err := auth.TokensFromCache(config.Config{})
@@ -220,7 +242,7 @@ func TestLogin_Errors(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			err := driveLogin(t, tc.tokenHandler, tc.callbackReq)
+			tracker, err := driveLogin(t, tc.tokenHandler, tc.callbackReq)
 			if err == nil {
 				t.Fatalf("Login() = nil error, want error")
 			}
@@ -229,6 +251,9 @@ func TestLogin_Errors(t *testing.T) {
 			}
 			if tc.wantErrContains != "" && !strings.Contains(err.Error(), tc.wantErrContains) {
 				t.Errorf("Login() = %v, want error containing %q", err, tc.wantErrContains)
+			}
+			if n := tracker.count(posthog.UserSignInSuccessEvent); n != 0 {
+				t.Errorf("UserSignInSuccess emitted %d times on a failed login, want 0", n)
 			}
 		})
 	}
