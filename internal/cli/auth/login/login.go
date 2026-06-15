@@ -14,7 +14,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 	"time"
 
 	"tina.io/tinacloud-cli/internal/auth"
@@ -37,23 +36,17 @@ func generateChallenge(verifier string) string {
 	return base64.RawURLEncoding.EncodeToString(h[:])
 }
 
-func callbackPort() (int, error) {
-	port := 0
-	for i := 9999; i <= 10011; i++ {
-		timeout := time.Second
-		conn, _ := net.DialTimeout("tcp", net.JoinHostPort("localhost", strconv.Itoa(i)), timeout)
-		if conn != nil {
-			defer conn.Close()
+// callbackListener binds the local OAuth callback server before the browser opens, avoiding a race with a fast SSO redirect.
+func callbackListener() (net.Listener, int, error) {
+	for port := 9999; port <= 10011; port++ {
+		ln, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+		if err != nil {
 			continue
 		}
-		port = i
-		break
-	}
-	if port == 0 {
-		return port, fmt.Errorf("failed to bind local callback server on port range :9999-:10011")
+		return ln, port, nil
 	}
 
-	return port, nil
+	return nil, 0, fmt.Errorf("failed to bind local callback server on port range :9999-:10011")
 }
 
 func Login(args []string, cfg config.Config, track posthog.Tracker, identify posthog.Identifier) error {
@@ -74,10 +67,11 @@ func runLogin(cfg config.Config, openURL func(string) error, track posthog.Track
 	}
 	challenge := generateChallenge(verifier)
 
-	port, err := callbackPort()
+	ln, port, err := callbackListener()
 	if err != nil {
 		return err
 	}
+	defer ln.Close()
 
 	{
 		// <tinacloud-host>:oauth/authorize will attempt to redirect the client
@@ -116,12 +110,6 @@ Attempting to open your default browser. If the browser does not open, open the 
 	// Read auth code from client
 	code := ""
 	{
-		ln, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-		if err != nil {
-			return fmt.Errorf("failed to start callback server: %w", err)
-		}
-		defer ln.Close()
-
 		conn, err := ln.Accept()
 		if err != nil {
 			return fmt.Errorf("failed to accept auth callback: %w", err)

@@ -81,13 +81,14 @@ func TestGenerateVerifier_Format(t *testing.T) {
 	}
 }
 
-func TestCallbackPort(t *testing.T) {
-	port, err := callbackPort()
+func TestCallbackListener(t *testing.T) {
+	ln, port, err := callbackListener()
 	if err != nil {
-		t.Fatalf("callbackPort() = %v, want nil error", err)
+		t.Fatalf("callbackListener() = %v, want nil error", err)
 	}
+	defer ln.Close()
 	if port < 9999 || port > 10011 {
-		t.Errorf("callbackPort() = %d, want a port in [9999, 10011]", port)
+		t.Errorf("callbackListener() port = %d, want a port in [9999, 10011]", port)
 	}
 }
 

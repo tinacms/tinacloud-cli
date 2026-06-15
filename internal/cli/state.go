@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"strconv"
 
 	"github.com/posthog/posthog-go"
 	"tina.io/tinacloud-cli/internal/auth"
@@ -17,10 +18,20 @@ type State struct {
 	distinctID string
 }
 
-func New(ctx context.Context) (*State, error) {
+func New(ctx context.Context, posthogAPIKey, devMode string) (*State, error) {
 	cfg, err := config.LoadConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config: %w", err)
+	}
+
+	// ldflags-embedded release values override the runtime env; empty for local builds.
+	if posthogAPIKey != "" {
+		cfg.Posthog.APIKey = posthogAPIKey
+	}
+	if devMode != "" {
+		if dev, err := strconv.ParseBool(devMode); err == nil {
+			cfg.Core.Dev = dev
+		}
 	}
 
 	var ph posthog.Client

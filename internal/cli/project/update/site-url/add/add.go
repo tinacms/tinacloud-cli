@@ -115,11 +115,17 @@ func runAdd(cfg config.Config, newSiteURLs domain.UrlsFlag, orgID, projectID, ti
 		if value == "" {
 			continue
 		}
-		if _, exists := seen[value]; exists {
+
+		// Dedup on the normalized origin so stored values match the cleaned new ones.
+		key := value
+		if normalized, err := utils.CleanSiteURL(value); err == nil {
+			key = normalized
+		}
+		if _, exists := seen[key]; exists {
 			continue
 		}
 
-		seen[value] = struct{}{}
+		seen[key] = struct{}{}
 		uniqueSiteURLs = append(uniqueSiteURLs, value)
 	}
 

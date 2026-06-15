@@ -116,7 +116,13 @@ func runRemove(cfg config.Config, removeSiteURLs domain.UrlsFlag, orgID, project
 		if value == "" {
 			continue
 		}
-		if _, exists := removeSet[value]; exists {
+
+		// Match on the normalized origin so trailing-slash/path variants still remove.
+		key := value
+		if normalized, err := utils.CleanSiteURL(value); err == nil {
+			key = normalized
+		}
+		if _, exists := removeSet[key]; exists {
 			continue
 		}
 

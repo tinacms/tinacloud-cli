@@ -5,7 +5,6 @@ import (
 )
 
 const (
-	CLIStartedEvent             string = "tinacloud-cli-started"
 	UserSignInInitiatedEvent    string = "tinacloud-cli-user-sign-in-initiated"
 	UserSignInSuccessEvent      string = "tinacloud-cli-user-sign-in-success"
 	UserLoggedOutEvent          string = "tinacloud-cli-user-logged-out"
@@ -34,14 +33,6 @@ func CommandFailed(command, errMsg string, args []string) ph.Capture {
 			Set("command", command).
 			Set("error", errMsg).
 			Set("args", args),
-	}
-}
-
-func CLIStarted(command string) ph.Capture {
-	return ph.Capture{
-		Event: CLIStartedEvent,
-		Properties: ph.NewProperties().
-			Set("command", command),
 	}
 }
 
