@@ -1,8 +1,10 @@
 NAME	= tinacloud-cli
 CMD		= ./cmd/$(NAME)
 VERSION	= $(shell cat .version)
+# Provided by the release pipeline from a GitHub secret; empty for local builds.
+POSTHOG_API_KEY ?=
 FLAGS	= -ldflags="-X main.version=$(VERSION)"
-RELEASE_FLAGS = -trimpath -buildvcs=false -ldflags="-s -w -X main.version=$(VERSION)"
+RELEASE_FLAGS = -trimpath -buildvcs=false -ldflags="-s -w -X main.version=$(VERSION) -X main.posthogAPIKey=$(POSTHOG_API_KEY) -X main.devMode=false"
 
 ifeq ($(OS),Windows_NT)
 	BINARY_NAME	= $(NAME).exe

@@ -37,7 +37,6 @@ func (s *State) Root(version string) error {
 	}
 
 	args := flagSet.Args()
-	s.Track(events.CLIStarted(commandPath(args)))
 	if len(args) == 0 {
 		flagSet.Usage()
 		return nil

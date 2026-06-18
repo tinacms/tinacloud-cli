@@ -99,6 +99,8 @@ jobs:
 
       - name: Package release assets
         run: make package
+        env:
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
 
       - name: Push commit
         id: push
