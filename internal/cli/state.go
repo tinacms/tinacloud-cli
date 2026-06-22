@@ -6,10 +6,12 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/posthog/posthog-go"
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
+	"tina.io/tinacloud-cli/internal/requests"
 )
 
 type State struct {
@@ -18,27 +20,23 @@ type State struct {
 	distinctID string
 }
 
-func New(ctx context.Context, posthogAPIKey, devMode string) (*State, error) {
+func New(ctx context.Context, dev string) (*State, error) {
 	cfg, err := config.LoadConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
 
-	// ldflags-embedded release values override the runtime env; empty for local builds.
-	if posthogAPIKey != "" {
-		cfg.Posthog.APIKey = posthogAPIKey
-	}
-	if devMode != "" {
-		if dev, err := strconv.ParseBool(devMode); err == nil {
-			cfg.Core.Dev = dev
+	if strings.TrimSpace(dev) != "" {
+		if isDev, err := strconv.ParseBool(dev); err == nil {
+			cfg.Core.Dev = isDev
 		}
 	}
 
 	var ph posthog.Client
-	if cfg.Posthog.APIKey != "" {
+	if posthogTokens, err := requests.GetPostHogToken(cfg.TinaCloud.Endpoint); err == nil {
 		ph, err = posthog.NewWithConfig(
-			cfg.Posthog.APIKey,
-			posthog.Config{Endpoint: cfg.Posthog.Endpoint},
+			posthogTokens.APIKey,
+			posthog.Config{Endpoint: posthogTokens.Endpoint},
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create posthog client: %w", err)
