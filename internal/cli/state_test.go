@@ -57,7 +57,7 @@ func TestTrack(t *testing.T) {
 	})
 
 	t.Run("is a no-op when telemetry is disabled", func(t *testing.T) {
-		s := &State{distinctID: "user-1"}
+		s := State{distinctID: "user-1"}
 
 		// Must not panic when no PostHog client is configured.
 		s.Track(event)
