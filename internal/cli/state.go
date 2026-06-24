@@ -6,10 +6,12 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/posthog/posthog-go"
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
+	"tina.io/tinacloud-cli/internal/requests"
 )
 
 type State struct {
@@ -18,40 +20,22 @@ type State struct {
 	distinctID string
 }
 
-func New(ctx context.Context, posthogAPIKey, devMode string) (*State, error) {
+func New(ctx context.Context, dev string) (*State, error) {
 	cfg, err := config.LoadConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
 
-	// ldflags-embedded release values override the runtime env; empty for local builds.
-	if posthogAPIKey != "" {
-		cfg.Posthog.APIKey = posthogAPIKey
-	}
-	if devMode != "" {
-		if dev, err := strconv.ParseBool(devMode); err == nil {
-			cfg.Core.Dev = dev
+	if strings.TrimSpace(dev) != "" {
+		if isDev, err := strconv.ParseBool(dev); err == nil {
+			cfg.Core.Dev = isDev
 		}
 	}
 
-	var ph posthog.Client
-	if cfg.Posthog.APIKey != "" {
-		ph, err = posthog.NewWithConfig(
-			cfg.Posthog.APIKey,
-			posthog.Config{Endpoint: cfg.Posthog.Endpoint},
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create posthog client: %w", err)
-		}
-	}
-
-	state := &State{
-		config:  cfg,
-		posthog: ph,
-	}
+	state := &State{config: cfg}
 
 	// Resolve the distinct ID only when telemetry is on; it is unused otherwise.
-	if state.telemetryEnabled() {
+	if !cfg.Core.Dev {
 		state.distinctID = resolveDistinctID()
 	}
 
@@ -75,13 +59,36 @@ func resolveDistinctID() string {
 	return "anon-" + hex.EncodeToString(b)
 }
 
-func (s *State) telemetryEnabled() bool {
-	return s.posthog != nil && !s.config.Core.Dev
+// No-op if already initialised.
+func (s *State) InitialisePostHog() error {
+	if s.posthog == nil {
+		var ph posthog.Client
+		posthogTokens, err := requests.GetPostHogToken(s.config.TinaCloud.Endpoint)
+		if err != nil {
+			return fmt.Errorf("failed to get posthog tokens from tinacloud: %w", err)
+		}
+
+		ph, err = posthog.NewWithConfig(
+			posthogTokens.APIKey,
+			posthog.Config{Endpoint: posthogTokens.Endpoint},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to create posthog client: %w", err)
+		}
+
+		s.posthog = ph
+	}
+
+	return nil
 }
 
 // Track enqueues a telemetry event with the distinct ID. No-op when telemetry is off; never errors so it can't affect command flow.
 func (s *State) Track(event posthog.Capture) {
-	if !s.telemetryEnabled() {
+	if s.config.Core.Dev {
+		return
+	}
+
+	if err := s.InitialisePostHog(); err != nil {
 		return
 	}
 
@@ -91,7 +98,11 @@ func (s *State) Track(event posthog.Capture) {
 
 // Identify links the anonymous distinct ID to the authenticated user so pre-login events are attributed to them.
 func (s *State) Identify(userID string) {
-	if !s.telemetryEnabled() || userID == "" || userID == s.distinctID {
+	if s.config.Core.Dev || userID == "" || userID == s.distinctID {
+		return
+	}
+
+	if err := s.InitialisePostHog(); err != nil {
 		return
 	}
 

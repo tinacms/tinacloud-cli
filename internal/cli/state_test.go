@@ -56,10 +56,10 @@ func TestTrack(t *testing.T) {
 		}
 	})
 
-	t.Run("is a no-op when telemetry is disabled", func(t *testing.T) {
+	t.Run("is a no-op when posthog cannot be initialised", func(t *testing.T) {
+		// No endpoint, so lazy init fails and Track must no-op without panicking.
 		s := &State{distinctID: "user-1"}
 
-		// Must not panic when no PostHog client is configured.
 		s.Track(event)
 	})
 }

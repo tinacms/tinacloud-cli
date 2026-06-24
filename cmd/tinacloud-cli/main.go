@@ -7,17 +7,15 @@ import (
 	"tina.io/tinacloud-cli/internal/cli"
 )
 
-// Injected at release time via ldflags; empty for local/source builds.
 var (
-	version       = "undefined"
-	posthogAPIKey string
-	devMode       string
+	version = "undefined"
+	dev     string
 )
 
 func main() {
 	ctx := context.Background()
 
-	state, err := cli.New(ctx, posthogAPIKey, devMode)
+	state, err := cli.New(ctx, dev)
 	if err != nil {
 		log.Fatalf("failed to create cli state: %v", err)
 	}

@@ -24,7 +24,6 @@ func TestLoadConfig(t *testing.T) {
 			name: "defaults",
 			want: Config{
 				Core:      CoreConfig{Dev: true},
-				Posthog:   PosthogConfig{Endpoint: "https://us.i.posthog.com"},
 				TinaCloud: TinaCloudConfig{Endpoint: "https://identity-v2.tinajs.io"},
 			},
 		},
@@ -38,7 +37,6 @@ func TestLoadConfig(t *testing.T) {
 			},
 			want: Config{
 				Core:      CoreConfig{Dev: false},
-				Posthog:   PosthogConfig{APIKey: "ph-key", Endpoint: "https://ph.example"},
 				TinaCloud: TinaCloudConfig{Endpoint: "https://tc.example"},
 			},
 		},
