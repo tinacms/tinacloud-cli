@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 
-	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/domain"
 )
 
@@ -23,10 +22,6 @@ func GetPostHogToken(endpoint string) (domain.GetV2PostHogTokenResponse, error) 
 		return domain.GetV2PostHogTokenResponse{}, fmt.Errorf("failed to get posthog token: %w", err)
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusUnauthorized {
-		return domain.GetV2PostHogTokenResponse{}, auth.ErrUnauthorized
-	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
