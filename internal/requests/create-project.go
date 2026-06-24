@@ -3,13 +3,17 @@ package requests
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/domain"
 )
+
+var MissingInstallationID error = errors.New("failed to retrieve installation ID")
 
 func CreateProject(endpoint, accessToken, orgID string, body domain.PostV2ProjectsBody) (domain.PostV2ProjectResponse, error) {
 	postBody, err := json.Marshal(body)
@@ -42,6 +46,9 @@ func CreateProject(endpoint, accessToken, orgID string, body domain.PostV2Projec
 	}
 
 	if resp.StatusCode > 299 {
+		if strings.Contains(string(responseBody), "failed to retrieve installation ID") {
+			return domain.PostV2ProjectResponse{}, MissingInstallationID
+		}
 		return domain.PostV2ProjectResponse{}, fmt.Errorf("failed to create project. received response status of '%d': %s", resp.StatusCode, string(responseBody))
 	}
 
