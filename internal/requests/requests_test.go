@@ -173,3 +173,18 @@ func TestPutProject(t *testing.T) {
 		t.Errorf("request body = %q, want it to contain the marshalled name", rec.body)
 	}
 }
+
+func TestGetPostHogToken(t *testing.T) {
+	server, rec := jsonServer(t, http.StatusOK, `{"api_key":"1234","endpoint":"https://ph.example"}`)
+
+	got, err := GetPostHogToken(server.URL)
+	if err != nil {
+		t.Fatalf("GetPostHogToken() = %v, want nil error", err)
+	}
+	if rec.req.URL.Path != "/v2/posthog-token" {
+		t.Errorf("request path = %q, want %q", rec.req.URL.Path, "/v2/posthog-token")
+	}
+	if got.APIKey != "1234" || got.Endpoint != "https://ph.example" {
+		t.Errorf("GetPostHogToken() = %+v, want api-key: 1234; endpoint: https://ph.example", got)
+	}
+}
