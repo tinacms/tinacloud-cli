@@ -19,20 +19,20 @@ func CallbackListener() (net.Listener, int, error) {
 	return nil, 0, fmt.Errorf("failed to bind local callback server on port range :9999-:10011")
 }
 
-func CallbackResponse(connection net.Conn) (int, error) {
+func CallbackResponse(connection net.Conn) error {
 	writer := bufio.NewWriter(connection)
-	bytes, err := writer.WriteString("HTTP/1.1 200 OK\r\n" +
+	_, err := writer.WriteString("HTTP/1.1 200 OK\r\n" +
 		"Content-Type: text/plain\r\n" +
 		"Connection: close\r\n" +
 		"\r\n" +
 		"You may now close this tab.")
 	if err != nil {
-		return bytes, fmt.Errorf("failed to write back to connection: %w", err)
+		return fmt.Errorf("failed to write back to connection: %w", err)
 	}
 	err = writer.Flush()
 	if err != nil {
-		return bytes, fmt.Errorf("failed to flush writer to connection: %w", err)
+		return fmt.Errorf("failed to flush writer to connection: %w", err)
 	}
 
-	return bytes, nil
+	return nil
 }

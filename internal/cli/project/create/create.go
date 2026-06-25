@@ -185,7 +185,7 @@ Attempting to open your default browser. If the browser does not open, open the 
 				return createJSONOutput{}, fmt.Errorf("failed to read auth callback: %w", err)
 			}
 
-			_, err = utils.CallbackResponse(conn)
+			err = utils.CallbackResponse(conn)
 			if err != nil {
 				return createJSONOutput{}, err
 			}
