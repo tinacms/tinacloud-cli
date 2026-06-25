@@ -110,7 +110,7 @@ func runCreate(cfg config.Config, openURL func(string) error, orgID, projectName
 	var resp domain.PostV2ProjectResponse
 	resp, err = requests.CreateProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, body)
 	if err != nil {
-		if !errors.Is(err, requests.MissingInstallationID) {
+		if !errors.Is(err, requests.ErrMissingInstallationID) {
 			return createJSONOutput{}, err
 		}
 
