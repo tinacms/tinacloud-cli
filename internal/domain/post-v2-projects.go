@@ -6,9 +6,10 @@ import (
 )
 
 type PostV2ProjectsBody struct {
-	Name    string `json:"name"`
-	RepoURL string `json:"repo_url"`
-	SiteURL string `json:"site_url"`
+	Name           string `json:"name"`
+	RepoURL        string `json:"repo_url"`
+	SiteURL        string `json:"site_url"`
+	InstallationID *int64 `json:"installation_id,omitempty"`
 }
 
 type PostV2ProjectResponse struct {

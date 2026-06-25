@@ -1,18 +1,24 @@
 package create
 
 import (
+	"bufio"
 	"errors"
 	"flag"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 
+	"github.com/manifoldco/promptui"
 	"tina.io/tinacloud-cli/internal/auth"
+	"tina.io/tinacloud-cli/internal/browser"
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
 	"tina.io/tinacloud-cli/internal/posthog"
 	"tina.io/tinacloud-cli/internal/requests"
+	"tina.io/tinacloud-cli/internal/utils"
 )
 
 type createJSONOutput struct {
@@ -37,7 +43,7 @@ func Create(args []string, cfg config.Config, track posthog.Tracker) error {
 	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
 	_ = flagSet.Parse(args)
 
-	out, err := runCreate(cfg, *orgIDFlag, *projectNameFlag, *repoURLFlag, *siteURLFlag, *tinaDirFlag)
+	out, err := runCreate(cfg, browser.OpenURL, *orgIDFlag, *projectNameFlag, *repoURLFlag, *siteURLFlag, *tinaDirFlag)
 	if err == nil && out.LoggedIn {
 		track(posthog.ProjectCreated(out.Project.OrgID, out.Project.ProjectID, out.Project.Name, out.Project.RepoURL, out.Project.SiteURLs))
 	}
@@ -59,7 +65,7 @@ func Create(args []string, cfg config.Config, track posthog.Tracker) error {
 	return nil
 }
 
-func runCreate(cfg config.Config, orgID, projectName, repoURL, siteURL, tinaDir string) (createJSONOutput, error) {
+func runCreate(cfg config.Config, openURL func(string) error, orgID, projectName, repoURL, siteURL, tinaDir string) (createJSONOutput, error) {
 	if orgID == "" {
 		if cwd, err := os.Getwd(); err == nil {
 			if tinacloudConfig, err := domain.TinaCloudConfigFromDisk(cwd, tinaDir); err == nil {
@@ -79,11 +85,11 @@ func runCreate(cfg config.Config, orgID, projectName, repoURL, siteURL, tinaDir 
 	if repoURL == "" {
 		return createJSONOutput{}, errors.New("repo url is required")
 	}
-	url, err := url.Parse(repoURL)
+	repoUrl, err := url.Parse(repoURL)
 	if err != nil {
 		return createJSONOutput{}, fmt.Errorf("repo url is invalid: %w", err)
 	}
-	if url.Scheme != "https" || url.Host != "github.com" {
+	if repoUrl.Scheme != "https" || repoUrl.Host != "github.com" {
 		return createJSONOutput{}, errors.New("repo url is invalid: host must be https://github.com")
 	}
 
@@ -101,15 +107,117 @@ func runCreate(cfg config.Config, orgID, projectName, repoURL, siteURL, tinaDir 
 		SiteURL: siteURL,
 	}
 
-	resp, err := requests.CreateProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, body)
+	var resp domain.PostV2ProjectResponse
+	resp, err = requests.CreateProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, body)
 	if err != nil {
-		return createJSONOutput{}, err
+		if !errors.Is(err, requests.ErrMissingInstallationID) {
+			return createJSONOutput{}, err
+		}
+
+		ln, port, err := utils.CallbackListener()
+		if err != nil {
+			return createJSONOutput{}, err
+		}
+		defer ln.Close()
+
+		{
+			githubGitHost := domain.GitHost{ID: "github", Name: "GitHub", Server: "github.com"}
+			githosts := []domain.GitHost{githubGitHost}
+
+			githostResp, err := requests.GetGitHosts(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID)
+			if err != nil {
+				return createJSONOutput{}, fmt.Errorf("failed to retrieve githosts: %w", err)
+			}
+			githosts = append(githosts, githostResp.GitHosts...)
+
+			state := fmt.Sprintf("http: localhost:%d", port)
+			installationURL, err := githubAppInstallationURL(cfg, githubGitHost, state)
+			if err != nil {
+				return createJSONOutput{}, fmt.Errorf("failed to create github installation url: %w", err)
+			}
+			if len(githosts) > 1 {
+				var menuItems []string
+				for _, githost := range githosts {
+					menuItems = append(
+						menuItems,
+						fmt.Sprintf("%s - %s", githost.Name, githost.Server),
+					)
+				}
+
+				prompt := promptui.Select{
+					Label: "Please select the GitHost you would like to install the app into",
+					Items: menuItems,
+					Size:  10,
+				}
+				selectedIndex, _, err := prompt.Run()
+				if err != nil {
+					return createJSONOutput{}, fmt.Errorf("failed to select githost: %w", err)
+				}
+
+				githost := githosts[selectedIndex]
+				installationURL, err = githubAppInstallationURL(cfg, githost, state)
+				if err != nil {
+					return createJSONOutput{}, fmt.Errorf("failed to create github installation url: %w", err)
+				}
+			}
+
+			// User can copy string from terminal if this fails
+			_ = openURL(installationURL)
+
+			fmt.Printf(`Install the TinaCloud GitHub App.
+Attempting to open your default browser. If the browser does not open, open the following URL.
+
+%s
+
+`, installationURL)
+		}
+
+		var installationID *int64
+		{
+			conn, err := ln.Accept()
+			if err != nil {
+				return createJSONOutput{}, fmt.Errorf("failed to accept auth callback: %w", err)
+			}
+			defer conn.Close()
+
+			req, err := http.ReadRequest(bufio.NewReader(conn))
+			if err != nil {
+				return createJSONOutput{}, fmt.Errorf("failed to read auth callback: %w", err)
+			}
+
+			err = utils.CallbackResponse(conn)
+			if err != nil {
+				return createJSONOutput{}, err
+			}
+
+			params, err := url.ParseQuery(req.URL.RawQuery)
+			if err != nil {
+				return createJSONOutput{}, fmt.Errorf("failed to read installation_id from auth callback: %w", err)
+			}
+
+			installationIDParam := params.Get("installation_id")
+			if installationIDParam == "" {
+				return createJSONOutput{}, errors.New("installation_id is missing from client request")
+			}
+
+			id, err := strconv.ParseInt(installationIDParam, 10, 64)
+			if err != nil {
+				return createJSONOutput{}, fmt.Errorf("failed to parse installation_id from auth callback: %w", err)
+			}
+
+			installationID = &id
+		}
+
+		body.InstallationID = installationID
+		resp, err = requests.CreateProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, body)
+		if err != nil {
+			return createJSONOutput{}, err
+		}
 	}
 
-	// If in a tinacms project, write information to <tina-dir>/tinacloud.json.
-	// This is best-effort and must not block a successful return: being outside
-	// a tinacms project is expected and stays silent, but real failures are
-	// surfaced to stderr.
+	// Attempt to write information to <tina-dir>/tinacloud.json if in a
+	// tinacms project This is best-effort and must not block a successful
+	// return
 	if cwd, err := os.Getwd(); err == nil {
 		err = domain.SaveTinaCloudConfig(cwd, tinaDir, orgID, resp.CreatedProject.ProjectID)
 		if err != nil && !errors.Is(err, domain.ErrNotTinaProject) {
@@ -121,4 +229,17 @@ func runCreate(cfg config.Config, orgID, projectName, repoURL, siteURL, tinaDir 
 		LoggedIn: true,
 		Project:  resp.CreatedProject,
 	}, nil
+}
+
+func githubAppInstallationURL(cfg config.Config, githost domain.GitHost, state string) (string, error) {
+	if githost.Server != "" && githost.GitHubAppName != "" {
+		return fmt.Sprintf("https://%s/github-apps/%s/installations/new?state=%s", githost.Server, githost.GitHubAppName, state), nil
+	}
+
+	githubApp, err := requests.GetTinaCloudGitHubApp(cfg.TinaCloud.Endpoint)
+	if err != nil {
+		return "", fmt.Errorf("failed to retrieve tinacloud github app name: %w", err)
+	}
+
+	return fmt.Sprintf("https://%s/apps/%s/installations/new?state=%s", githost.Server, githubApp.Name, state), nil
 }

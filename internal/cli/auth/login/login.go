@@ -10,7 +10,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -21,6 +20,7 @@ import (
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
 	"tina.io/tinacloud-cli/internal/posthog"
+	"tina.io/tinacloud-cli/internal/utils"
 )
 
 func generateVerifier() (string, error) {
@@ -34,19 +34,6 @@ func generateVerifier() (string, error) {
 func generateChallenge(verifier string) string {
 	h := sha256.Sum256([]byte(verifier))
 	return base64.RawURLEncoding.EncodeToString(h[:])
-}
-
-// callbackListener binds the local OAuth callback server before the browser opens, avoiding a race with a fast SSO redirect.
-func callbackListener() (net.Listener, int, error) {
-	for port := 9999; port <= 10011; port++ {
-		ln, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-		if err != nil {
-			continue
-		}
-		return ln, port, nil
-	}
-
-	return nil, 0, fmt.Errorf("failed to bind local callback server on port range :9999-:10011")
 }
 
 func Login(args []string, cfg config.Config, track posthog.Tracker, identify posthog.Identifier) error {
@@ -67,7 +54,7 @@ func runLogin(cfg config.Config, openURL func(string) error, track posthog.Track
 	}
 	challenge := generateChallenge(verifier)
 
-	ln, port, err := callbackListener()
+	ln, port, err := utils.CallbackListener()
 	if err != nil {
 		return err
 	}
@@ -121,19 +108,9 @@ Attempting to open your default browser. If the browser does not open, open the 
 			return fmt.Errorf("failed to read auth callback: %w", err)
 		}
 
-		// Send message back to client
-		writer := bufio.NewWriter(conn)
-		_, err = writer.WriteString("HTTP/1.1 200 OK\r\n" +
-			"Content-Type: text/plain\r\n" +
-			"Connection: close\r\n" +
-			"\r\n" +
-			"You may now close this tab.")
+		err = utils.CallbackResponse(conn)
 		if err != nil {
-			return fmt.Errorf("failed to write back to connection: %w", err)
-		}
-		err = writer.Flush()
-		if err != nil {
-			return fmt.Errorf("failed to flush writer to connection: %w", err)
+			return err
 		}
 
 		params, err := url.ParseQuery(req.URL.RawQuery)

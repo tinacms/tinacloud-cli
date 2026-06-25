@@ -19,6 +19,7 @@ import (
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
 	"tina.io/tinacloud-cli/internal/posthog"
+	"tina.io/tinacloud-cli/internal/utils"
 )
 
 // captureTracker records emitted events and identify calls for assertions.
@@ -82,7 +83,7 @@ func TestGenerateVerifier_Format(t *testing.T) {
 }
 
 func TestCallbackListener(t *testing.T) {
-	ln, port, err := callbackListener()
+	ln, port, err := utils.CallbackListener()
 	if err != nil {
 		t.Fatalf("callbackListener() = %v, want nil error", err)
 	}
