@@ -22,10 +22,10 @@ func CallbackListener() (net.Listener, int, error) {
 func CallbackResponse(connection net.Conn) error {
 	writer := bufio.NewWriter(connection)
 	_, err := writer.WriteString("HTTP/1.1 200 OK\r\n" +
-		"Content-Type: text/plain\r\n" +
+		"Content-Type: text/html\r\n" +
 		"Connection: close\r\n" +
 		"\r\n" +
-		"You may now close this tab.")
+		"<html><body><p>You may now close this tab.<p><script>window.close()</script></body></html>")
 	if err != nil {
 		return fmt.Errorf("failed to write back to connection: %w", err)
 	}

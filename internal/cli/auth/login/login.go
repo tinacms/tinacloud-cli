@@ -61,29 +61,10 @@ func runLogin(cfg config.Config, openURL func(string) error, track posthog.Track
 	defer ln.Close()
 
 	{
-		// <tinacloud-host>:oauth/authorize will attempt to redirect the client
-		// to the authorization page. instead, we want to catch the redirect
-		// location to display to user.
-		client := http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		}
-
-		oauthURL := fmt.Sprintf("%s/oauth/authorize?code_challenge=%s&redirect_uri=http://localhost:%d/callback", cfg.TinaCloud.Endpoint, challenge, port)
-		resp, err := client.Get(oauthURL)
-		if err != nil {
-			return fmt.Errorf("failed to authorize with tinacloud: %w", err)
-		}
-
-		redirectURL := resp.Header.Get("location")
-		if redirectURL == "" {
-			// Default to pre-redirect URL if no location header is found
-			redirectURL = oauthURL
-		}
+		oauthURL := fmt.Sprintf("%s/signin?cli=true&code_challenge=%s&redirect_uri=http://localhost:%d/callback", cfg.TinaCloud.FrontEndEndpoint, challenge, port)
 
 		// User can copy string from terminal if this fails
-		_ = openURL(redirectURL)
+		_ = openURL(oauthURL)
 		track(posthog.UserSignInInitiated())
 
 		fmt.Printf(`TinaCloud SSO login required.
@@ -91,7 +72,7 @@ Attempting to open your default browser. If the browser does not open, open the 
 
 %s
 
-`, redirectURL)
+`, oauthURL)
 	}
 
 	// Read auth code from client

@@ -12,7 +12,8 @@ type CoreConfig struct {
 }
 
 type TinaCloudConfig struct {
-	Endpoint string `env:"ENDPOINT, default=https://identity-v2.tinajs.io"`
+	Endpoint         string `env:"ENDPOINT, default=https://identity-v2.tinajs.io"`
+	FrontEndEndpoint string `env:"FRONT_END_ENDPOINT, default=https://app.tina.io"`
 }
 
 type Config struct {
