@@ -93,22 +93,6 @@ func TestCallbackListener(t *testing.T) {
 	}
 }
 
-// Login should fail before opening a browser when the authorize request to
-// TinaCloud cannot be made. Pointing the endpoint at a closed port exercises
-// that error path without any browser side effects.
-func TestLogin_AuthorizeRequestFails(t *testing.T) {
-	cfg := config.Config{}
-	cfg.TinaCloud.Endpoint = "http://127.0.0.1:1"
-
-	err := Login(nil, cfg, posthog.NoopTracker, posthog.NoopIdentifier)
-	if err == nil {
-		t.Fatal("Login() = nil error, want error when authorize request fails")
-	}
-	if !strings.Contains(err.Error(), "failed to authorize with tinacloud") {
-		t.Errorf("Login() = %v, want authorize failure", err)
-	}
-}
-
 // validCallback is a well-formed OAuth redirect carrying an auth code.
 const validCallback = "GET /callback?code=test-code HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 

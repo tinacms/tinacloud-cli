@@ -24,7 +24,7 @@ func TestLoadConfig(t *testing.T) {
 			name: "defaults",
 			want: Config{
 				Core:      CoreConfig{Dev: true},
-				TinaCloud: TinaCloudConfig{Endpoint: "https://identity-v2.tinajs.io"},
+				TinaCloud: TinaCloudConfig{Endpoint: "https://identity-v2.tinajs.io", FrontEndEndpoint: "https://app.tina.io"},
 			},
 		},
 		{
@@ -37,14 +37,14 @@ func TestLoadConfig(t *testing.T) {
 			},
 			want: Config{
 				Core:      CoreConfig{Dev: false},
-				TinaCloud: TinaCloudConfig{Endpoint: "https://tc.example"},
+				TinaCloud: TinaCloudConfig{Endpoint: "https://tc.example", FrontEndEndpoint: "https://app.tina.io"},
 			},
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			for _, key := range []string{"DEV", "POSTHOG_API_KEY", "POSTHOG_ENDPOINT", "TINACLOUD_ENDPOINT"} {
+			for _, key := range []string{"DEV", "POSTHOG_API_KEY", "POSTHOG_ENDPOINT", "TINACLOUD_ENDPOINT", "TINACLOUD_FRONT_END_ENDPOINT"} {
 				unset(t, key)
 			}
 			for key, val := range tc.env {
