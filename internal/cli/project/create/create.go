@@ -59,7 +59,7 @@ func Create(args []string, cfg config.Config, track posthog.Tracker) error {
 		return nil
 	}
 
-	fmt.Println("Project successfully created!")
+	fmt.Println("✅️ Successfully created project!")
 	fmt.Printf("\t- %s\n", out.Project.String())
 
 	return nil
