@@ -84,10 +84,10 @@ func runLogin(cfg config.Config, openURL func(string) error, track posthog.Track
 
 		// User can copy string from terminal if this fails
 		_ = openURL(redirectURL)
+
 		track(posthog.UserSignInInitiated())
 
-		fmt.Printf(`TinaCloud SSO login required.
-Attempting to open your default browser. If the browser does not open, open the following URL.
+		fmt.Printf(`Attempting to open your default browser. If the browser does not open, open the following URL.
 
 %s
 
@@ -179,7 +179,7 @@ Attempting to open your default browser. If the browser does not open, open the 
 
 	track(posthog.UserSignInSuccess())
 
-	fmt.Println("Successfully logged into your TinaCloud account!")
+	fmt.Println("✅️ Successfully logged into TinaCloud!")
 
 	return nil
 }

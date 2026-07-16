@@ -35,6 +35,6 @@ func Logout(args []string, cfg config.Config, track posthog.Tracker) error {
 
 	track(posthog.UserLoggedOut())
 
-	fmt.Println("Successfully signed out of your TinaCloud account")
+	fmt.Println("✅️ Successfully signed out of your TinaCloud account")
 	return nil
 }
