@@ -24,7 +24,7 @@ type siteURLAddJSONOutput struct {
 func Add(args []string, cfg config.Config, track posthog.Tracker) error {
 	flagSet := flag.NewFlagSet("projectupdatesiteurladd", flag.ExitOnError)
 	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli project update site-url add [flags]")
+		fmt.Fprintln(os.Stderr, "Usage: tinacloud project update site-url add [flags]")
 		fmt.Fprintln(os.Stderr, "\nAdd site URLs")
 		fmt.Fprintln(os.Stderr, "\nFlags:")
 		flagSet.PrintDefaults()

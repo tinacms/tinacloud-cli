@@ -15,7 +15,7 @@ import (
 func Update(args []string, cfg config.Config, track posthog.Tracker) error {
 	flagSet := flag.NewFlagSet("projectupdate", flag.ExitOnError)
 	flagSet.Usage = func() {
-		command.PrintSubCommands(os.Stderr, "tinacloud-cli project update", []command.SubCommand{
+		command.PrintSubCommands(os.Stderr, "tinacloud project update", []command.SubCommand{
 			{Name: "site-url", Description: "Update a projects site URLs"},
 			{Name: "protected-branch", Description: "Update a projects protected branches. This command is only available if your project has access to the editorial workflow feature."},
 		})

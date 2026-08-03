@@ -21,7 +21,7 @@ type statusJSONOutput struct {
 func Status(args []string, cfg config.Config) error {
 	flagSet := flag.NewFlagSet("projectstatus", flag.ExitOnError)
 	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli project status [flags]")
+		fmt.Fprintln(os.Stderr, "Usage: tinacloud project status [flags]")
 		fmt.Fprintln(os.Stderr, "\nList a project's status")
 		fmt.Fprintln(os.Stderr, "\nFlags:")
 		flagSet.PrintDefaults()

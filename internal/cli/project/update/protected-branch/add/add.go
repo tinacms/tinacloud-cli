@@ -24,7 +24,7 @@ type protectedBranchAddJSONOutput struct {
 func Add(args []string, cfg config.Config, track posthog.Tracker) error {
 	flagSet := flag.NewFlagSet("projectupdateprotectedbranchadd", flag.ExitOnError)
 	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli project update protected-branch add [flags]")
+		fmt.Fprintln(os.Stderr, "Usage: tinacloud project update protected-branch add [flags]")
 		fmt.Fprintln(os.Stderr, "\nAdd protected branches")
 		fmt.Fprintln(os.Stderr, "\nFlags:")
 		flagSet.PrintDefaults()

@@ -8,11 +8,11 @@ import (
 
 func TestPrintSubCommands(t *testing.T) {
 	var buf bytes.Buffer
-	PrintSubCommands(&buf, "tinacloud-cli org", []SubCommand{
+	PrintSubCommands(&buf, "tinacloud org", []SubCommand{
 		{Name: "list", Description: "List organizations"},
 	})
 
-	want := "Usage: tinacloud-cli org <command> [flags]\n\nCommands:\n  list         List organizations\n"
+	want := "Usage: tinacloud org <command> [flags]\n\nCommands:\n  list         List organizations\n"
 	if got := buf.String(); got != want {
 		t.Errorf("PrintSubCommands() = %q, want %q", got, want)
 	}

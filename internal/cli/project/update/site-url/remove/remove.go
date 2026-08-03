@@ -24,7 +24,7 @@ type siteURLRemoveJSONOutput struct {
 func Remove(args []string, cfg config.Config, track posthog.Tracker) error {
 	flagSet := flag.NewFlagSet("projectupdatesiteurlremove", flag.ExitOnError)
 	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli project update site-url remove [flags]")
+		fmt.Fprintln(os.Stderr, "Usage: tinacloud project update site-url remove [flags]")
 		fmt.Fprintln(os.Stderr, "\nRemove site URLs")
 		fmt.Fprintln(os.Stderr, "\nFlags:")
 		flagSet.PrintDefaults()

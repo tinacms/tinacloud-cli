@@ -21,7 +21,7 @@ type listJSONOutput struct {
 func List(args []string, cfg config.Config) error {
 	flagSet := flag.NewFlagSet("orglist", flag.ExitOnError)
 	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli org list [flags]")
+		fmt.Fprintln(os.Stderr, "Usage: tinacloud org list [flags]")
 		fmt.Fprintln(os.Stderr, "\nList organizations")
 		fmt.Fprintln(os.Stderr, "\nFlags:")
 		flagSet.PrintDefaults()
