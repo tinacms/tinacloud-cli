@@ -46,7 +46,7 @@ func (c *captureTracker) count(event string) int {
 const fakeUserID = "user-abc"
 
 var fakeAccessToken = func() string {
-	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{"tinacloud_user_id": fakeUserID})
+	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{"external_id": fakeUserID})
 	signed, _ := tok.SignedString([]byte("test-secret"))
 	return signed
 }()
