@@ -16,7 +16,7 @@ import (
 func Auth(args []string, cfg config.Config, track posthog.Tracker, identify posthog.Identifier) error {
 	flagSet := flag.NewFlagSet("auth", flag.ExitOnError)
 	flagSet.Usage = func() {
-		command.PrintSubCommands(os.Stderr, "tinacloud-cli auth", []command.SubCommand{
+		command.PrintSubCommands(os.Stderr, "tinacloud auth", []command.SubCommand{
 			{Name: "login", Description: "Log in to a TinaCloud account"},
 			{Name: "logout", Description: "Log out of a TinaCloud account"},
 			{Name: "status", Description: "Display authentication status and TinaCloud account information"},

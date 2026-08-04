@@ -39,7 +39,7 @@ func generateChallenge(verifier string) string {
 func Login(args []string, cfg config.Config, track posthog.Tracker, identify posthog.Identifier) error {
 	flagSet := flag.NewFlagSet("login", flag.ExitOnError)
 	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli auth login")
+		fmt.Fprintln(os.Stderr, "Usage: tinacloud auth login")
 		fmt.Fprintln(os.Stderr, "\nLog in to a TinaCloud account")
 	}
 	_ = flagSet.Parse(args)

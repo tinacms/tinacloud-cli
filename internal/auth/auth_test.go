@@ -24,7 +24,7 @@ func TestDecodeAccessToken(t *testing.T) {
 		wantErr    bool
 	}{
 		{
-			name: "valid token with tinacloud_user_id",
+			name: "valid token with external_id",
 			token: makeJWT(t, &DecodedAccessToken{
 				TinaCloudUserID:  "user-abc",
 				RegisteredClaims: jwt.RegisteredClaims{Subject: "user-1"},
@@ -32,7 +32,7 @@ func TestDecodeAccessToken(t *testing.T) {
 			wantUserID: "user-abc",
 		},
 		{
-			name: "valid token without tinacloud_user_id",
+			name: "valid token without external_id",
 			token: makeJWT(t, &DecodedAccessToken{
 				RegisteredClaims: jwt.RegisteredClaims{Subject: "user-2"},
 			}),
@@ -71,7 +71,7 @@ func TestDecodeAccessToken(t *testing.T) {
 // so it round-trips under whatever json tag the struct carries — it can't
 // catch a tag drift away from what the identity service emits (#3677).
 func TestDecodeAccessToken_WireClaimName(t *testing.T) {
-	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{"tinacloud_user_id": "user-abc"})
+	tok := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{"external_id": "user-abc"})
 	token, err := tok.SignedString([]byte("test-secret"))
 	if err != nil {
 		t.Fatalf("mint: %v", err)

@@ -17,7 +17,7 @@ import (
 func Project(args []string, cfg config.Config, track posthog.Tracker) error {
 	flagSet := flag.NewFlagSet("project", flag.ExitOnError)
 	flagSet.Usage = func() {
-		command.PrintSubCommands(os.Stderr, "tinacloud-cli project", []command.SubCommand{
+		command.PrintSubCommands(os.Stderr, "tinacloud project", []command.SubCommand{
 			{Name: "list", Description: "List projects"},
 			{Name: "create", Description: "Create a new project"},
 			{Name: "status", Description: "List a project's status"},

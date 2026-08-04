@@ -26,7 +26,7 @@ type projectOption struct {
 func Configure(args []string, cfg config.Config, track posthog.Tracker) error {
 	flagSet := flag.NewFlagSet("configure", flag.ExitOnError)
 	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli configure [flags]")
+		fmt.Fprintln(os.Stderr, "Usage: tinacloud configure [flags]")
 		fmt.Fprintln(os.Stderr, "\nConfigure a local Tina project")
 		fmt.Fprintln(os.Stderr, "\nFlags:")
 		flagSet.PrintDefaults()

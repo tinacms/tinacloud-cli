@@ -24,7 +24,7 @@ type protectedBranchRemoveJSONOutput struct {
 func Remove(args []string, cfg config.Config, track posthog.Tracker) error {
 	flagSet := flag.NewFlagSet("projectupdateprotectedbranchremove", flag.ExitOnError)
 	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli project update protected-branch remove [flags]")
+		fmt.Fprintln(os.Stderr, "Usage: tinacloud project update protected-branch remove [flags]")
 		fmt.Fprintln(os.Stderr, "\nRemove protected branches")
 		fmt.Fprintln(os.Stderr, "\nFlags:")
 		flagSet.PrintDefaults()

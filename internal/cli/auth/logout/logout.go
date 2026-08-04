@@ -14,7 +14,7 @@ import (
 func Logout(args []string, cfg config.Config, track posthog.Tracker) error {
 	flagSet := flag.NewFlagSet("logout", flag.ExitOnError)
 	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli auth logout")
+		fmt.Fprintln(os.Stderr, "Usage: tinacloud auth logout")
 		fmt.Fprintln(os.Stderr, "\nLog out of a TinaCloud account")
 	}
 	_ = flagSet.Parse(args)

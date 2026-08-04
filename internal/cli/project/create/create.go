@@ -29,7 +29,7 @@ type createJSONOutput struct {
 func Create(args []string, cfg config.Config, track posthog.Tracker) error {
 	flagSet := flag.NewFlagSet("projectcreate", flag.ExitOnError)
 	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli project create [flags]")
+		fmt.Fprintln(os.Stderr, "Usage: tinacloud project create [flags]")
 		fmt.Fprintln(os.Stderr, "\nCreate a new project")
 		fmt.Fprintln(os.Stderr, "\nFlags:")
 		flagSet.PrintDefaults()

@@ -15,9 +15,9 @@ import (
 func SiteURL(args []string, cfg config.Config, track posthog.Tracker) error {
 	flagSet := flag.NewFlagSet("projectupdatesiteurl", flag.ExitOnError)
 	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud-cli project update site-url")
+		fmt.Fprintln(os.Stderr, "Usage: tinacloud project update site-url")
 		fmt.Fprintln(os.Stderr, "\nUpdate a projects site URLs")
-		command.PrintSubCommands(os.Stderr, "tinacloud-cli project update", []command.SubCommand{
+		command.PrintSubCommands(os.Stderr, "tinacloud project update", []command.SubCommand{
 			{Name: "Add", Description: "Add site URLs"},
 			{Name: "Remove", Description: "Remove site URLs"},
 		})

@@ -15,9 +15,9 @@ import (
 )
 
 func (s *State) Root(version string) error {
-	flagSet := flag.NewFlagSet("tinacloud-cli", flag.ExitOnError)
+	flagSet := flag.NewFlagSet("tinacloud", flag.ExitOnError)
 	flagSet.Usage = func() {
-		command.PrintSubCommands(os.Stderr, "tinacloud-cli", []command.SubCommand{
+		command.PrintSubCommands(os.Stderr, "tinacloud", []command.SubCommand{
 			{Name: "auth", Description: "Authenticate with TinaCloud"},
 			{Name: "org", Description: "Interact with organizations"},
 			{Name: "project", Description: "Interact with projects"},

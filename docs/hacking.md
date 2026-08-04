@@ -27,7 +27,7 @@ go fmt ./...
 
 To build:
 ```bash
-go build -o ./build/tinacloud-cli ./cmd/tinacloud-cli
+go build -o ./build/tinacloud ./cmd/tinacloud-cli
 ```
 
 To run security scans and code vets:
