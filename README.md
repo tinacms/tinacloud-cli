@@ -8,7 +8,7 @@ A CLI tool to interact with TinaCloud related services.
 ```
 $ git clone https://github.com/tinacms/tinacloud-cli
 $ cd tinacloud-cli
-$ go build -o tinacloud ./cmd/tinacloud-cli
+$ go build -o tinacloud ./cmd/tinacloud
 ```
 
 ## Getting started
