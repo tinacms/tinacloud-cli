@@ -52,7 +52,7 @@ func (c *Command) Dispatch(args []string, path []string) error {
 		}
 	}
 
-	if c.Run != nil {
+	if len(c.SubCommands) == 0 && c.Run != nil {
 		return c.Run(args)
 	}
 

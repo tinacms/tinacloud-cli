@@ -21,7 +21,7 @@ type siteURLRemoveJSONOutput struct {
 	SiteURLs []string `json:"site_urls"`
 }
 
-func Command(cfg config.Config, track posthog.Tracker, identify posthog.Identifier) *command.Command {
+func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	flagSet := flag.NewFlagSet("remove", flag.ContinueOnError)
 	var siteURLsFlag domain.UrlsFlag
 	flagSet.Var(&siteURLsFlag, "url", "A URL to remove from your TinaCloud project")

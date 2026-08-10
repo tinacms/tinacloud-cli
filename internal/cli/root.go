@@ -33,19 +33,21 @@ func (s *State) rootCommand(version string) *command.Command {
 	root := &command.Command{
 		Name:  "tinacloud",
 		Flags: flagSet,
-		Run: func(args []string) error {
-			if *versionFlag {
-				fmt.Println(version)
-				return nil
-			}
-			return nil
-		},
 		SubCommands: []*command.Command{
 			auth.Command(s.config, s.Track, s.Identify),
 			org.Command(s.config),
 			project.Command(s.config, s.Track, s.Identify),
 			configure.Command(s.config, s.Track),
 		},
+	}
+
+	root.Run = func(args []string) error {
+		if *versionFlag {
+			fmt.Println(version)
+			return nil
+		}
+		root.PrintUsage(os.Stderr, nil)
+		return nil
 	}
 
 	root.SubCommands = append(root.SubCommands, completionCommand(root))

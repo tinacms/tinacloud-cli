@@ -15,7 +15,7 @@ func Command(cfg config.Config, track posthog.Tracker, identify posthog.Identifi
 		Description: "Authenticate with TinaCloud",
 		SubCommands: []*command.Command{
 			login.Command(cfg, track, identify),
-			logout.Command(cfg, track, identify),
+			logout.Command(cfg, track),
 			status.Command(cfg),
 		},
 	}

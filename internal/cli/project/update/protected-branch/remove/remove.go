@@ -22,7 +22,7 @@ type protectedBranchRemoveJSONOutput struct {
 	ProtectedBranches []string `json:"protected_branches"`
 }
 
-func Command(cfg config.Config, track posthog.Tracker, identify posthog.Identifier) *command.Command {
+func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	flagSet := flag.NewFlagSet("remove", flag.ContinueOnError)
 	var protectedBranchesFlag domain.BranchesFlag
 	flagSet.Var(&protectedBranchesFlag, "branch", "A protected branch to remove from your TinaCloud project")

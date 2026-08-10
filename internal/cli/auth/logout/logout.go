@@ -11,7 +11,7 @@ import (
 	"tina.io/tinacloud-cli/internal/posthog"
 )
 
-func Command(cfg config.Config, track posthog.Tracker, identify posthog.Identifier) *command.Command {
+func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	return &command.Command{
 		Name:        "logout",
 		Description: "Log out of a TinaCloud account",

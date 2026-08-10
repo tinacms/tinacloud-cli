@@ -8,13 +8,13 @@ import (
 	"tina.io/tinacloud-cli/internal/posthog"
 )
 
-func Command(cfg config.Config, track posthog.Tracker, identify posthog.Identifier) *command.Command {
+func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	return &command.Command{
 		Name:        "update",
 		Description: "Update a projects information",
 		SubCommands: []*command.Command{
-			siteurl.Command(cfg, track, identify),
-			protectedbranch.Command(cfg, track, identify),
+			siteurl.Command(cfg, track),
+			protectedbranch.Command(cfg, track),
 		},
 	}
 }

@@ -31,8 +31,8 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
 
 	return &command.Command{
-		Name:        "status",
-		Description: "Display authentication status and TinaCloud account information",
+		Name:        "configure",
+		Description: "Configure a local Tina project",
 		Flags:       flagSet,
 		Run: func(args []string) error {
 			cwd, err := os.Getwd()

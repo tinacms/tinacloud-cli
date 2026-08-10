@@ -1,9 +1,9 @@
 package project
 
 import (
-	"tina.io/tinacloud-cli/internal/cli/auth/status"
 	"tina.io/tinacloud-cli/internal/cli/project/create"
 	"tina.io/tinacloud-cli/internal/cli/project/list"
+	"tina.io/tinacloud-cli/internal/cli/project/status"
 	"tina.io/tinacloud-cli/internal/cli/project/update"
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
@@ -18,7 +18,7 @@ func Command(cfg config.Config, track posthog.Tracker, identify posthog.Identifi
 			list.Command(cfg),
 			create.Command(cfg, track),
 			status.Command(cfg),
-			update.Command(cfg, track, identify),
+			update.Command(cfg, track),
 		},
 	}
 }
