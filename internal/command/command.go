@@ -1,42 +1,98 @@
 package command
 
 import (
-	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
+	"os"
+	"strings"
 )
 
-type SubCommand struct {
-	Name        string
-	Description string
+type Command struct {
+	Name            string
+	Description     string
+	LongDescription string
+	Flags           *flag.FlagSet
+	SubCommands     []*Command
+	Run             func(args []string) error
 }
 
-func (sc SubCommand) fprint(w io.Writer) {
-	fmt.Fprintf(w, "  %-12s %s\n", sc.Name, sc.Description)
+func (c *Command) Dispatch(args []string, path []string) error {
+	if c.Flags != nil {
+		c.Flags.Usage = func() {
+			c.PrintUsage(os.Stderr, path)
+		}
+		if err := c.Flags.Parse(args); err != nil {
+			if err == flag.ErrHelp {
+				return nil
+			}
+			return err
+		}
+		args = c.Flags.Args()
+	}
+
+	if len(args) == 0 {
+		if c.Run == nil {
+			c.PrintUsage(os.Stderr, path)
+			return nil
+		}
+		return c.Run(args)
+	}
+
+	name, rest := args[0], args[1:]
+
+	if name == "-h" || name == "--help" {
+		c.PrintUsage(os.Stdout, path)
+		return nil
+	}
+
+	for _, sub := range c.SubCommands {
+		if sub.Name == name {
+			return sub.Dispatch(rest, append(path, sub.Name))
+		}
+	}
+
+	if len(c.SubCommands) == 0 && c.Run != nil {
+		return c.Run(args)
+	}
+
+	fmt.Fprintf(os.Stderr, "unrecognized command %q\n\n", name)
+	c.PrintUsage(os.Stderr, path)
+	return fmt.Errorf("unrecognized command %q", name)
 }
 
-func PrintSubCommands(w io.Writer, parent string, cmds []SubCommand) {
-	fmt.Fprintf(w, "Usage: %s <command> [flags]\n\nCommands:\n", parent)
-	for _, cmd := range cmds {
-		cmd.fprint(w)
+func (c *Command) PrintUsage(w io.Writer, path []string) {
+	fullPath := strings.Join(append([]string{"tinacloud"}, path...), " ")
+
+	if c.Description != "" {
+		fmt.Fprintf(w, "%s\n\n", c.Description)
 	}
-}
-
-func WriteJSONResult(w io.Writer, v any, err error) error {
-	if err != nil {
-		data, _ := json.Marshal(struct {
-			Error string `json:"error"`
-		}{err.Error()})
-
-		fmt.Fprintln(w, string(data))
-		return err
+	fmt.Fprintf(w, "Usage:\n  %s", fullPath)
+	if len(c.SubCommands) > 0 {
+		fmt.Fprint(w, " [command]")
 	}
+	fmt.Fprintln(w)
 
-	data, marshalErr := json.Marshal(v)
-	if marshalErr != nil {
-		return fmt.Errorf("failed to marshal output: %w", marshalErr)
+	if c.LongDescription != "" {
+		fmt.Fprintf(w, "\n%s\n", c.LongDescription)
 	}
 
-	fmt.Fprintln(w, string(data))
-	return nil
+	if len(c.SubCommands) > 0 {
+		fmt.Fprint(w, "\nAvailable Commands:\n")
+		maxLen := 0
+		for _, s := range c.SubCommands {
+			if len(s.Name) > maxLen {
+				maxLen = len(s.Name)
+			}
+		}
+		for _, s := range c.SubCommands {
+			fmt.Fprintf(w, "  %-*s  %s\n", maxLen, s.Name, s.Description)
+		}
+	}
+
+	if c.Flags != nil {
+		fmt.Fprint(w, "\nFlags:\n")
+		c.Flags.SetOutput(w)
+		c.Flags.PrintDefaults()
+	}
 }

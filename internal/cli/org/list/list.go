@@ -11,6 +11,7 @@ import (
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
 	"tina.io/tinacloud-cli/internal/requests"
+	"tina.io/tinacloud-cli/internal/utils"
 )
 
 type listJSONOutput struct {
@@ -18,37 +19,36 @@ type listJSONOutput struct {
 	Organizations []domain.OrganizationWithRole `json:"organizations"`
 }
 
-func List(args []string, cfg config.Config) error {
-	flagSet := flag.NewFlagSet("orglist", flag.ExitOnError)
-	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud org list [flags]")
-		fmt.Fprintln(os.Stderr, "\nList organizations")
-		fmt.Fprintln(os.Stderr, "\nFlags:")
-		flagSet.PrintDefaults()
-	}
-
+func Command(cfg config.Config) *command.Command {
+	flagSet := flag.NewFlagSet("list", flag.ContinueOnError)
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
-	_ = flagSet.Parse(args)
 
-	out, err := runList(cfg, auth.TokensFromCache)
-	if *jsonFlag {
-		return command.WriteJSONResult(os.Stdout, out, err)
-	}
-	if err != nil {
-		return err
-	}
+	return &command.Command{
+		Name:        "list",
+		Description: "List organizations",
+		Flags:       flagSet,
+		Run: func(args []string) error {
+			out, err := runList(cfg, auth.TokensFromCache)
+			if *jsonFlag {
+				return utils.WriteJSONResult(os.Stdout, out, err)
+			}
+			if err != nil {
+				return err
+			}
 
-	if !out.LoggedIn {
-		fmt.Println("You are not currently logged in")
-		return nil
-	}
+			if !out.LoggedIn {
+				fmt.Println("You are not currently logged in")
+				return nil
+			}
 
-	fmt.Println("Organizations:")
-	for _, org := range out.Organizations {
-		fmt.Printf("\t- %s\n", org.String())
-	}
+			fmt.Println("Organizations:")
+			for _, org := range out.Organizations {
+				fmt.Printf("\t- %s\n", org.String())
+			}
 
-	return nil
+			return nil
+		},
+	}
 }
 
 func runList(cfg config.Config, loadTokens auth.TokenLoader) (listJSONOutput, error) {

@@ -11,6 +11,7 @@ import (
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
 	"tina.io/tinacloud-cli/internal/requests"
+	"tina.io/tinacloud-cli/internal/utils"
 )
 
 type listJSONOutput struct {
@@ -18,39 +19,38 @@ type listJSONOutput struct {
 	Projects []domain.GetV2ProjectsResponse `json:"projects"`
 }
 
-func List(args []string, cfg config.Config) error {
-	flagSet := flag.NewFlagSet("projectlist", flag.ExitOnError)
-	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud project list [flags]")
-		fmt.Fprintln(os.Stderr, "\nList projects")
-		fmt.Fprintln(os.Stderr, "\nFlags:")
-		flagSet.PrintDefaults()
-	}
-
+func Command(cfg config.Config) *command.Command {
+	flagSet := flag.NewFlagSet("list", flag.ContinueOnError)
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
 	var orgIDFlag = flagSet.String("org-id", "", "TinaCloud organization ID")
 	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
-	_ = flagSet.Parse(args)
 
-	out, err := runList(cfg, *orgIDFlag, *tinaDirFlag)
-	if *jsonFlag {
-		return command.WriteJSONResult(os.Stdout, out, err)
-	}
-	if err != nil {
-		return err
-	}
+	return &command.Command{
+		Name:        "list",
+		Description: "List projects",
+		Flags:       flagSet,
+		Run: func(args []string) error {
+			out, err := runList(cfg, *orgIDFlag, *tinaDirFlag)
+			if *jsonFlag {
+				return utils.WriteJSONResult(os.Stdout, out, err)
+			}
+			if err != nil {
+				return err
+			}
 
-	if !out.LoggedIn {
-		fmt.Println("You are not currently logged in")
-		return nil
-	}
+			if !out.LoggedIn {
+				fmt.Println("You are not currently logged in")
+				return nil
+			}
 
-	fmt.Println("Projects:")
-	for _, project := range out.Projects {
-		fmt.Printf("\t- %s\n", project.String())
-	}
+			fmt.Println("Projects:")
+			for _, project := range out.Projects {
+				fmt.Printf("\t- %s\n", project.String())
+			}
 
-	return nil
+			return nil
+		},
+	}
 }
 
 func runList(cfg config.Config, orgID, tinaDir string) (listJSONOutput, error) {

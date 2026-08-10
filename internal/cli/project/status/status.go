@@ -11,6 +11,7 @@ import (
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
 	"tina.io/tinacloud-cli/internal/requests"
+	"tina.io/tinacloud-cli/internal/utils"
 )
 
 type statusJSONOutput struct {
@@ -18,36 +19,35 @@ type statusJSONOutput struct {
 	Project  domain.GetV2ProjectResponse `json:"project"`
 }
 
-func Status(args []string, cfg config.Config) error {
-	flagSet := flag.NewFlagSet("projectstatus", flag.ExitOnError)
-	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud project status [flags]")
-		fmt.Fprintln(os.Stderr, "\nList a project's status")
-		fmt.Fprintln(os.Stderr, "\nFlags:")
-		flagSet.PrintDefaults()
-	}
-
+func Command(cfg config.Config) *command.Command {
+	flagSet := flag.NewFlagSet("list", flag.ContinueOnError)
 	var projectIDFlag = flagSet.String("project-id", "", "TinaCloud project ID")
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
 	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
-	_ = flagSet.Parse(args)
 
-	out, err := runStatus(cfg, *projectIDFlag, *tinaDirFlag)
-	if *jsonFlag {
-		return command.WriteJSONResult(os.Stdout, out, err)
+	return &command.Command{
+		Name:        "status",
+		Description: "List a project's status",
+		Flags:       flagSet,
+		Run: func(args []string) error {
+			out, err := runStatus(cfg, *projectIDFlag, *tinaDirFlag)
+			if *jsonFlag {
+				return utils.WriteJSONResult(os.Stdout, out, err)
+			}
+			if err != nil {
+				return err
+			}
+
+			if !out.LoggedIn {
+				fmt.Println("You are not currently logged in")
+				return nil
+			}
+
+			fmt.Printf("%s\n", out.Project.String())
+
+			return nil
+		},
 	}
-	if err != nil {
-		return err
-	}
-
-	if !out.LoggedIn {
-		fmt.Println("You are not currently logged in")
-		return nil
-	}
-
-	fmt.Printf("%s\n", out.Project.String())
-
-	return nil
 }
 
 func runStatus(cfg config.Config, projectID, tinaDir string) (statusJSONOutput, error) {

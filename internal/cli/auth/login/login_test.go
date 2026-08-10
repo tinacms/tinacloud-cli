@@ -100,7 +100,7 @@ func TestLogin_AuthorizeRequestFails(t *testing.T) {
 	cfg := config.Config{}
 	cfg.TinaCloud.Endpoint = "http://127.0.0.1:1"
 
-	err := Login(nil, cfg, posthog.NoopTracker, posthog.NoopIdentifier)
+	err := runLogin(cfg, nil, posthog.NoopTracker, posthog.NoopIdentifier)
 	if err == nil {
 		t.Fatal("Login() = nil error, want error when authorize request fails")
 	}

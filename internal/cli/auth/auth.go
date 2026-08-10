@@ -1,10 +1,6 @@
 package auth
 
 import (
-	"flag"
-	"fmt"
-	"os"
-
 	"tina.io/tinacloud-cli/internal/cli/auth/login"
 	"tina.io/tinacloud-cli/internal/cli/auth/logout"
 	"tina.io/tinacloud-cli/internal/cli/auth/status"
@@ -13,33 +9,14 @@ import (
 	"tina.io/tinacloud-cli/internal/posthog"
 )
 
-func Auth(args []string, cfg config.Config, track posthog.Tracker, identify posthog.Identifier) error {
-	flagSet := flag.NewFlagSet("auth", flag.ExitOnError)
-	flagSet.Usage = func() {
-		command.PrintSubCommands(os.Stderr, "tinacloud auth", []command.SubCommand{
-			{Name: "login", Description: "Log in to a TinaCloud account"},
-			{Name: "logout", Description: "Log out of a TinaCloud account"},
-			{Name: "status", Description: "Display authentication status and TinaCloud account information"},
-		})
-		flagSet.PrintDefaults()
-	}
-
-	_ = flagSet.Parse(args)
-	args = flagSet.Args()
-	if len(args) == 0 {
-		flagSet.Usage()
-		return nil
-	}
-
-	cmd, subargs := args[0], args[1:]
-	switch cmd {
-	case "login":
-		return login.Login(subargs, cfg, track, identify)
-	case "status":
-		return status.Status(subargs, cfg)
-	case "logout":
-		return logout.Logout(subargs, cfg, track)
-	default:
-		return fmt.Errorf("unrecognized command %q", cmd)
+func Command(cfg config.Config, track posthog.Tracker, identify posthog.Identifier) *command.Command {
+	return &command.Command{
+		Name:        "auth",
+		Description: "Authenticate with TinaCloud",
+		SubCommands: []*command.Command{
+			login.Command(cfg, track, identify),
+			logout.Command(cfg, track),
+			status.Command(cfg),
+		},
 	}
 }
