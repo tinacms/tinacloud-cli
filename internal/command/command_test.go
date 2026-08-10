@@ -269,7 +269,9 @@ func TestGenPowerShell(t *testing.T) {
     param($wordToComplete, $commandAst, $cursorPosition)
 
     $tokens = $commandAst.CommandElements | ForEach-Object { $_.ToString() }
-    $path = ($tokens | Select-Object -Skip 1 | Select-Object -SkipLast 1) -join ' '
+    $elements = @($tokens | Select-Object -Skip 1)
+    if ($wordToComplete) { $elements = @($elements | Select-Object -SkipLast 1) }
+    $path = $elements -join ' '
 
     switch ($path) {
         '' {
