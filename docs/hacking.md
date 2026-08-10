@@ -11,7 +11,7 @@ For your convenience, all the below commands are available via the
 
 To run:
 ```bash
-go run ./cmd/tinacloud-cli
+go run ./cmd/tinacloud
 ```
 
 <details>
@@ -27,7 +27,7 @@ go fmt ./...
 
 To build:
 ```bash
-go build -o ./build/tinacloud ./cmd/tinacloud-cli
+go build -o ./build/tinacloud ./cmd/tinacloud
 ```
 
 To run security scans and code vets:

@@ -1,5 +1,5 @@
 NAME	= tinacloud
-CMD		= ./cmd/tinacloud-cli
+CMD		= ./cmd/tinacloud
 VERSION	= $(shell cat .version)
 # Provided by the release pipeline from a GitHub secret; empty for local builds.
 FLAGS	= -ldflags="-X main.version=$(VERSION)"
