@@ -14,6 +14,7 @@ import (
 	"tina.io/tinacloud-cli/internal/domain"
 	"tina.io/tinacloud-cli/internal/posthog"
 	"tina.io/tinacloud-cli/internal/requests"
+	"tina.io/tinacloud-cli/internal/utils"
 )
 
 type protectedBranchRemoveJSONOutput struct {
@@ -21,42 +22,41 @@ type protectedBranchRemoveJSONOutput struct {
 	ProtectedBranches []string `json:"protected_branches"`
 }
 
-func Remove(args []string, cfg config.Config, track posthog.Tracker) error {
-	flagSet := flag.NewFlagSet("projectupdateprotectedbranchremove", flag.ExitOnError)
-	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud project update protected-branch remove [flags]")
-		fmt.Fprintln(os.Stderr, "\nRemove protected branches")
-		fmt.Fprintln(os.Stderr, "\nFlags:")
-		flagSet.PrintDefaults()
-	}
-
+func Command(cfg config.Config, track posthog.Tracker, identify posthog.Identifier) *command.Command {
+	flagSet := flag.NewFlagSet("remove", flag.ContinueOnError)
 	var protectedBranchesFlag domain.BranchesFlag
 	flagSet.Var(&protectedBranchesFlag, "branch", "A protected branch to remove from your TinaCloud project")
 	var projectIDFlag = flagSet.String("project-id", "", "TinaCloud project ID")
 	var orgIDFlag = flagSet.String("org-id", "", "TinaCloud organization ID")
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
 	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
-	_ = flagSet.Parse(args)
 
-	out, err := runRemove(cfg, protectedBranchesFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
-	if err == nil && out.LoggedIn {
-		track(posthog.ProtectedBranchRemoved(protectedBranchesFlag))
-	}
-	if *jsonFlag {
-		return command.WriteJSONResult(os.Stdout, out, err)
-	}
-	if err != nil {
-		return err
-	}
+	return &command.Command{
+		Name:        "remove",
+		Description: "Remove protected branches",
+		Flags:       flagSet,
+		Run: func(args []string) error {
+			out, err := runRemove(cfg, protectedBranchesFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
+			if err == nil && out.LoggedIn {
+				track(posthog.ProtectedBranchRemoved(protectedBranchesFlag))
+			}
+			if *jsonFlag {
+				return utils.WriteJSONResult(os.Stdout, out, err)
+			}
+			if err != nil {
+				return err
+			}
 
-	if !out.LoggedIn {
-		fmt.Println("You are not currently logged in")
-		return nil
+			if !out.LoggedIn {
+				fmt.Println("You are not currently logged in")
+				return nil
+			}
+
+			fmt.Printf("Project protected branch(es): %s\n", out.ProtectedBranches)
+
+			return nil
+		},
 	}
-
-	fmt.Printf("Project protected branch(es): %s\n", out.ProtectedBranches)
-
-	return nil
 }
 
 func runRemove(cfg config.Config, removeProtectedBranches []string, orgID, projectID, tinaDir string) (protectedBranchRemoveJSONOutput, error) {

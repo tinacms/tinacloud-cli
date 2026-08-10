@@ -2,23 +2,26 @@ package logout
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"os"
 
 	"tina.io/tinacloud-cli/internal/auth"
+	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/posthog"
 )
 
-func Logout(args []string, cfg config.Config, track posthog.Tracker) error {
-	flagSet := flag.NewFlagSet("logout", flag.ExitOnError)
-	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud auth logout")
-		fmt.Fprintln(os.Stderr, "\nLog out of a TinaCloud account")
+func Command(cfg config.Config, track posthog.Tracker, identify posthog.Identifier) *command.Command {
+	return &command.Command{
+		Name:        "logout",
+		Description: "Log out of a TinaCloud account",
+		Run: func(args []string) error {
+			return runLogout(cfg, track)
+		},
 	}
-	_ = flagSet.Parse(args)
+}
 
+func runLogout(cfg config.Config, track posthog.Tracker) error {
 	// Best-effort upstream revocation: a failure should never block logout.
 	tokens, err := auth.PeekTokens()
 	if err == nil {

@@ -21,42 +21,41 @@ type siteURLAddJSONOutput struct {
 	SiteURLs []string `json:"site_urls"`
 }
 
-func Add(args []string, cfg config.Config, track posthog.Tracker) error {
-	flagSet := flag.NewFlagSet("projectupdatesiteurladd", flag.ExitOnError)
-	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud project update site-url add [flags]")
-		fmt.Fprintln(os.Stderr, "\nAdd site URLs")
-		fmt.Fprintln(os.Stderr, "\nFlags:")
-		flagSet.PrintDefaults()
-	}
-
+func Command(cfg config.Config, track posthog.Tracker, identify posthog.Identifier) *command.Command {
+	flagSet := flag.NewFlagSet("add", flag.ContinueOnError)
 	var siteURLsFlag domain.UrlsFlag
 	flagSet.Var(&siteURLsFlag, "url", "A URL to register against your TinaCloud project")
 	var projectIDFlag = flagSet.String("project-id", "", "TinaCloud project ID")
 	var orgIDFlag = flagSet.String("org-id", "", "TinaCloud organization ID")
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
 	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
-	_ = flagSet.Parse(args)
 
-	out, err := runAdd(cfg, siteURLsFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
-	if err == nil && out.LoggedIn {
-		track(posthog.SiteURLAdded(siteURLsFlag))
-	}
-	if *jsonFlag {
-		return command.WriteJSONResult(os.Stdout, out, err)
-	}
-	if err != nil {
-		return err
-	}
+	return &command.Command{
+		Name:        "add",
+		Description: "Add site URLs",
+		Flags:       flagSet,
+		Run: func(args []string) error {
+			out, err := runAdd(cfg, siteURLsFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
+			if err == nil && out.LoggedIn {
+				track(posthog.SiteURLAdded(siteURLsFlag))
+			}
+			if *jsonFlag {
+				return utils.WriteJSONResult(os.Stdout, out, err)
+			}
+			if err != nil {
+				return err
+			}
 
-	if !out.LoggedIn {
-		fmt.Println("You are not currently logged in")
-		return nil
+			if !out.LoggedIn {
+				fmt.Println("You are not currently logged in")
+				return nil
+			}
+
+			fmt.Printf("Project site URL(s): %s\n", out.SiteURLs)
+
+			return nil
+		},
 	}
-
-	fmt.Printf("Project site URL(s): %s\n", out.SiteURLs)
-
-	return nil
 }
 
 func runAdd(cfg config.Config, newSiteURLs domain.UrlsFlag, orgID, projectID, tinaDir string) (siteURLAddJSONOutput, error) {

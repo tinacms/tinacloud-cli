@@ -26,43 +26,42 @@ type createJSONOutput struct {
 	Project  domain.CreatedProject `json:"project"`
 }
 
-func Create(args []string, cfg config.Config, track posthog.Tracker) error {
-	flagSet := flag.NewFlagSet("projectcreate", flag.ExitOnError)
-	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud project create [flags]")
-		fmt.Fprintln(os.Stderr, "\nCreate a new project")
-		fmt.Fprintln(os.Stderr, "\nFlags:")
-		flagSet.PrintDefaults()
-	}
-
+func Command(cfg config.Config, track posthog.Tracker) *command.Command {
+	flagSet := flag.NewFlagSet("list", flag.ContinueOnError)
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
 	var orgIDFlag = flagSet.String("org-id", "", "TinaCloud organization ID")
 	var projectNameFlag = flagSet.String("name", "", "Project name")
 	var repoURLFlag = flagSet.String("repo-url", "", "GitHub Repo URL")
 	var siteURLFlag = flagSet.String("site-url", "http://localhost:3000", "Site URL")
 	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
-	_ = flagSet.Parse(args)
 
-	out, err := runCreate(cfg, browser.OpenURL, *orgIDFlag, *projectNameFlag, *repoURLFlag, *siteURLFlag, *tinaDirFlag)
-	if err == nil && out.LoggedIn {
-		track(posthog.ProjectCreated(out.Project.OrgID, out.Project.ProjectID, out.Project.Name, out.Project.RepoURL, out.Project.SiteURLs))
-	}
-	if *jsonFlag {
-		return command.WriteJSONResult(os.Stdout, out, err)
-	}
-	if err != nil {
-		return err
-	}
+	return &command.Command{
+		Name:        "create",
+		Description: "Create a new project",
+		Flags:       flagSet,
+		Run: func(args []string) error {
+			out, err := runCreate(cfg, browser.OpenURL, *orgIDFlag, *projectNameFlag, *repoURLFlag, *siteURLFlag, *tinaDirFlag)
+			if err == nil && out.LoggedIn {
+				track(posthog.ProjectCreated(out.Project.OrgID, out.Project.ProjectID, out.Project.Name, out.Project.RepoURL, out.Project.SiteURLs))
+			}
+			if *jsonFlag {
+				return utils.WriteJSONResult(os.Stdout, out, err)
+			}
+			if err != nil {
+				return err
+			}
 
-	if !out.LoggedIn {
-		fmt.Println("You are not currently logged in")
-		return nil
+			if !out.LoggedIn {
+				fmt.Println("You are not currently logged in")
+				return nil
+			}
+
+			fmt.Println("✅️ Successfully created project!")
+			fmt.Printf("\t- %s\n", out.Project.String())
+
+			return nil
+		},
 	}
-
-	fmt.Println("✅️ Successfully created project!")
-	fmt.Printf("\t- %s\n", out.Project.String())
-
-	return nil
 }
 
 func runCreate(cfg config.Config, openURL func(string) error, orgID, projectName, repoURL, siteURL, tinaDir string) (createJSONOutput, error) {

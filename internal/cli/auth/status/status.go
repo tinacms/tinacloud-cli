@@ -10,6 +10,7 @@ import (
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/requests"
+	"tina.io/tinacloud-cli/internal/utils"
 )
 
 type statusJSONOutput struct {
@@ -18,33 +19,32 @@ type statusJSONOutput struct {
 	Email    string `json:"email,omitempty"`
 }
 
-func Status(args []string, cfg config.Config) error {
-	flagSet := flag.NewFlagSet("status", flag.ExitOnError)
-	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud auth status [flags]")
-		fmt.Fprintln(os.Stderr, "\nDisplay authentication status and TinaCloud account information")
-		fmt.Fprintln(os.Stderr, "\nFlags:")
-		flagSet.PrintDefaults()
-	}
-
+func Command(cfg config.Config) *command.Command {
+	flagSet := flag.NewFlagSet("status", flag.ContinueOnError)
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
-	_ = flagSet.Parse(args)
 
-	out, err := runStatus(cfg, auth.TokensFromCache)
-	if *jsonFlag {
-		return command.WriteJSONResult(os.Stdout, out, err)
-	}
-	if err != nil {
-		return err
-	}
+	return &command.Command{
+		Name:        "status",
+		Description: "Display authentication status and TinaCloud account information",
+		Flags:       flagSet,
+		Run: func(args []string) error {
+			out, err := runStatus(cfg, auth.TokensFromCache)
+			if *jsonFlag {
+				return utils.WriteJSONResult(os.Stdout, out, err)
+			}
+			if err != nil {
+				return err
+			}
 
-	if !out.LoggedIn {
-		fmt.Println("You are not currently logged in")
-		return nil
-	}
+			if !out.LoggedIn {
+				fmt.Println("You are not currently logged in")
+				return nil
+			}
 
-	fmt.Printf("Currently signed in as %s (%s)\n", out.FullName, out.Email)
-	return nil
+			fmt.Printf("Currently signed in as %s (%s)\n", out.FullName, out.Email)
+			return nil
+		},
+	}
 }
 
 func runStatus(cfg config.Config, loadTokens auth.TokenLoader) (statusJSONOutput, error) {

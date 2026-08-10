@@ -7,44 +7,29 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/browser"
+	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
 	"tina.io/tinacloud-cli/internal/posthog"
 	"tina.io/tinacloud-cli/internal/utils"
 )
 
-func generateVerifier() (string, error) {
-	b := make([]byte, 32)
-	if _, err := rand.Read(b); err != nil {
-		return "", err
+func Command(cfg config.Config, track posthog.Tracker, identify posthog.Identifier) *command.Command {
+	return &command.Command{
+		Name:        "login",
+		Description: "Log in to a TinaCloud account",
+		Run: func(args []string) error {
+			return runLogin(cfg, browser.OpenURL, track, identify)
+		},
 	}
-	return base64.RawURLEncoding.EncodeToString(b), nil
-}
-
-func generateChallenge(verifier string) string {
-	h := sha256.Sum256([]byte(verifier))
-	return base64.RawURLEncoding.EncodeToString(h[:])
-}
-
-func Login(args []string, cfg config.Config, track posthog.Tracker, identify posthog.Identifier) error {
-	flagSet := flag.NewFlagSet("login", flag.ExitOnError)
-	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud auth login")
-		fmt.Fprintln(os.Stderr, "\nLog in to a TinaCloud account")
-	}
-	_ = flagSet.Parse(args)
-
-	return runLogin(cfg, browser.OpenURL, track, identify)
 }
 
 func runLogin(cfg config.Config, openURL func(string) error, track posthog.Tracker, identify posthog.Identifier) error {
@@ -182,4 +167,17 @@ func runLogin(cfg config.Config, openURL func(string) error, track posthog.Track
 	fmt.Println("✅️ Successfully logged into TinaCloud!")
 
 	return nil
+}
+
+func generateVerifier() (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+func generateChallenge(verifier string) string {
+	h := sha256.Sum256([]byte(verifier))
+	return base64.RawURLEncoding.EncodeToString(h[:])
 }

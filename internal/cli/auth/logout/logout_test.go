@@ -76,7 +76,7 @@ func TestLogout(t *testing.T) {
 
 			cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: server.URL}}
 
-			if err := Logout(nil, cfg, posthog.NoopTracker); err != nil {
+			if err := runLogout(cfg, posthog.NoopTracker); err != nil {
 				t.Fatalf("Logout() = %v, want nil error", err)
 			}
 

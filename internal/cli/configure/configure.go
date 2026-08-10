@@ -12,6 +12,7 @@ import (
 	"github.com/chzyer/readline"
 	"github.com/manifoldco/promptui"
 	"tina.io/tinacloud-cli/internal/auth"
+	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
 	"tina.io/tinacloud-cli/internal/posthog"
@@ -23,41 +24,40 @@ type projectOption struct {
 	org     domain.Organization
 }
 
-func Configure(args []string, cfg config.Config, track posthog.Tracker) error {
-	flagSet := flag.NewFlagSet("configure", flag.ExitOnError)
-	flagSet.Usage = func() {
-		fmt.Fprintln(os.Stderr, "Usage: tinacloud configure [flags]")
-		fmt.Fprintln(os.Stderr, "\nConfigure a local Tina project")
-		fmt.Fprintln(os.Stderr, "\nFlags:")
-		flagSet.PrintDefaults()
-	}
-
+func Command(cfg config.Config, track posthog.Tracker) *command.Command {
+	flagSet := flag.NewFlagSet("configure", flag.ContinueOnError)
 	var projectIDFlag = flagSet.String("project-id", "", "TinaCloud project ID")
 	var orgIDFlag = flagSet.String("org-id", "", "TinaCloud organization ID")
 	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
-	_ = flagSet.Parse(args)
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("failed to get current directory: %w", err)
-	}
+	return &command.Command{
+		Name:        "status",
+		Description: "Display authentication status and TinaCloud account information",
+		Flags:       flagSet,
+		Run: func(args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return fmt.Errorf("failed to get current directory: %w", err)
+			}
 
-	saved, err := runConfigure(cfg, cwd, *orgIDFlag, *projectIDFlag, *tinaDirFlag, auth.TokensFromCache, track)
-	if err != nil {
-		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
-			fmt.Println("You are not currently logged in")
+			saved, err := runConfigure(cfg, cwd, *orgIDFlag, *projectIDFlag, *tinaDirFlag, auth.TokensFromCache, track)
+			if err != nil {
+				if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
+					fmt.Println("You are not currently logged in")
+					return nil
+				}
+				return err
+			}
+
+			if saved {
+				fmt.Printf("Wrote tinacloud config to %s\n", path.Join(cwd, *tinaDirFlag, domain.TinaCloudConfigFileName))
+			} else {
+				fmt.Println("Did not write to tinacloud config")
+			}
+
 			return nil
-		}
-		return err
+		},
 	}
-
-	if saved {
-		fmt.Printf("Wrote tinacloud config to %s\n", path.Join(cwd, *tinaDirFlag, domain.TinaCloudConfigFileName))
-	} else {
-		fmt.Println("Did not write to tinacloud config")
-	}
-
-	return nil
 }
 
 func runConfigure(cfg config.Config, cwd, orgID, projectID, tinaDir string, loadTokens auth.TokenLoader, track posthog.Tracker) (bool, error) {
