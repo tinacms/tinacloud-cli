@@ -36,7 +36,7 @@ func (s *State) rootCommand(version string) *command.Command {
 		SubCommands: []*command.Command{
 			auth.Command(s.config, s.Track, s.Identify),
 			org.Command(s.config),
-			project.Command(s.config, s.Track, s.Identify),
+			project.Command(s.config, s.Track),
 			configure.Command(s.config, s.Track),
 		},
 	}
