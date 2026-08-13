@@ -43,8 +43,8 @@ Flags:
     	Print the current installed version
 ```
 
-### Enable Autocompletion
-Autocompletion can be enabled by installing one of the provided autocomplete
+### Enable Autocomplete
+Autocomplete can be enabled by installing one of the provided autocomplete
 scripts into your shell profile, if not there already.
 
 ```
