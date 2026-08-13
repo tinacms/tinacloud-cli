@@ -12,21 +12,6 @@ $ go build -o tinacloud ./cmd/tinacloud
 $ go install ./cmd/tinacloud
 ```
 
-### Enable CLI Auto Completion
-```
-$ tinacloud completion --help
-
-Available Commands:
-  bash        Generate the bash completion script
-  zsh         Generate the zsh completion script
-  fish        Generate the fish completion script
-  powershell  Generate the PowerShell completion script
-```
-
-Select the shell according to the terminal you use, then run `tinacloud
-completion <shell> --help`. Follow the instructions it prints, then restart
-your terminal.
-
 ## Getting started
 Before using `tinacloud`, you need to authenticate with TinaCloud:
 ```
@@ -57,6 +42,24 @@ Flags:
   -version
     	Print the current installed version
 ```
+
+### Enable Autocompletion
+Autocompletion can be enabled by installing one of the provided autocomplete
+scripts into your shell profile, if not there already.
+
+```
+$ tinacloud completion --help
+
+Available Commands:
+  bash        Generate the bash completion script
+  zsh         Generate the zsh completion script
+  fish        Generate the fish completion script
+  powershell  Generate the PowerShell completion script
+```
+
+Select the shell according to the terminal you use, then run `tinacloud
+completion <shell> --help`. Follow the printed instructions, then restart your
+terminal for the changes to take effect.
 
 ## Documentation
 - [Contribution guide - **please read before opening a PR**](./docs/contributing.md)
