@@ -9,6 +9,7 @@ A CLI tool to interact with TinaCloud related services.
 $ git clone https://github.com/tinacms/tinacloud-cli
 $ cd tinacloud-cli
 $ go build -o tinacloud ./cmd/tinacloud
+$ go install ./cmd/tinacloud
 ```
 
 ## Getting started
@@ -28,12 +29,31 @@ For additional usage guidance, each command has an accompanying help menu:
 $ tinacloud --help
 Usage: tinacloud <command> [flags]
 
-Commands:
-  auth         Authenticate with TinaCloud
-  org          Interact with organizations
-  project      Interact with projects
-  configure    Configure a local Tina project
+Available Commands:
+  auth        Authenticate with TinaCloud
+  org         Interact with organizations
+  project     Interact with projects
+  configure   Configure a local Tina project
+  completion  Generate shell completion scripts
 ```
+
+### Enable Autocomplete
+Autocomplete can be enabled by installing one of the provided autocomplete
+scripts into your shell profile, if not there already.
+
+```
+$ tinacloud completion --help
+
+Available Commands:
+  bash        Generate the bash completion script
+  zsh         Generate the zsh completion script
+  fish        Generate the fish completion script
+  powershell  Generate the PowerShell completion script
+```
+
+Select the shell according to the terminal you use, then run `tinacloud
+completion <shell> --help`. Follow the printed instructions, then restart your
+terminal for the changes to take effect.
 
 ## Documentation
 - [Contribution guide - **please read before opening a PR**](./docs/contributing.md)
