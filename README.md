@@ -17,7 +17,7 @@ If you would like to change the install path or version, set the `INSTALL_PATH`
 and `VERSION` environment variables as required.
 
 ```
-curl -L https://github.com/tinacms/tinacloud-cli/raw/main/scripts/install.sh | INSTALL_PATH=$HOME/bin VERSION=0.1.0 bash
+curl -L https://github.com/tinacms/tinacloud-cli/raw/main/scripts/install.sh | INSTALL_PATH=$HOME/bin VERSION=v0.1.0 bash
 ```
 
 ### Any Platform
@@ -25,7 +25,7 @@ Download and extract the archive file for your platform from the latest release
 on the [GitHub releases
 page](https://github.com/tinacms/tinacloud-cli/releases/).
 
-- darwin (Apple Silicon): tinacloud-darwin_aarch64.tar.gz
+- darwin (Apple Silicon): tinacloud-darwin-aarch64.tar.gz
 - darwin (Intel): tinacloud-darwin-x86_64.tar.gz
 - Linux (x86_64): tinacloud-linux-x86_64.tar.gz
 - Linux (ARM): tinacloud-linux-aarch64.tar.gz

@@ -71,7 +71,7 @@ unamestr=`uname`
 if [[ "$unamestr" == 'Linux' ]]; then
     platform='linux'
 elif [[ "$unamestr" == 'Darwin' ]]; then
-    platform='macOS'
+    platform='darwin'
 fi
 
 if [[ "$platform" == 'unknown' ]]; then
@@ -83,9 +83,9 @@ archstr=`uname -m`
 if [[ "$archstr" == 'x86_64' ]]; then
     arch='x86_64'
 elif [[ "$archstr" == 'arm64' ]] || [[ "$archstr" == 'aarch64' ]]; then
-    arch='arm64'
+    arch='aarch64'
 else
-    die "prebuilt binaries for $(arch) architecture not available, please try building from source https://github.com/tinacms/tinacloud-cli"
+    die "prebuilt binaries for ${arch} architecture not available, please try building from source https://github.com/tinacms/tinacloud-cli"
 fi
 
 # some variables
@@ -102,7 +102,7 @@ if [ -e $targetExe ]; then
 fi
 
 log "${PURPLE}Downloading TinaCloud cli for $platform-$arch to ${targetFile}${NC}"
-url=https://github.com/tinacms/tinacloud-cli/releases/download/$version/tinacloud-cli$suffix
+url=https://github.com/tinacms/tinacloud-cli/releases/download/$version/tinacloud$suffix
 
 try curl -L# -f -o $targetFile "$url"
 try tar -xzf $targetFile -C "/tmp"
@@ -112,7 +112,7 @@ log "${GREEN}Download complete!${NC}"
 
 # check for sudo
 needSudo=$(mkdir -p ${INSTALL_PATH} && touch ${INSTALL_PATH}/.tinacloudinstall &> /dev/null)
-if [[ "$?" == "1" ]]; then
+if [[ "$?" != "0" ]]; then
     NEED_SUDO=1
 fi
 rm ${INSTALL_PATH}/.tinacloudinstall &> /dev/null
