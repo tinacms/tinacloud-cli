@@ -13,8 +13,8 @@ This will install the TinaCloud CLI to `/usr/local/bin`.
 curl -L https://github.com/tinacms/tinacloud-cli/raw/main/scripts/install.sh | bash
 ```
 
- If you would like to change the install path or version, set
-the `INSTALL_PATH` and `VERSION` as required.
+If you would like to change the install path or version, set the `INSTALL_PATH`
+and `VERSION` environment variables as required.
 
 ```
 curl -L https://github.com/tinacms/tinacloud-cli/raw/main/scripts/install.sh | INSTALL_PATH=$HOME/bin VERSION=0.1.0 bash
