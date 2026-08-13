@@ -27,8 +27,7 @@ any of these two values will attempt to read from said file first.
 For additional usage guidance, each command has an accompanying help menu:
 ```
 $ tinacloud --help
-Usage:
-  tinacloud [command]
+Usage: tinacloud <command> [flags]
 
 Available Commands:
   auth        Authenticate with TinaCloud
@@ -36,11 +35,6 @@ Available Commands:
   project     Interact with projects
   configure   Configure a local Tina project
   completion  Generate shell completion scripts
-
-Flags:
-  -v	Alias of -version
-  -version
-    	Print the current installed version
 ```
 
 ### Enable Autocomplete
