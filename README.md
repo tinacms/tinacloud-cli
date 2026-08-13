@@ -26,11 +26,11 @@ on the [GitHub releases
 page](https://github.com/tinacms/tinacloud-cli/releases/).
 
 - darwin (Apple Silicon): tinacloud-darwin_aarch64.tar.gz
-- darwin (Intel): tinacloud-darwin_x86_64.tar.gz
-- Linux (x86_64): tinacloud-linux_x86_64.tar.gz
-- Linux (ARM): tinacloud_linux_aarch64.tar.gz
-- Windows (x86_64): tinacloud_windows_x86_64.zip
-- Windows (ARM): tinacloud_windows_aarch64.zip
+- darwin (Intel): tinacloud-darwin-x86_64.tar.gz
+- Linux (x86_64): tinacloud-linux-x86_64.tar.gz
+- Linux (ARM): tinacloud-linux-aarch64.tar.gz
+- Windows (x86_64): tinacloud-windows-x86_64.zip
+- Windows (ARM): tinacloud-windows-aarch64.zip
 
 The archive file contains a compressed version of the TinaCloud CLI binary. If
 you would like to add it to your PATH then you must do this yourself.
