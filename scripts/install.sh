@@ -33,7 +33,8 @@ fi
 
 log "Selecting version..."
 
-version=${VERSION:-$(cat .version)}
+DEFAULT_VERSION="v0.1.1"
+version=${VERSION:-$DEFAULT_VERSION}
 
 if [ ! $version ]; then
     log "${YELLOW}"

@@ -92,7 +92,8 @@ jobs:
             exit 1
           fi
           echo "$NEXT_RELEASE" > .version
-          git add .version
+          sed -i "s/^DEFAULT_VERSION=.*/DEFAULT_VERSION=\"$NEXT_RELEASE\"/" scripts/install.sh
+          git add .version scripts/install.sh
           git commit -m "chore: release $NEXT_RELEASE [skip ci]"
         env:
           NEXT_RELEASE: ${{ steps.version.outputs.next_release }}
