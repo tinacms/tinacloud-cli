@@ -122,9 +122,15 @@ if [[ "$NEED_SUDO" == '1' ]]; then
     log
     log "${YELLOW}Path '$INSTALL_PATH' requires root access to write."
     log "${YELLOW}This script will attempt to execute the move command with sudo.${NC}"
-    log "${YELLOW}Are you ok with that? (y/N)${NC}"
-    read a
-    if [[ $a == "Y" || $a == "y" || $a = "" ]]; then
+    if [ -t 0 ]; then
+        log "${YELLOW}Are you ok with that? (y/N)${NC}"
+        read a
+    elif { exec 3< /dev/tty; } 2>/dev/null; then
+        log "${YELLOW}Are you ok with that? (y/N)${NC}"
+        read a <&3
+        exec 3<&-
+    fi
+    if [[ $a == "Y" || $a == "y" ]]; then
         log
     else
         log
