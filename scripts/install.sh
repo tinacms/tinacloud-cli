@@ -86,7 +86,7 @@ if [[ "$archstr" == 'x86_64' ]]; then
 elif [[ "$archstr" == 'arm64' ]] || [[ "$archstr" == 'aarch64' ]]; then
     arch='aarch64'
 else
-    die "prebuilt binaries for ${arch} architecture not available, please try building from source https://github.com/tinacms/tinacloud-cli"
+    die "prebuilt binaries for ${archstr} architecture not available, please try building from source https://github.com/tinacms/tinacloud-cli"
 fi
 
 # some variables
