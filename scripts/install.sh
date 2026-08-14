@@ -36,18 +36,6 @@ log "Selecting version..."
 DEFAULT_VERSION="v0.1.1"
 version=${VERSION:-$DEFAULT_VERSION}
 
-if [ ! $version ]; then
-    log "${YELLOW}"
-    log "Failed while attempting to install tinacloud cli. Please manually install:"
-    log ""
-    log "1. Open your web browser and go to https://github.com/tinacms/tinacloud-cli/releases"
-    log "2. Download the cli from the latest release for your platform. Make sure rename it tinacloud"
-    log "3. chmod +x ./tinacloud"
-    log "4. mv ./tinacloud /usr/local/bin"
-    log "${NC}"
-    die "exiting..."
-fi
-
 log "Selected version: $version"
 
 log "${YELLOW}"
@@ -134,7 +122,7 @@ if [[ "$NEED_SUDO" == '1' ]]; then
         log
     else
         log
-        log "  ${BLUE}sudo mv $targetFile ${INSTALL_PATH}/tinacloud${NC}"
+        log "  ${BLUE}sudo mv $targetExe ${INSTALL_PATH}/tinacloud${NC}"
         log
         die "Please move the binary manually using the command above."
     fi
@@ -142,6 +130,7 @@ fi
 
 log "Moving TinaCloud cli from $targetExe to ${INSTALL_PATH}"
 
+try maybe_sudo mkdir -p "${INSTALL_PATH}"
 try maybe_sudo mv "$targetExe" "${INSTALL_PATH}/tinacloud"
 
 log
