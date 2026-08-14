@@ -94,29 +94,29 @@ suffix="-${platform}-${arch}.tar.gz"
 targetFile="/tmp/tinacloud$suffix"
 targetExe="/tmp/tinacloud"
 
-if [ -e $targetFile ]; then
-    rm $targetFile
+if [ -e "$targetFile" ]; then
+    rm "$targetFile"
 fi
 
-if [ -e $targetExe ]; then
-  rm $targetExe
+if [ -e "$targetExe" ]; then
+  rm "$targetExe"
 fi
 
 log "${PURPLE}Downloading TinaCloud cli for $platform-$arch to ${targetFile}${NC}"
 url=https://github.com/tinacms/tinacloud-cli/releases/download/$version/tinacloud$suffix
 
-try curl -L# -f -o $targetFile "$url"
-try tar -xzf $targetFile -C "/tmp"
-try chmod +x $targetExe
+try curl -L# -f -o "$targetFile" "$url"
+try tar -xzf "$targetFile" -C "/tmp"
+try chmod +x "$targetExe"
 
 log "${GREEN}Download complete!${NC}"
 
 # check for sudo
-needSudo=$(mkdir -p ${INSTALL_PATH} && touch ${INSTALL_PATH}/.tinacloudinstall &> /dev/null)
+needSudo=$(mkdir -p "${INSTALL_PATH}" && touch "${INSTALL_PATH}/.tinacloudinstall" &> /dev/null)
 if [[ "$?" != "0" ]]; then
     NEED_SUDO=1
 fi
-rm ${INSTALL_PATH}/.tinacloudinstall &> /dev/null
+rm "${INSTALL_PATH}/.tinacloudinstall" &> /dev/null
 
 if [[ "$NEED_SUDO" == '1' ]]; then
     log
@@ -136,24 +136,24 @@ fi
 
 log "Moving TinaCloud cli from $targetExe to ${INSTALL_PATH}"
 
-try maybe_sudo mv $targetExe ${INSTALL_PATH}/tinacloud
+try maybe_sudo mv "$targetExe" "${INSTALL_PATH}/tinacloud"
 
 log
 log "${GREEN}TinaCloud cli installed to ${INSTALL_PATH}${NC}"
 log
 
-if [ -e $targetFile ]; then
-    rm $targetFile
+if [ -e "$targetFile" ]; then
+    rm "$targetFile"
 fi
 
-if [ -e $targetExe ]; then
-  rm $targetExe
+if [ -e "$targetExe" ]; then
+  rm "$targetExe"
 fi
 
 log "Running ${BLUE}tinacloud -v${NC}"
 tinacloud -v
 
-if ! $(echo "$PATH" | grep -q "$INSTALL_PATH"); then
+if ! echo "$PATH" | grep -q "$INSTALL_PATH"; then
     log
     log "${YELLOW}$INSTALL_PATH not found in \$PATH, you might need to add it${NC}"
     log
