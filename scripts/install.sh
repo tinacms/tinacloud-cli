@@ -52,7 +52,7 @@ log "Selected version: $version"
 
 log "${YELLOW}"
 log NOTE: Install a specific version of the CLI by using VERSION variable
-log 'curl -L https://github.com/tinacms/tinacloud-cli/raw/scripts/install.sh | bash'
+log 'curl -L https://github.com/tinacms/tinacloud-cli/raw/main/scripts/install.sh | bash'
 log "${NC}"
 
 # check for existing tinacloud cli installation
