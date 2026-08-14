@@ -4,6 +4,37 @@ A CLI tool to interact with TinaCloud related services.
 
 ## Installation
 
+### Linux & MacOS
+The easiest way to install the TinaCloud CLI is via the provided install
+script.  To use the install script, run the following command in your terminal.
+This will install the TinaCloud CLI to `/usr/local/bin`.
+
+```
+curl -L https://github.com/tinacms/tinacloud-cli/raw/main/scripts/install.sh | bash
+```
+
+If you would like to change the install path or version, set the `INSTALL_PATH`
+and `VERSION` environment variables as required.
+
+```
+curl -L https://github.com/tinacms/tinacloud-cli/raw/main/scripts/install.sh | INSTALL_PATH=$HOME/bin VERSION=v0.1.0 bash
+```
+
+### Any Platform
+Download and extract the archive file for your platform from the latest release
+on the [GitHub releases
+page](https://github.com/tinacms/tinacloud-cli/releases/).
+
+- darwin (Apple Silicon): tinacloud-darwin-aarch64.tar.gz
+- darwin (Intel): tinacloud-darwin-x86_64.tar.gz
+- Linux (x86_64): tinacloud-linux-x86_64.tar.gz
+- Linux (ARM): tinacloud-linux-aarch64.tar.gz
+- Windows (x86_64): tinacloud-windows-x86_64.zip
+- Windows (ARM): tinacloud-windows-aarch64.zip
+
+The archive file contains a compressed version of the TinaCloud CLI binary. If
+you would like to add it to your PATH then you must do this yourself.
+
 ### Build from source
 ```
 $ git clone https://github.com/tinacms/tinacloud-cli
