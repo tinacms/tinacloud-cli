@@ -6,6 +6,13 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	sysinfo "tina.io/tinacloud-cli/internal/sys-info"
+)
+
+const (
+	libName    = "tinacloud-cli-posthog"
+	libVersion = "1.0.0"
 )
 
 type Client struct {
@@ -44,6 +51,17 @@ func (c *Client) Alias(distinctID, alias string) {
 }
 
 func (c *Client) send(event map[string]any) {
+	props, _ := event["properties"].(map[string]any)
+	if props == nil {
+		props = map[string]any{}
+	}
+	props["$lib"] = libName
+	props["$lib_version"] = libVersion
+	for k, v := range sysinfo.GetSystemContext().ToProperties() {
+		props[k] = v
+	}
+	event["properties"] = props
+
 	body, err := json.Marshal(map[string]any{
 		"api_key": c.apiKey,
 		"batch":   []map[string]any{event},
