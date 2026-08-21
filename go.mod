@@ -7,9 +7,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/manifoldco/promptui v0.9.0
 	github.com/sethvargo/go-envconfig v1.3.0
+	golang.org/x/sys v0.21.0
 )
 
-require (
-	github.com/google/go-cmp v0.7.0 // indirect
-	golang.org/x/sys v0.21.0 // indirect
-)
+require github.com/google/go-cmp v0.7.0 // indirect

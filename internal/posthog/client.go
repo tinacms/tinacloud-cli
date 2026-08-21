@@ -63,6 +63,8 @@ func (c *Client) send(event map[string]any) {
 	}
 	props["$lib"] = libName
 	props["$lib_version"] = libVersion
+	// PostHog geolocates by request IP unless this is set; posthog-go sent it by default.
+	props["$geoip_disable"] = true
 	for k, v := range sysinfo.GetSystemContext().ToProperties() {
 		props[k] = v
 	}
