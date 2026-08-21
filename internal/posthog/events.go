@@ -1,9 +1,5 @@
 package posthog
 
-import (
-	ph "github.com/posthog/posthog-go"
-)
-
 const (
 	UserSignInInitiatedEvent    string = "tinacloud-cli-user-sign-in-initiated"
 	UserSignInSuccessEvent      string = "tinacloud-cli-user-sign-in-success"
@@ -26,82 +22,73 @@ const (
 	ConfigMethodOnlyOneProject ConfigMethod = "only-one-project"
 )
 
-func CommandFailed(command, errMsg string, args []string) ph.Capture {
-	return ph.Capture{
+func CommandFailed(command, errMsg string, args []string) Capture {
+	return Capture{
 		Event: CommandFailedEvent,
-		Properties: ph.NewProperties().
-			Set("command", command).
-			Set("error", errMsg).
-			Set("args", args),
+		Properties: map[string]any{
+			"command": command,
+			"error":   errMsg,
+			"args":    args,
+		},
 	}
 }
 
-func UserSignInInitiated() ph.Capture {
-	return ph.Capture{
-		Event: UserSignInInitiatedEvent,
+func UserSignInInitiated() Capture {
+	return Capture{Event: UserSignInInitiatedEvent}
+}
+
+func UserSignInSuccess() Capture {
+	return Capture{Event: UserSignInSuccessEvent}
+}
+
+func UserLoggedOut() Capture {
+	return Capture{Event: UserLoggedOutEvent}
+}
+
+func UserConfigured(method ConfigMethod) Capture {
+	return Capture{
+		Event:      UserConfiguredEvent,
+		Properties: map[string]any{"configuration_method": method},
 	}
 }
 
-func UserSignInSuccess() ph.Capture {
-	return ph.Capture{
-		Event: UserSignInSuccessEvent,
-	}
-}
-
-func UserLoggedOut() ph.Capture {
-	return ph.Capture{
-		Event: UserLoggedOutEvent,
-	}
-}
-
-func UserConfigured(method ConfigMethod) ph.Capture {
-	return ph.Capture{
-		Event: UserConfiguredEvent,
-		Properties: ph.NewProperties().
-			Set("configuration_method", method),
-	}
-}
-
-func ProjectCreated(orgID, projectID, name, repoURL, siteURL string) ph.Capture {
-	return ph.Capture{
+func ProjectCreated(orgID, projectID, name, repoURL, siteURL string) Capture {
+	return Capture{
 		Event: ProjectCreatedEvent,
-		Properties: ph.NewProperties().
-			Set("org_id", orgID).
-			Set("project_id", projectID).
-			Set("name", name).
-			Set("repo_url", repoURL).
-			Set("site_url", siteURL),
+		Properties: map[string]any{
+			"org_id":     orgID,
+			"project_id": projectID,
+			"name":       name,
+			"repo_url":   repoURL,
+			"site_url":   siteURL,
+		},
 	}
 }
 
-func SiteURLAdded(urls []string) ph.Capture {
-	return ph.Capture{
-		Event: SiteURLAddedEvent,
-		Properties: ph.NewProperties().
-			Set("urls", urls),
+func SiteURLAdded(urls []string) Capture {
+	return Capture{
+		Event:      SiteURLAddedEvent,
+		Properties: map[string]any{"urls": urls},
 	}
 }
 
-func SiteURLRemoved(urls []string) ph.Capture {
-	return ph.Capture{
-		Event: SiteURLRemovedEvent,
-		Properties: ph.NewProperties().
-			Set("urls", urls),
+func SiteURLRemoved(urls []string) Capture {
+	return Capture{
+		Event:      SiteURLRemovedEvent,
+		Properties: map[string]any{"urls": urls},
 	}
 }
 
-func ProtectedBranchAdded(branches []string) ph.Capture {
-	return ph.Capture{
-		Event: ProtectedBranchAddedEvent,
-		Properties: ph.NewProperties().
-			Set("branches", branches),
+func ProtectedBranchAdded(branches []string) Capture {
+	return Capture{
+		Event:      ProtectedBranchAddedEvent,
+		Properties: map[string]any{"branches": branches},
 	}
 }
 
-func ProtectedBranchRemoved(branches []string) ph.Capture {
-	return ph.Capture{
-		Event: ProtectedBranchRemovedEvent,
-		Properties: ph.NewProperties().
-			Set("branches", branches),
+func ProtectedBranchRemoved(branches []string) Capture {
+	return Capture{
+		Event:      ProtectedBranchRemovedEvent,
+		Properties: map[string]any{"branches": branches},
 	}
 }

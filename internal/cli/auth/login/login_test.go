@@ -14,7 +14,6 @@ import (
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v4"
-	ph "github.com/posthog/posthog-go"
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
@@ -24,11 +23,11 @@ import (
 
 // captureTracker records emitted events and identify calls for assertions.
 type captureTracker struct {
-	events     []ph.Capture
+	events     []posthog.Capture
 	identified []string
 }
 
-func (c *captureTracker) track(event ph.Capture) { c.events = append(c.events, event) }
+func (c *captureTracker) track(event posthog.Capture) { c.events = append(c.events, event) }
 
 func (c *captureTracker) identify(userID string) { c.identified = append(c.identified, userID) }
 
