@@ -13,6 +13,12 @@ import (
 const (
 	libName    = "tinacloud-cli-posthog"
 	libVersion = "1.0.0"
+
+	// requestTimeout must stay below closeTimeout so a request always finishes
+	// (or fails) in time for Close to observe it, instead of Close abandoning
+	// a request that was still going to complete.
+	requestTimeout = 4 * time.Second
+	closeTimeout   = 5 * time.Second
 )
 
 type Client struct {
@@ -26,7 +32,7 @@ func NewClient(apiKey, endpoint string) *Client {
 	return &Client{
 		apiKey:   apiKey,
 		endpoint: endpoint,
-		http:     &http.Client{Timeout: 5 * time.Second},
+		http:     &http.Client{Timeout: requestTimeout},
 	}
 }
 
@@ -97,6 +103,6 @@ func (c *Client) Close() {
 
 	select {
 	case <-done:
-	case <-time.After(3 * time.Second):
+	case <-time.After(closeTimeout):
 	}
 }
