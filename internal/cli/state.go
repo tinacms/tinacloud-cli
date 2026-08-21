@@ -8,15 +8,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/posthog/posthog-go"
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
+	"tina.io/tinacloud-cli/internal/posthog"
 	"tina.io/tinacloud-cli/internal/requests"
 )
 
 type State struct {
 	config     config.Config
-	posthog    posthog.Client
+	posthog    posthog.Sender
 	distinctID string
 }
 
@@ -62,21 +62,12 @@ func resolveDistinctID() string {
 // No-op if already initialised.
 func (s *State) InitialisePostHog() error {
 	if s.posthog == nil {
-		var ph posthog.Client
 		posthogTokens, err := requests.GetPostHogToken(s.config.TinaCloud.Endpoint)
 		if err != nil {
 			return fmt.Errorf("failed to get posthog tokens from tinacloud: %w", err)
 		}
 
-		ph, err = posthog.NewWithConfig(
-			posthogTokens.APIKey,
-			posthog.Config{Endpoint: posthogTokens.Endpoint},
-		)
-		if err != nil {
-			return fmt.Errorf("failed to create posthog client: %w", err)
-		}
-
-		s.posthog = ph
+		s.posthog = posthog.NewClient(posthogTokens.APIKey, posthogTokens.Endpoint)
 	}
 
 	return nil
@@ -93,7 +84,7 @@ func (s *State) Track(event posthog.Capture) {
 	}
 
 	event.DistinctId = s.distinctID
-	_ = s.posthog.Enqueue(event)
+	s.posthog.Enqueue(event)
 }
 
 // Identify links the anonymous distinct ID to the authenticated user so pre-login events are attributed to them.
@@ -106,19 +97,11 @@ func (s *State) Identify(userID string) {
 		return
 	}
 
-	_ = s.posthog.Enqueue(posthog.Alias{
-		DistinctId: userID,
-		Alias:      s.distinctID,
-	})
+	s.posthog.Alias(userID, s.distinctID)
 }
 
-func (s *State) Close() error {
+func (s *State) Close() {
 	if s.posthog != nil {
-		err := s.posthog.Close()
-		if err != nil {
-			return fmt.Errorf("failed to close posthog connection: %w", err)
-		}
+		s.posthog.Close()
 	}
-
-	return nil
 }

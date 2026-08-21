@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	ph "github.com/posthog/posthog-go"
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
@@ -136,8 +135,8 @@ func TestRunConfigureTracking(t *testing.T) {
 			t.Fatalf("Mkdir: %v", err)
 		}
 
-		var got []ph.Capture
-		track := func(c ph.Capture) { got = append(got, c) }
+		var got []posthog.Capture
+		track := func(c posthog.Capture) { got = append(got, c) }
 
 		if _, err := runConfigure(config.Config{}, cwd, "org-1", "project-1", "tina", nil, track); err != nil {
 			t.Fatalf("runConfigure() = %v, want nil error", err)
@@ -156,8 +155,8 @@ func TestRunConfigureTracking(t *testing.T) {
 
 	t.Run("does not emit when the save fails", func(t *testing.T) {
 		// A missing tina dir makes the save fail, so nothing should be tracked.
-		var got []ph.Capture
-		track := func(c ph.Capture) { got = append(got, c) }
+		var got []posthog.Capture
+		track := func(c posthog.Capture) { got = append(got, c) }
 
 		if _, err := runConfigure(config.Config{}, t.TempDir(), "org-1", "project-1", "tina", nil, track); err == nil {
 			t.Fatal("runConfigure() = nil error, want error")

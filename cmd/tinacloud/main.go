@@ -22,10 +22,7 @@ func main() {
 
 	rootErr := state.Root(version)
 
-	// Don't let a telemetry-flush failure mask the command's own error.
-	if err := state.Close(); err != nil {
-		log.Printf("warning: failed to destroy cli state: %v", err)
-	}
+	state.Close()
 
 	if rootErr != nil {
 		log.Fatal(rootErr)

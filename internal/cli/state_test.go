@@ -3,26 +3,31 @@ package cli
 import (
 	"testing"
 
-	"github.com/posthog/posthog-go"
 	"tina.io/tinacloud-cli/internal/config"
+	"tina.io/tinacloud-cli/internal/posthog"
 )
 
-// captureClient records enqueued messages; it embeds posthog.Client so only Enqueue needs implementing.
-type captureClient struct {
-	posthog.Client
-	events  []posthog.Capture
-	aliases []posthog.Alias
+// aliasCall records the arguments of one Alias call.
+type aliasCall struct {
+	DistinctId string
+	Alias      string
 }
 
-func (c *captureClient) Enqueue(m posthog.Message) error {
-	switch msg := m.(type) {
-	case posthog.Capture:
-		c.events = append(c.events, msg)
-	case posthog.Alias:
-		c.aliases = append(c.aliases, msg)
-	}
-	return nil
+// captureClient records enqueued messages; it implements posthog.Sender.
+type captureClient struct {
+	events  []posthog.Capture
+	aliases []aliasCall
 }
+
+func (c *captureClient) Enqueue(event posthog.Capture) {
+	c.events = append(c.events, event)
+}
+
+func (c *captureClient) Alias(distinctID, alias string) {
+	c.aliases = append(c.aliases, aliasCall{DistinctId: distinctID, Alias: alias})
+}
+
+func (c *captureClient) Close() {}
 
 func TestTrack(t *testing.T) {
 	event := posthog.Capture{Event: "test-event"}
