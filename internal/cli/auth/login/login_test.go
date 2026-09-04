@@ -201,7 +201,7 @@ func TestLogin_Success(t *testing.T) {
 		t.Errorf("identified = %v, want %v", tracker.identified, want)
 	}
 
-	tokens, err := auth.TokensFromCache(config.Config{})
+	tokens, err := auth.PeekTokens()
 	if err != nil {
 		t.Fatalf("TokensFromCache() = %v, want nil error", err)
 	}

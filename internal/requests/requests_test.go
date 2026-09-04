@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -80,6 +81,10 @@ func TestRequestsMap401ToErrUnauthorized(t *testing.T) {
 		}},
 		{"PutProject", func() error {
 			return NewClient().PutProject(server.URL, "tok", "org-1", "project-1", domain.PutV2ProjectBody{})
+		}},
+		{"RefreshToken", func() error {
+			_, err := NewClient().RefreshToken(server.URL, "refresh-1")
+			return err
 		}},
 	}
 
@@ -157,6 +162,35 @@ func TestCreateProject(t *testing.T) {
 	}
 }
 
+func TestRefreshToken(t *testing.T) {
+	server, rec := jsonServer(t, http.StatusOK, `{"id_token":"new-id","access_token":"new-access","token_type":"Bearer","expires_in":3600}`)
+
+	got, err := NewClient().RefreshToken(server.URL, "refresh-1")
+	if err != nil {
+		t.Fatalf("RefreshToken() = %v, want nil error", err)
+	}
+	if rec.req.URL.Path != "/oauth/token" {
+		t.Errorf("request path = %q, want %q", rec.req.URL.Path, "/oauth/token")
+	}
+	if gotContentType := rec.req.Header.Get("Content-Type"); gotContentType != "application/x-www-form-urlencoded" {
+		t.Errorf("Content-Type = %q, want %q", gotContentType, "application/x-www-form-urlencoded")
+	}
+
+	form, err := url.ParseQuery(string(rec.body))
+	if err != nil {
+		t.Fatalf("ParseQuery(%q) = %v", rec.body, err)
+	}
+	if gotGrant := form.Get("grant_type"); gotGrant != "refresh_token" {
+		t.Errorf("grant_type = %q, want %q", gotGrant, "refresh_token")
+	}
+	if gotRefresh := form.Get("refresh_token"); gotRefresh != "refresh-1" {
+		t.Errorf("refresh_token = %q, want %q", gotRefresh, "refresh-1")
+	}
+	if got.AccessToken != "new-access" {
+		t.Errorf("RefreshToken().AccessToken = %q, want %q", got.AccessToken, "new-access")
+	}
+}
+
 func TestRequestTimeouts(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(50 * time.Millisecond)
@@ -202,6 +236,10 @@ func TestRequestTimeouts(t *testing.T) {
 		}},
 		{name: "GetPostHogToken", operation: "get PostHog token", call: func() error {
 			_, err := client.GetPostHogToken(server.URL)
+			return err
+		}},
+		{name: "RefreshToken", operation: "refresh auth token", call: func() error {
+			_, err := client.RefreshToken(server.URL, "refresh-1")
 			return err
 		}},
 	}
