@@ -10,7 +10,23 @@ import (
 	"time"
 
 	"tina.io/tinacloud-cli/internal/config"
+	"tina.io/tinacloud-cli/internal/domain"
 )
+
+type tokenRefresherStub struct {
+	response     domain.AuthResponse
+	err          error
+	endpoint     string
+	refreshToken string
+	calls        int
+}
+
+func (s *tokenRefresherStub) RefreshToken(endpoint, refreshToken string) (domain.AuthResponse, error) {
+	s.endpoint = endpoint
+	s.refreshToken = refreshToken
+	s.calls++
+	return s.response, s.err
+}
 
 // tokenCachePath redirects the user config dir to a temp dir and returns the
 // path where the token cache is expected to live.
@@ -115,11 +131,14 @@ func TestTokensFromCache(t *testing.T) {
 		future := time.Now().Add(time.Hour).UTC().Format(time.RFC3339)
 		seedTokenCache(t, tokenPath, `{"access_token":"access-1","refresh_token":"refresh-1","expires_at":"`+future+`"}`)
 
-		// Endpoint points nowhere reachable; an unwanted refresh would fail.
+		refresher := &tokenRefresherStub{err: errors.New("unexpected refresh")}
 		cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: "http://127.0.0.1:1"}}
-		tokens, err := TokensFromCache(cfg)
+		tokens, err := TokensFromCache(cfg, refresher)
 		if err != nil {
 			t.Fatalf("TokensFromCache() = %v, want nil error", err)
+		}
+		if refresher.calls != 0 {
+			t.Errorf("RefreshToken() calls = %d, want 0", refresher.calls)
 		}
 		if tokens.AccessToken != "access-1" {
 			t.Errorf("AccessToken = %q, want %q", tokens.AccessToken, "access-1")
@@ -131,29 +150,25 @@ func TestTokensFromCache(t *testing.T) {
 		expired := time.Now().Add(-time.Hour).UTC().Format(time.RFC3339)
 		seedTokenCache(t, tokenPath, `{"access_token":"old-access","refresh_token":"refresh-1","expires_at":"`+expired+`"}`)
 
-		var gotPath, gotGrant, gotRefresh string
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			gotPath = r.URL.Path
-			gotGrant = r.PostFormValue("grant_type")
-			gotRefresh = r.PostFormValue("refresh_token")
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte(`{"id_token":"new-id","access_token":"new-access","token_type":"Bearer","expires_in":3600}`))
-		}))
-		defer server.Close()
-
-		cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: server.URL}}
-		tokens, err := TokensFromCache(cfg)
+		refresher := &tokenRefresherStub{response: domain.AuthResponse{
+			IDToken:     "new-id",
+			AccessToken: "new-access",
+			TokenType:   "Bearer",
+			ExpiresIn:   3600,
+		}}
+		cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: "https://identity.example"}}
+		tokens, err := TokensFromCache(cfg, refresher)
 		if err != nil {
 			t.Fatalf("TokensFromCache() = %v, want nil error", err)
 		}
-		if gotPath != "/oauth/token" {
-			t.Errorf("request path = %q, want %q", gotPath, "/oauth/token")
+		if refresher.calls != 1 {
+			t.Errorf("RefreshToken() calls = %d, want 1", refresher.calls)
 		}
-		if gotGrant != "refresh_token" {
-			t.Errorf("grant_type = %q, want %q", gotGrant, "refresh_token")
+		if refresher.endpoint != cfg.TinaCloud.Endpoint {
+			t.Errorf("RefreshToken() endpoint = %q, want %q", refresher.endpoint, cfg.TinaCloud.Endpoint)
 		}
-		if gotRefresh != "refresh-1" {
-			t.Errorf("refresh_token = %q, want %q", gotRefresh, "refresh-1")
+		if refresher.refreshToken != "refresh-1" {
+			t.Errorf("RefreshToken() refresh token = %q, want %q", refresher.refreshToken, "refresh-1")
 		}
 		if tokens.AccessToken != "new-access" {
 			t.Errorf("AccessToken = %q, want %q", tokens.AccessToken, "new-access")
@@ -178,13 +193,9 @@ func TestTokensFromCache(t *testing.T) {
 		expired := time.Now().Add(-time.Hour).UTC().Format(time.RFC3339)
 		seedTokenCache(t, tokenPath, `{"access_token":"old-access","refresh_token":"refresh-1","expires_at":"`+expired+`"}`)
 
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusUnauthorized)
-		}))
-		defer server.Close()
-
-		cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: server.URL}}
-		if _, err := TokensFromCache(cfg); !errors.Is(err, ErrUnauthorized) {
+		refresher := &tokenRefresherStub{err: ErrUnauthorized}
+		cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: "https://identity.example"}}
+		if _, err := TokensFromCache(cfg, refresher); !errors.Is(err, ErrUnauthorized) {
 			t.Fatalf("TokensFromCache() = %v, want ErrUnauthorized", err)
 		}
 	})
