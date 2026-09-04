@@ -209,6 +209,7 @@ func TestRequestTimeouts(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			err := tc.call()
+			t.Logf("timeout error: %v", err)
 			if !errors.Is(err, ErrRequestTimeout) {
 				t.Fatalf("%s() = %v, want ErrRequestTimeout", tc.name, err)
 			}
