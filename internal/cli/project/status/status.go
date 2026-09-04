@@ -63,7 +63,7 @@ func runStatus(cfg config.Config, requestClient *requests.Client, projectID, tin
 		}
 	}
 
-	tokens, err := auth.TokensFromCache(cfg)
+	tokens, err := auth.TokensFromCache(cfg, requestClient)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
 			return statusJSONOutput{LoggedIn: false}, nil

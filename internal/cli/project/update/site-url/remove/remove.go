@@ -91,7 +91,7 @@ func runRemove(cfg config.Config, requestClient *requests.Client, removeSiteURLs
 		return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to parse site urls: %w", err)
 	}
 
-	tokens, err := auth.TokensFromCache(cfg)
+	tokens, err := auth.TokensFromCache(cfg, requestClient)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
 			return siteURLRemoveJSONOutput{LoggedIn: false}, nil

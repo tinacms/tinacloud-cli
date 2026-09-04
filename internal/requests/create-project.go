@@ -33,7 +33,6 @@ func (c *Client) CreateProject(endpoint, accessToken, orgID string, body domain.
 	if err != nil {
 		return domain.PostV2ProjectResponse{}, c.requestError("create project", err)
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusUnauthorized {
 		return domain.PostV2ProjectResponse{}, auth.ErrUnauthorized

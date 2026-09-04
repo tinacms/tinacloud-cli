@@ -40,7 +40,7 @@ func Command(cfg config.Config, requestClient *requests.Client, track posthog.Tr
 				return fmt.Errorf("failed to get current directory: %w", err)
 			}
 
-			saved, err := runConfigure(cfg, requestClient, cwd, *orgIDFlag, *projectIDFlag, *tinaDirFlag, auth.TokensFromCache, track)
+			saved, err := runConfigure(cfg, requestClient, cwd, *orgIDFlag, *projectIDFlag, *tinaDirFlag, auth.NewTokenLoader(requestClient), track)
 			if err != nil {
 				if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
 					fmt.Println("You are not currently logged in")

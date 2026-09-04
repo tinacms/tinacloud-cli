@@ -28,7 +28,7 @@ func Command(cfg config.Config, requestClient *requests.Client) *command.Command
 		Description: "Display authentication status and TinaCloud account information",
 		Flags:       flagSet,
 		Run: func(args []string) error {
-			out, err := runStatus(cfg, requestClient, auth.TokensFromCache)
+			out, err := runStatus(cfg, requestClient, auth.NewTokenLoader(requestClient))
 			if *jsonFlag {
 				return utils.WriteJSONResult(os.Stdout, out, err)
 			}

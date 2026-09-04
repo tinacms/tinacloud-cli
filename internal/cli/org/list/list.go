@@ -28,7 +28,7 @@ func Command(cfg config.Config, requestClient *requests.Client) *command.Command
 		Description: "List organizations",
 		Flags:       flagSet,
 		Run: func(args []string) error {
-			out, err := runList(cfg, requestClient, auth.TokensFromCache)
+			out, err := runList(cfg, requestClient, auth.NewTokenLoader(requestClient))
 			if *jsonFlag {
 				return utils.WriteJSONResult(os.Stdout, out, err)
 			}

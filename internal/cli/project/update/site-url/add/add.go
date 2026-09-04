@@ -91,7 +91,7 @@ func runAdd(cfg config.Config, requestClient *requests.Client, newSiteURLs domai
 		return siteURLAddJSONOutput{}, fmt.Errorf("failed to parse site urls: %w", err)
 	}
 
-	tokens, err := auth.TokensFromCache(cfg)
+	tokens, err := auth.TokensFromCache(cfg, requestClient)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
 			return siteURLAddJSONOutput{LoggedIn: false}, nil

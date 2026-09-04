@@ -66,7 +66,7 @@ func runList(cfg config.Config, requestClient *requests.Client, orgID, tinaDir s
 		}
 	}
 
-	tokens, err := auth.TokensFromCache(cfg)
+	tokens, err := auth.TokensFromCache(cfg, requestClient)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
 			return listJSONOutput{LoggedIn: false}, nil

@@ -92,7 +92,7 @@ func runCreate(cfg config.Config, requestClient *requests.Client, openURL func(s
 		return createJSONOutput{}, errors.New("repo url is invalid: host must be https://github.com")
 	}
 
-	tokens, err := auth.TokensFromCache(cfg)
+	tokens, err := auth.TokensFromCache(cfg, requestClient)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
 			return createJSONOutput{LoggedIn: false}, nil

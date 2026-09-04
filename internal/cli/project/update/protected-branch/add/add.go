@@ -88,7 +88,7 @@ func runAdd(cfg config.Config, requestClient *requests.Client, newProtectedBranc
 		return protectedBranchAddJSONOutput{}, errors.New("must pass at least one protected branch")
 	}
 
-	tokens, err := auth.TokensFromCache(cfg)
+	tokens, err := auth.TokensFromCache(cfg, requestClient)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
 			return protectedBranchAddJSONOutput{LoggedIn: false}, nil
