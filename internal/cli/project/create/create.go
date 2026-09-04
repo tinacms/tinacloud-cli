@@ -123,14 +123,14 @@ func runCreate(cfg config.Config, requestClient *requests.Client, openURL func(s
 			githubGitHost := domain.GitHost{ID: "github", Name: "GitHub", Server: "github.com"}
 			githosts := []domain.GitHost{githubGitHost}
 
-			githostResp, err := requestClient.GetGitHosts(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID)
+			githostResp, err := requests.NewClient().GetGitHosts(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID)
 			if err != nil {
 				return createJSONOutput{}, fmt.Errorf("failed to retrieve githosts: %w", err)
 			}
 			githosts = append(githosts, githostResp.GitHosts...)
 
 			state := fmt.Sprintf("http: localhost:%d", port)
-			installationURL, err := githubAppInstallationURL(cfg, requestClient, githubGitHost, state)
+			installationURL, err := githubAppInstallationURL(cfg, githubGitHost, state)
 			if err != nil {
 				return createJSONOutput{}, fmt.Errorf("failed to create github installation url: %w", err)
 			}
@@ -154,7 +154,7 @@ func runCreate(cfg config.Config, requestClient *requests.Client, openURL func(s
 				}
 
 				githost := githosts[selectedIndex]
-				installationURL, err = githubAppInstallationURL(cfg, requestClient, githost, state)
+				installationURL, err = githubAppInstallationURL(cfg, githost, state)
 				if err != nil {
 					return createJSONOutput{}, fmt.Errorf("failed to create github installation url: %w", err)
 				}
@@ -230,12 +230,12 @@ Attempting to open your default browser. If the browser does not open, open the 
 	}, nil
 }
 
-func githubAppInstallationURL(cfg config.Config, requestClient *requests.Client, githost domain.GitHost, state string) (string, error) {
+func githubAppInstallationURL(cfg config.Config, githost domain.GitHost, state string) (string, error) {
 	if githost.Server != "" && githost.GitHubAppName != "" {
 		return fmt.Sprintf("https://%s/github-apps/%s/installations/new?state=%s", githost.Server, githost.GitHubAppName, state), nil
 	}
 
-	githubApp, err := requestClient.GetTinaCloudGitHubApp(cfg.TinaCloud.Endpoint)
+	githubApp, err := requests.NewClient().GetTinaCloudGitHubApp(cfg.TinaCloud.Endpoint)
 	if err != nil {
 		return "", fmt.Errorf("failed to retrieve tinacloud github app name: %w", err)
 	}
