@@ -17,9 +17,13 @@ type Client struct {
 }
 
 func NewClient() *Client {
+	return NewClientWithTimeout(defaultRequestTimeout)
+}
+
+func NewClientWithTimeout(timeout time.Duration) *Client {
 	return &Client{
 		http: &http.Client{
-			Timeout: defaultRequestTimeout,
+			Timeout: timeout,
 		},
 	}
 }

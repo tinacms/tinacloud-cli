@@ -197,7 +197,7 @@ func TestRequestTimeouts(t *testing.T) {
 	}))
 	t.Cleanup(server.Close)
 
-	client := &Client{http: &http.Client{Timeout: 10 * time.Millisecond}}
+	client := NewClientWithTimeout(10 * time.Millisecond)
 	tests := []struct {
 		name      string
 		operation string
