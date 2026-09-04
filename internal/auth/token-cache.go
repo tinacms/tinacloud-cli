@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
-	"net/url"
 	"os"
 	"path"
 	"time"
@@ -17,6 +15,11 @@ import (
 
 var ErrUnauthenticated = errors.New("not logged in")
 var ErrUnauthorized = errors.New("no access")
+
+// TokenRefresher exchanges a refresh token for a new set of authentication tokens.
+type TokenRefresher interface {
+	RefreshToken(endpoint, refreshToken string) (domain.AuthResponse, error)
+}
 
 type TokenCache struct {
 	IDToken      string    `json:"id_token"`
@@ -62,6 +65,13 @@ func SaveTokens(tokens TokenCache) error {
 // Load authentication tokens.
 type TokenLoader func(config.Config) (TokenCache, error)
 
+// NewTokenLoader returns a token loader that refreshes expired tokens with refresher.
+func NewTokenLoader(refresher TokenRefresher) TokenLoader {
+	return func(cfg config.Config) (TokenCache, error) {
+		return TokensFromCache(cfg, refresher)
+	}
+}
+
 // Read cached tokens without refreshing expired access tokens.
 func PeekTokens() (TokenCache, error) {
 	configPath, err := cachePath()
@@ -94,7 +104,7 @@ func PeekTokens() (TokenCache, error) {
 	return tokens, nil
 }
 
-func TokensFromCache(cfg config.Config) (TokenCache, error) {
+func TokensFromCache(cfg config.Config, refresher TokenRefresher) (TokenCache, error) {
 	tokens, err := PeekTokens()
 	if err != nil {
 		return TokenCache{}, err
@@ -102,32 +112,9 @@ func TokensFromCache(cfg config.Config) (TokenCache, error) {
 
 	if tokens.ExpiresAt.Before(time.Now()) {
 		fmt.Fprintln(os.Stderr, "auth token expired, refreshing...")
-		params := url.Values{}
-		params.Set("grant_type", "refresh_token")
-		params.Set("refresh_token", tokens.RefreshToken)
-
-		resp, err := http.PostForm(fmt.Sprintf("%s/oauth/token", cfg.TinaCloud.Endpoint), params)
+		authTokens, err := refresher.RefreshToken(cfg.TinaCloud.Endpoint, tokens.RefreshToken)
 		if err != nil {
-			return TokenCache{}, fmt.Errorf("failed to post code to cognito for refresh: %w", err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode == http.StatusUnauthorized {
-			return TokenCache{}, ErrUnauthorized
-		}
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return TokenCache{}, fmt.Errorf("failed to read auth refresh response: %w", err)
-		}
-
-		if resp.StatusCode > 299 {
-			return TokenCache{}, fmt.Errorf("failed to refresh auth token. received response status of '%d': %s", resp.StatusCode, string(body))
-		}
-
-		var authTokens domain.AuthResponse
-		if err := json.Unmarshal(body, &authTokens); err != nil {
-			return TokenCache{}, fmt.Errorf("could not parse tokens: %w", err)
+			return TokenCache{}, err
 		}
 
 		tokens = TokenCache{
