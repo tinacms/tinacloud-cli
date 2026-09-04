@@ -26,7 +26,7 @@ type createJSONOutput struct {
 	Project  domain.CreatedProject `json:"project"`
 }
 
-func Command(cfg config.Config, track posthog.Tracker) *command.Command {
+func Command(cfg config.Config, requestClient *requests.Client, track posthog.Tracker) *command.Command {
 	flagSet := flag.NewFlagSet("list", flag.ContinueOnError)
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
 	var orgIDFlag = flagSet.String("org-id", "", "TinaCloud organization ID")
@@ -40,7 +40,7 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 		Description: "Create a new project",
 		Flags:       flagSet,
 		Run: func(args []string) error {
-			out, err := runCreate(cfg, browser.OpenURL, *orgIDFlag, *projectNameFlag, *repoURLFlag, *siteURLFlag, *tinaDirFlag)
+			out, err := runCreate(cfg, requestClient, browser.OpenURL, *orgIDFlag, *projectNameFlag, *repoURLFlag, *siteURLFlag, *tinaDirFlag)
 			if err == nil && out.LoggedIn {
 				track(posthog.ProjectCreated(out.Project.OrgID, out.Project.ProjectID, out.Project.Name, out.Project.RepoURL, out.Project.SiteURLs))
 			}
@@ -64,7 +64,7 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	}
 }
 
-func runCreate(cfg config.Config, openURL func(string) error, orgID, projectName, repoURL, siteURL, tinaDir string) (createJSONOutput, error) {
+func runCreate(cfg config.Config, requestClient *requests.Client, openURL func(string) error, orgID, projectName, repoURL, siteURL, tinaDir string) (createJSONOutput, error) {
 	if orgID == "" {
 		if cwd, err := os.Getwd(); err == nil {
 			if tinacloudConfig, err := domain.TinaCloudConfigFromDisk(cwd, tinaDir); err == nil {
@@ -107,7 +107,7 @@ func runCreate(cfg config.Config, openURL func(string) error, orgID, projectName
 	}
 
 	var resp domain.PostV2ProjectResponse
-	resp, err = requests.CreateProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, body)
+	resp, err = requestClient.CreateProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, body)
 	if err != nil {
 		if !errors.Is(err, requests.ErrMissingInstallationID) {
 			return createJSONOutput{}, err
@@ -123,14 +123,14 @@ func runCreate(cfg config.Config, openURL func(string) error, orgID, projectName
 			githubGitHost := domain.GitHost{ID: "github", Name: "GitHub", Server: "github.com"}
 			githosts := []domain.GitHost{githubGitHost}
 
-			githostResp, err := requests.GetGitHosts(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID)
+			githostResp, err := requestClient.GetGitHosts(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID)
 			if err != nil {
 				return createJSONOutput{}, fmt.Errorf("failed to retrieve githosts: %w", err)
 			}
 			githosts = append(githosts, githostResp.GitHosts...)
 
 			state := fmt.Sprintf("http: localhost:%d", port)
-			installationURL, err := githubAppInstallationURL(cfg, githubGitHost, state)
+			installationURL, err := githubAppInstallationURL(cfg, requestClient, githubGitHost, state)
 			if err != nil {
 				return createJSONOutput{}, fmt.Errorf("failed to create github installation url: %w", err)
 			}
@@ -154,7 +154,7 @@ func runCreate(cfg config.Config, openURL func(string) error, orgID, projectName
 				}
 
 				githost := githosts[selectedIndex]
-				installationURL, err = githubAppInstallationURL(cfg, githost, state)
+				installationURL, err = githubAppInstallationURL(cfg, requestClient, githost, state)
 				if err != nil {
 					return createJSONOutput{}, fmt.Errorf("failed to create github installation url: %w", err)
 				}
@@ -208,7 +208,7 @@ Attempting to open your default browser. If the browser does not open, open the 
 		}
 
 		body.InstallationID = installationID
-		resp, err = requests.CreateProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, body)
+		resp, err = requestClient.CreateProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, body)
 		if err != nil {
 			return createJSONOutput{}, err
 		}
@@ -230,12 +230,12 @@ Attempting to open your default browser. If the browser does not open, open the 
 	}, nil
 }
 
-func githubAppInstallationURL(cfg config.Config, githost domain.GitHost, state string) (string, error) {
+func githubAppInstallationURL(cfg config.Config, requestClient *requests.Client, githost domain.GitHost, state string) (string, error) {
 	if githost.Server != "" && githost.GitHubAppName != "" {
 		return fmt.Sprintf("https://%s/github-apps/%s/installations/new?state=%s", githost.Server, githost.GitHubAppName, state), nil
 	}
 
-	githubApp, err := requests.GetTinaCloudGitHubApp(cfg.TinaCloud.Endpoint)
+	githubApp, err := requestClient.GetTinaCloudGitHubApp(cfg.TinaCloud.Endpoint)
 	if err != nil {
 		return "", fmt.Errorf("failed to retrieve tinacloud github app name: %w", err)
 	}

@@ -21,7 +21,7 @@ type siteURLAddJSONOutput struct {
 	SiteURLs []string `json:"site_urls"`
 }
 
-func Command(cfg config.Config, track posthog.Tracker) *command.Command {
+func Command(cfg config.Config, requestClient *requests.Client, track posthog.Tracker) *command.Command {
 	flagSet := flag.NewFlagSet("add", flag.ContinueOnError)
 	var siteURLsFlag domain.UrlsFlag
 	flagSet.Var(&siteURLsFlag, "url", "A URL to register against your TinaCloud project")
@@ -35,7 +35,7 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 		Description: "Add site URLs",
 		Flags:       flagSet,
 		Run: func(args []string) error {
-			out, err := runAdd(cfg, siteURLsFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
+			out, err := runAdd(cfg, requestClient, siteURLsFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
 			if err == nil && out.LoggedIn {
 				track(posthog.SiteURLAdded(siteURLsFlag))
 			}
@@ -58,7 +58,7 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	}
 }
 
-func runAdd(cfg config.Config, newSiteURLs domain.UrlsFlag, orgID, projectID, tinaDir string) (siteURLAddJSONOutput, error) {
+func runAdd(cfg config.Config, requestClient *requests.Client, newSiteURLs domain.UrlsFlag, orgID, projectID, tinaDir string) (siteURLAddJSONOutput, error) {
 	bothProvided := projectID != "" && orgID != ""
 	bothEmpty := projectID == "" && orgID == ""
 
@@ -99,7 +99,7 @@ func runAdd(cfg config.Config, newSiteURLs domain.UrlsFlag, orgID, projectID, ti
 		return siteURLAddJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
-	project, err := requests.GetProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, projectID)
+	project, err := requestClient.GetProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, projectID)
 	if err != nil {
 		return siteURLAddJSONOutput{}, err
 	}
@@ -138,7 +138,7 @@ func runAdd(cfg config.Config, newSiteURLs domain.UrlsFlag, orgID, projectID, ti
 		SiteURL:           strings.Join(uniqueSiteURLs, ","),
 	}
 
-	err = requests.PutProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, projectID, body)
+	err = requestClient.PutProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, projectID, body)
 	if err != nil {
 		return siteURLAddJSONOutput{}, err
 	}

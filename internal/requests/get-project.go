@@ -10,8 +10,7 @@ import (
 	"tina.io/tinacloud-cli/internal/domain"
 )
 
-func GetProject(endpoint, accessToken, projectID string) (domain.GetV2ProjectResponse, error) {
-	client := http.Client{}
+func (c *Client) GetProject(endpoint, accessToken, projectID string) (domain.GetV2ProjectResponse, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/apps/%s", endpoint, projectID), nil)
 	if err != nil {
 		return domain.GetV2ProjectResponse{}, fmt.Errorf("failed to initialize request: %w", err)
@@ -19,9 +18,9 @@ func GetProject(endpoint, accessToken, projectID string) (domain.GetV2ProjectRes
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
-		return domain.GetV2ProjectResponse{}, fmt.Errorf("failed to get project: %w", err)
+		return domain.GetV2ProjectResponse{}, c.requestError("get project", err)
 	}
 	defer resp.Body.Close()
 
@@ -31,7 +30,7 @@ func GetProject(endpoint, accessToken, projectID string) (domain.GetV2ProjectRes
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return domain.GetV2ProjectResponse{}, fmt.Errorf("failed to read get project response: %w", err)
+		return domain.GetV2ProjectResponse{}, c.requestError("get project", err)
 	}
 
 	if resp.StatusCode > 299 {

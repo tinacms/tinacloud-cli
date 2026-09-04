@@ -8,17 +8,18 @@ import (
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/posthog"
+	"tina.io/tinacloud-cli/internal/requests"
 )
 
-func Command(cfg config.Config, track posthog.Tracker) *command.Command {
+func Command(cfg config.Config, requestClient *requests.Client, track posthog.Tracker) *command.Command {
 	return &command.Command{
 		Name:        "project",
 		Description: "Interact with projects",
 		SubCommands: []*command.Command{
-			list.Command(cfg),
-			create.Command(cfg, track),
-			status.Command(cfg),
-			update.Command(cfg, track),
+			list.Command(cfg, requestClient),
+			create.Command(cfg, requestClient, track),
+			status.Command(cfg, requestClient),
+			update.Command(cfg, requestClient, track),
 		},
 	}
 }

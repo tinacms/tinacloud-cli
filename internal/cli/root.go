@@ -34,10 +34,10 @@ func (s *State) rootCommand(version string) *command.Command {
 		Name:  "tinacloud",
 		Flags: flagSet,
 		SubCommands: []*command.Command{
-			auth.Command(s.config, s.Track, s.Identify),
-			org.Command(s.config),
-			project.Command(s.config, s.Track),
-			configure.Command(s.config, s.Track),
+			auth.Command(s.config, s.requestClient, s.Track, s.Identify),
+			org.Command(s.config, s.requestClient),
+			project.Command(s.config, s.requestClient, s.Track),
+			configure.Command(s.config, s.requestClient, s.Track),
 		},
 	}
 

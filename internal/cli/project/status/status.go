@@ -19,7 +19,7 @@ type statusJSONOutput struct {
 	Project  domain.GetV2ProjectResponse `json:"project"`
 }
 
-func Command(cfg config.Config) *command.Command {
+func Command(cfg config.Config, requestClient *requests.Client) *command.Command {
 	flagSet := flag.NewFlagSet("list", flag.ContinueOnError)
 	var projectIDFlag = flagSet.String("project-id", "", "TinaCloud project ID")
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
@@ -30,7 +30,7 @@ func Command(cfg config.Config) *command.Command {
 		Description: "List a project's status",
 		Flags:       flagSet,
 		Run: func(args []string) error {
-			out, err := runStatus(cfg, *projectIDFlag, *tinaDirFlag)
+			out, err := runStatus(cfg, requestClient, *projectIDFlag, *tinaDirFlag)
 			if *jsonFlag {
 				return utils.WriteJSONResult(os.Stdout, out, err)
 			}
@@ -50,7 +50,7 @@ func Command(cfg config.Config) *command.Command {
 	}
 }
 
-func runStatus(cfg config.Config, projectID, tinaDir string) (statusJSONOutput, error) {
+func runStatus(cfg config.Config, requestClient *requests.Client, projectID, tinaDir string) (statusJSONOutput, error) {
 	if projectID == "" {
 		if cwd, err := os.Getwd(); err == nil {
 			if tinacloudConfig, err := domain.TinaCloudConfigFromDisk(cwd, tinaDir); err == nil {
@@ -71,7 +71,7 @@ func runStatus(cfg config.Config, projectID, tinaDir string) (statusJSONOutput, 
 		return statusJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
-	project, err := requests.GetProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, projectID)
+	project, err := requestClient.GetProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, projectID)
 	if err != nil {
 		return statusJSONOutput{}, err
 	}

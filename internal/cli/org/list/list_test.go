@@ -10,6 +10,7 @@ import (
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/requests"
 )
 
 func stubTokenLoader(tokens auth.TokenCache, err error) auth.TokenLoader {
@@ -30,7 +31,7 @@ func cfgWithServer(t *testing.T, handler http.HandlerFunc) config.Config {
 }
 
 func TestRunList_Unauthenticated(t *testing.T) {
-	out, err := runList(config.Config{}, stubTokenLoader(auth.TokenCache{}, auth.ErrUnauthenticated))
+	out, err := runList(config.Config{}, requests.NewClient(), stubTokenLoader(auth.TokenCache{}, auth.ErrUnauthenticated))
 	if err != nil {
 		t.Fatalf("runList() = %v, want nil error", err)
 	}
@@ -64,7 +65,7 @@ func TestRunList_MultipleOrgs(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(orgs)
 	})
 
-	out, err := runList(cfg, stubTokenLoader(auth.TokenCache{AccessToken: "access-token"}, nil))
+	out, err := runList(cfg, requests.NewClient(), stubTokenLoader(auth.TokenCache{AccessToken: "access-token"}, nil))
 	if err != nil {
 		t.Fatalf("runList() = %v, want nil error", err)
 	}
@@ -97,7 +98,7 @@ func TestRunList_APIErrors(t *testing.T) {
 				w.WriteHeader(tc.statusCode)
 			})
 
-			_, err := runList(cfg, stubTokenLoader(auth.TokenCache{AccessToken: "access-token"}, nil))
+			_, err := runList(cfg, requests.NewClient(), stubTokenLoader(auth.TokenCache{AccessToken: "access-token"}, nil))
 			if tc.wantErr != nil {
 				if !errors.Is(err, tc.wantErr) {
 					t.Errorf("runList() = %v, want %v", err, tc.wantErr)
@@ -112,7 +113,7 @@ func TestRunList_APIErrors(t *testing.T) {
 }
 
 func TestRunList_TokenLoadError(t *testing.T) {
-	_, err := runList(config.Config{}, stubTokenLoader(auth.TokenCache{}, errors.New("disk failure")))
+	_, err := runList(config.Config{}, requests.NewClient(), stubTokenLoader(auth.TokenCache{}, errors.New("disk failure")))
 	if err == nil {
 		t.Fatal("runList() = nil error, want error for non-auth load failure")
 	}
@@ -123,7 +124,7 @@ func TestRunList_MalformedJSON(t *testing.T) {
 		_, _ = w.Write([]byte("{not json"))
 	})
 
-	_, err := runList(cfg, stubTokenLoader(auth.TokenCache{AccessToken: "access-token"}, nil))
+	_, err := runList(cfg, requests.NewClient(), stubTokenLoader(auth.TokenCache{AccessToken: "access-token"}, nil))
 	if err == nil {
 		t.Fatal("runList() = nil error, want unmarshal error")
 	}

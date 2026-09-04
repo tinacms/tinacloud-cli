@@ -15,9 +15,10 @@ import (
 )
 
 type State struct {
-	config     config.Config
-	posthog    posthog.Sender
-	distinctID string
+	config        config.Config
+	requestClient *requests.Client
+	posthog       posthog.Sender
+	distinctID    string
 }
 
 func New(ctx context.Context, dev string) (*State, error) {
@@ -32,7 +33,10 @@ func New(ctx context.Context, dev string) (*State, error) {
 		}
 	}
 
-	state := &State{config: cfg}
+	state := &State{
+		config:        cfg,
+		requestClient: requests.NewClient(),
+	}
 
 	// Resolve the distinct ID only when telemetry is on; it is unused otherwise.
 	if !cfg.Core.Dev {
@@ -62,7 +66,7 @@ func resolveDistinctID() string {
 // No-op if already initialised.
 func (s *State) InitialisePostHog() error {
 	if s.posthog == nil {
-		posthogTokens, err := requests.GetPostHogToken(s.config.TinaCloud.Endpoint)
+		posthogTokens, err := s.requestClient.GetPostHogToken(s.config.TinaCloud.Endpoint)
 		if err != nil {
 			return fmt.Errorf("failed to get posthog tokens from tinacloud: %w", err)
 		}

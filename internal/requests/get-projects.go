@@ -10,8 +10,7 @@ import (
 	"tina.io/tinacloud-cli/internal/domain"
 )
 
-func GetProjects(endpoint, accessToken, orgID string) ([]domain.GetV2ProjectsResponse, error) {
-	client := http.Client{}
+func (c *Client) GetProjects(endpoint, accessToken, orgID string) ([]domain.GetV2ProjectsResponse, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/organizations/%s/apps", endpoint, orgID), nil)
 	if err != nil {
 		return []domain.GetV2ProjectsResponse{}, fmt.Errorf("failed to initialize request: %w", err)
@@ -19,9 +18,9 @@ func GetProjects(endpoint, accessToken, orgID string) ([]domain.GetV2ProjectsRes
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
-		return []domain.GetV2ProjectsResponse{}, fmt.Errorf("failed to get projects: %w", err)
+		return []domain.GetV2ProjectsResponse{}, c.requestError("get projects", err)
 	}
 	defer resp.Body.Close()
 
@@ -31,7 +30,7 @@ func GetProjects(endpoint, accessToken, orgID string) ([]domain.GetV2ProjectsRes
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return []domain.GetV2ProjectsResponse{}, fmt.Errorf("failed to read get projects response: %w", err)
+		return []domain.GetV2ProjectsResponse{}, c.requestError("get projects", err)
 	}
 
 	if resp.StatusCode > 299 {

@@ -10,6 +10,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
+	"tina.io/tinacloud-cli/internal/requests"
 )
 
 func makeJWT(t *testing.T, userID string) string {
@@ -45,7 +46,7 @@ func cfgWithServer(t *testing.T, handler http.HandlerFunc) config.Config {
 }
 
 func TestRunStatus_Unauthenticated(t *testing.T) {
-	out, err := runStatus(config.Config{}, stubTokenLoader(auth.TokenCache{}, auth.ErrUnauthenticated))
+	out, err := runStatus(config.Config{}, requests.NewClient(), stubTokenLoader(auth.TokenCache{}, auth.ErrUnauthenticated))
 	if err != nil {
 		t.Fatalf("runStatus() = %v, want nil error", err)
 	}
@@ -77,7 +78,7 @@ func TestRunStatus_Success(t *testing.T) {
 	})
 
 	tokens := auth.TokenCache{AccessToken: accessToken}
-	out, err := runStatus(cfg, stubTokenLoader(tokens, nil))
+	out, err := runStatus(cfg, requests.NewClient(), stubTokenLoader(tokens, nil))
 	if err != nil {
 		t.Fatalf("runStatus() = %v, want nil error", err)
 	}
@@ -109,7 +110,7 @@ func TestRunStatus_APIErrors(t *testing.T) {
 			})
 
 			tokens := auth.TokenCache{AccessToken: makeJWT(t, "user-123")}
-			_, err := runStatus(cfg, stubTokenLoader(tokens, nil))
+			_, err := runStatus(cfg, requests.NewClient(), stubTokenLoader(tokens, nil))
 			if tc.wantErr != nil {
 				if !errors.Is(err, tc.wantErr) {
 					t.Errorf("runStatus() = %v, want %v", err, tc.wantErr)
@@ -125,14 +126,14 @@ func TestRunStatus_APIErrors(t *testing.T) {
 
 func TestRunStatus_NoUserID(t *testing.T) {
 	tokens := auth.TokenCache{AccessToken: makeJWT(t, "")}
-	_, err := runStatus(config.Config{}, stubTokenLoader(tokens, nil))
+	_, err := runStatus(config.Config{}, requests.NewClient(), stubTokenLoader(tokens, nil))
 	if err == nil {
 		t.Fatal("runStatus() = nil error, want error for missing user ID")
 	}
 }
 
 func TestRunStatus_TokenLoadError(t *testing.T) {
-	_, err := runStatus(config.Config{}, stubTokenLoader(auth.TokenCache{}, errors.New("disk failure")))
+	_, err := runStatus(config.Config{}, requests.NewClient(), stubTokenLoader(auth.TokenCache{}, errors.New("disk failure")))
 	if err == nil {
 		t.Fatal("runStatus() = nil error, want error for non-auth load failure")
 	}
@@ -140,7 +141,7 @@ func TestRunStatus_TokenLoadError(t *testing.T) {
 
 func TestRunStatus_DecodeError(t *testing.T) {
 	tokens := auth.TokenCache{AccessToken: "not-a-jwt"}
-	_, err := runStatus(config.Config{}, stubTokenLoader(tokens, nil))
+	_, err := runStatus(config.Config{}, requests.NewClient(), stubTokenLoader(tokens, nil))
 	if err == nil {
 		t.Fatal("runStatus() = nil error, want decode error for malformed token")
 	}
@@ -152,7 +153,7 @@ func TestRunStatus_MalformedJSON(t *testing.T) {
 	})
 
 	tokens := auth.TokenCache{AccessToken: makeJWT(t, "user-123")}
-	_, err := runStatus(cfg, stubTokenLoader(tokens, nil))
+	_, err := runStatus(cfg, requests.NewClient(), stubTokenLoader(tokens, nil))
 	if err == nil {
 		t.Fatal("runStatus() = nil error, want unmarshal error")
 	}

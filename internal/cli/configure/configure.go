@@ -24,7 +24,7 @@ type projectOption struct {
 	org     domain.Organization
 }
 
-func Command(cfg config.Config, track posthog.Tracker) *command.Command {
+func Command(cfg config.Config, requestClient *requests.Client, track posthog.Tracker) *command.Command {
 	flagSet := flag.NewFlagSet("configure", flag.ContinueOnError)
 	var projectIDFlag = flagSet.String("project-id", "", "TinaCloud project ID")
 	var orgIDFlag = flagSet.String("org-id", "", "TinaCloud organization ID")
@@ -40,7 +40,7 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 				return fmt.Errorf("failed to get current directory: %w", err)
 			}
 
-			saved, err := runConfigure(cfg, cwd, *orgIDFlag, *projectIDFlag, *tinaDirFlag, auth.TokensFromCache, track)
+			saved, err := runConfigure(cfg, requestClient, cwd, *orgIDFlag, *projectIDFlag, *tinaDirFlag, auth.TokensFromCache, track)
 			if err != nil {
 				if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
 					fmt.Println("You are not currently logged in")
@@ -60,7 +60,7 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	}
 }
 
-func runConfigure(cfg config.Config, cwd, orgID, projectID, tinaDir string, loadTokens auth.TokenLoader, track posthog.Tracker) (bool, error) {
+func runConfigure(cfg config.Config, requestClient *requests.Client, cwd, orgID, projectID, tinaDir string, loadTokens auth.TokenLoader, track posthog.Tracker) (bool, error) {
 	if orgID != "" || projectID != "" {
 		if orgID == "" || projectID == "" {
 			return false, fmt.Errorf("both --org-id and --project-id must be passed")
@@ -76,14 +76,14 @@ func runConfigure(cfg config.Config, cwd, orgID, projectID, tinaDir string, load
 		return false, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
-	organizations, err := requests.GetOrganizations(cfg.TinaCloud.Endpoint, tokens.AccessToken)
+	organizations, err := requestClient.GetOrganizations(cfg.TinaCloud.Endpoint, tokens.AccessToken)
 	if err != nil {
 		return false, err
 	}
 
 	var projectOptions []projectOption
 	for _, org := range organizations {
-		projects, err := requests.GetProjects(cfg.TinaCloud.Endpoint, tokens.AccessToken, org.Organization.ID)
+		projects, err := requestClient.GetProjects(cfg.TinaCloud.Endpoint, tokens.AccessToken, org.Organization.ID)
 		if err != nil {
 			return false, err
 		}

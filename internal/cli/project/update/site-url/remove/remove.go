@@ -21,7 +21,7 @@ type siteURLRemoveJSONOutput struct {
 	SiteURLs []string `json:"site_urls"`
 }
 
-func Command(cfg config.Config, track posthog.Tracker) *command.Command {
+func Command(cfg config.Config, requestClient *requests.Client, track posthog.Tracker) *command.Command {
 	flagSet := flag.NewFlagSet("remove", flag.ContinueOnError)
 	var siteURLsFlag domain.UrlsFlag
 	flagSet.Var(&siteURLsFlag, "url", "A URL to remove from your TinaCloud project")
@@ -35,7 +35,7 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 		Description: "Remove site URLs",
 		Flags:       flagSet,
 		Run: func(args []string) error {
-			out, err := runRemove(cfg, siteURLsFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
+			out, err := runRemove(cfg, requestClient, siteURLsFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
 			if err == nil && out.LoggedIn {
 				track(posthog.SiteURLRemoved(siteURLsFlag))
 			}
@@ -58,7 +58,7 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	}
 }
 
-func runRemove(cfg config.Config, removeSiteURLs domain.UrlsFlag, orgID, projectID, tinaDir string) (siteURLRemoveJSONOutput, error) {
+func runRemove(cfg config.Config, requestClient *requests.Client, removeSiteURLs domain.UrlsFlag, orgID, projectID, tinaDir string) (siteURLRemoveJSONOutput, error) {
 	bothProvided := projectID != "" && orgID != ""
 	bothEmpty := projectID == "" && orgID == ""
 
@@ -99,7 +99,7 @@ func runRemove(cfg config.Config, removeSiteURLs domain.UrlsFlag, orgID, project
 		return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
-	project, err := requests.GetProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, projectID)
+	project, err := requestClient.GetProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, projectID)
 	if err != nil {
 		return siteURLRemoveJSONOutput{}, err
 	}
@@ -138,7 +138,7 @@ func runRemove(cfg config.Config, removeSiteURLs domain.UrlsFlag, orgID, project
 		SiteURL:           strings.Join(uniqueSiteURLs, ","),
 	}
 
-	err = requests.PutProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, projectID, body)
+	err = requestClient.PutProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, projectID, body)
 	if err != nil {
 		return siteURLRemoveJSONOutput{}, err
 	}

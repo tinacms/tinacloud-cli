@@ -10,8 +10,7 @@ import (
 	"tina.io/tinacloud-cli/internal/domain"
 )
 
-func GetOrganizations(endpoint, accessToken string) ([]domain.OrganizationWithRole, error) {
-	client := http.Client{}
+func (c *Client) GetOrganizations(endpoint, accessToken string) ([]domain.OrganizationWithRole, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/organizations", endpoint), nil)
 	if err != nil {
 		return []domain.OrganizationWithRole{}, fmt.Errorf("failed to initialize request: %w", err)
@@ -19,9 +18,9 @@ func GetOrganizations(endpoint, accessToken string) ([]domain.OrganizationWithRo
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
-		return []domain.OrganizationWithRole{}, fmt.Errorf("failed to get organizations: %w", err)
+		return []domain.OrganizationWithRole{}, c.requestError("get organizations", err)
 	}
 	defer resp.Body.Close()
 
@@ -31,7 +30,7 @@ func GetOrganizations(endpoint, accessToken string) ([]domain.OrganizationWithRo
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return []domain.OrganizationWithRole{}, fmt.Errorf("failed to read get organizations response: %w", err)
+		return []domain.OrganizationWithRole{}, c.requestError("get organizations", err)
 	}
 
 	if resp.StatusCode > 299 {

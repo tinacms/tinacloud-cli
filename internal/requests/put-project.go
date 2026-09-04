@@ -11,13 +11,12 @@ import (
 	"tina.io/tinacloud-cli/internal/domain"
 )
 
-func PutProject(endpoint, accessToken, orgID, projectID string, body domain.PutV2ProjectBody) error {
+func (c *Client) PutProject(endpoint, accessToken, orgID, projectID string, body domain.PutV2ProjectBody) error {
 	putBody, err := json.Marshal(body)
 	if err != nil {
 		return fmt.Errorf("failed to marshal request body: %w", err)
 	}
 
-	client := http.Client{}
 	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/v2/organizations/%s/apps/%s", endpoint, orgID, projectID), bytes.NewBuffer(putBody))
 	if err != nil {
 		return fmt.Errorf("failed to initialize request: %w", err)
@@ -26,9 +25,9 @@ func PutProject(endpoint, accessToken, orgID, projectID string, body domain.PutV
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to update project: %w", err)
+		return c.requestError("update project", err)
 	}
 	defer resp.Body.Close()
 
@@ -38,7 +37,7 @@ func PutProject(endpoint, accessToken, orgID, projectID string, body domain.PutV
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("failed to read update project response: %w", err)
+		return c.requestError("update project", err)
 	}
 
 	if resp.StatusCode > 299 {

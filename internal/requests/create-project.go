@@ -15,13 +15,12 @@ import (
 
 var ErrMissingInstallationID error = errors.New("failed to retrieve installation ID")
 
-func CreateProject(endpoint, accessToken, orgID string, body domain.PostV2ProjectsBody) (domain.PostV2ProjectResponse, error) {
+func (c *Client) CreateProject(endpoint, accessToken, orgID string, body domain.PostV2ProjectsBody) (domain.PostV2ProjectResponse, error) {
 	postBody, err := json.Marshal(body)
 	if err != nil {
 		return domain.PostV2ProjectResponse{}, fmt.Errorf("failed to marshal request body: %w", err)
 	}
 
-	client := http.Client{}
 	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/v2/organizations/%s/apps", endpoint, orgID), bytes.NewBuffer(postBody))
 	if err != nil {
 		return domain.PostV2ProjectResponse{}, fmt.Errorf("failed to initialize request: %w", err)
@@ -30,9 +29,9 @@ func CreateProject(endpoint, accessToken, orgID string, body domain.PostV2Projec
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
-		return domain.PostV2ProjectResponse{}, fmt.Errorf("failed to create project: %w", err)
+		return domain.PostV2ProjectResponse{}, c.requestError("create project", err)
 	}
 	defer resp.Body.Close()
 
@@ -42,7 +41,7 @@ func CreateProject(endpoint, accessToken, orgID string, body domain.PostV2Projec
 
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return domain.PostV2ProjectResponse{}, fmt.Errorf("failed to read create project response: %w", err)
+		return domain.PostV2ProjectResponse{}, c.requestError("create project", err)
 	}
 
 	if resp.StatusCode > 299 {

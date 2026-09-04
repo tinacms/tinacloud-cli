@@ -9,23 +9,22 @@ import (
 	"tina.io/tinacloud-cli/internal/domain"
 )
 
-func GetPostHogToken(endpoint string) (domain.GetV2PostHogTokenResponse, error) {
-	client := http.Client{}
+func (c *Client) GetPostHogToken(endpoint string) (domain.GetV2PostHogTokenResponse, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/posthog-token", endpoint), nil)
 	if err != nil {
 		return domain.GetV2PostHogTokenResponse{}, fmt.Errorf("failed to initialize request: %w", err)
 	}
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
-		return domain.GetV2PostHogTokenResponse{}, fmt.Errorf("failed to get posthog token: %w", err)
+		return domain.GetV2PostHogTokenResponse{}, c.requestError("get PostHog token", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return domain.GetV2PostHogTokenResponse{}, fmt.Errorf("failed to read get posthog token response: %w", err)
+		return domain.GetV2PostHogTokenResponse{}, c.requestError("get PostHog token", err)
 	}
 
 	if resp.StatusCode > 299 {

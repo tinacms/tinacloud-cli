@@ -5,6 +5,7 @@ import (
 
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/posthog"
+	"tina.io/tinacloud-cli/internal/requests"
 )
 
 // aliasCall records the arguments of one Alias call.
@@ -63,7 +64,7 @@ func TestTrack(t *testing.T) {
 
 	t.Run("is a no-op when posthog cannot be initialised", func(t *testing.T) {
 		// No endpoint, so lazy init fails and Track must no-op without panicking.
-		s := &State{distinctID: "user-1"}
+		s := &State{requestClient: requests.NewClient(), distinctID: "user-1"}
 
 		s.Track(event)
 	})

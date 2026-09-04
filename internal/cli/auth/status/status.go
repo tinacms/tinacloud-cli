@@ -19,7 +19,7 @@ type statusJSONOutput struct {
 	Email    string `json:"email,omitempty"`
 }
 
-func Command(cfg config.Config) *command.Command {
+func Command(cfg config.Config, requestClient *requests.Client) *command.Command {
 	flagSet := flag.NewFlagSet("status", flag.ContinueOnError)
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
 
@@ -28,7 +28,7 @@ func Command(cfg config.Config) *command.Command {
 		Description: "Display authentication status and TinaCloud account information",
 		Flags:       flagSet,
 		Run: func(args []string) error {
-			out, err := runStatus(cfg, auth.TokensFromCache)
+			out, err := runStatus(cfg, requestClient, auth.TokensFromCache)
 			if *jsonFlag {
 				return utils.WriteJSONResult(os.Stdout, out, err)
 			}
@@ -47,7 +47,7 @@ func Command(cfg config.Config) *command.Command {
 	}
 }
 
-func runStatus(cfg config.Config, loadTokens auth.TokenLoader) (statusJSONOutput, error) {
+func runStatus(cfg config.Config, requestClient *requests.Client, loadTokens auth.TokenLoader) (statusJSONOutput, error) {
 	tokens, err := loadTokens(cfg)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
@@ -65,7 +65,7 @@ func runStatus(cfg config.Config, loadTokens auth.TokenLoader) (statusJSONOutput
 		return statusJSONOutput{}, errors.New("failed to retrieve user id from access token")
 	}
 
-	user, err := requests.GetTinaCloudUser(cfg.TinaCloud.Endpoint, tokens.AccessToken, claims.TinaCloudUserID)
+	user, err := requestClient.GetTinaCloudUser(cfg.TinaCloud.Endpoint, tokens.AccessToken, claims.TinaCloudUserID)
 	if err != nil {
 		return statusJSONOutput{}, err
 	}

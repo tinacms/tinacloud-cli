@@ -22,7 +22,7 @@ type protectedBranchRemoveJSONOutput struct {
 	ProtectedBranches []string `json:"protected_branches"`
 }
 
-func Command(cfg config.Config, track posthog.Tracker) *command.Command {
+func Command(cfg config.Config, requestClient *requests.Client, track posthog.Tracker) *command.Command {
 	flagSet := flag.NewFlagSet("remove", flag.ContinueOnError)
 	var protectedBranchesFlag domain.BranchesFlag
 	flagSet.Var(&protectedBranchesFlag, "branch", "A protected branch to remove from your TinaCloud project")
@@ -36,7 +36,7 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 		Description: "Remove protected branches",
 		Flags:       flagSet,
 		Run: func(args []string) error {
-			out, err := runRemove(cfg, protectedBranchesFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
+			out, err := runRemove(cfg, requestClient, protectedBranchesFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
 			if err == nil && out.LoggedIn {
 				track(posthog.ProtectedBranchRemoved(protectedBranchesFlag))
 			}
@@ -59,7 +59,7 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	}
 }
 
-func runRemove(cfg config.Config, removeProtectedBranches []string, orgID, projectID, tinaDir string) (protectedBranchRemoveJSONOutput, error) {
+func runRemove(cfg config.Config, requestClient *requests.Client, removeProtectedBranches []string, orgID, projectID, tinaDir string) (protectedBranchRemoveJSONOutput, error) {
 	bothProvided := projectID != "" && orgID != ""
 	bothEmpty := projectID == "" && orgID == ""
 
@@ -96,7 +96,7 @@ func runRemove(cfg config.Config, removeProtectedBranches []string, orgID, proje
 		return protectedBranchRemoveJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
-	project, err := requests.GetProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, projectID)
+	project, err := requestClient.GetProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, projectID)
 	if err != nil {
 		return protectedBranchRemoveJSONOutput{}, err
 	}
@@ -140,7 +140,7 @@ func runRemove(cfg config.Config, removeProtectedBranches []string, orgID, proje
 		ProtectedBranches: &protectedBranches,
 	}
 
-	err = requests.PutProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, projectID, body)
+	err = requestClient.PutProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, projectID, body)
 	if err != nil {
 		return protectedBranchRemoveJSONOutput{}, err
 	}

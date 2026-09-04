@@ -19,7 +19,7 @@ type listJSONOutput struct {
 	Organizations []domain.OrganizationWithRole `json:"organizations"`
 }
 
-func Command(cfg config.Config) *command.Command {
+func Command(cfg config.Config, requestClient *requests.Client) *command.Command {
 	flagSet := flag.NewFlagSet("list", flag.ContinueOnError)
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
 
@@ -28,7 +28,7 @@ func Command(cfg config.Config) *command.Command {
 		Description: "List organizations",
 		Flags:       flagSet,
 		Run: func(args []string) error {
-			out, err := runList(cfg, auth.TokensFromCache)
+			out, err := runList(cfg, requestClient, auth.TokensFromCache)
 			if *jsonFlag {
 				return utils.WriteJSONResult(os.Stdout, out, err)
 			}
@@ -51,7 +51,7 @@ func Command(cfg config.Config) *command.Command {
 	}
 }
 
-func runList(cfg config.Config, loadTokens auth.TokenLoader) (listJSONOutput, error) {
+func runList(cfg config.Config, requestClient *requests.Client, loadTokens auth.TokenLoader) (listJSONOutput, error) {
 	tokens, err := loadTokens(cfg)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
@@ -60,7 +60,7 @@ func runList(cfg config.Config, loadTokens auth.TokenLoader) (listJSONOutput, er
 		return listJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
-	organizations, err := requests.GetOrganizations(cfg.TinaCloud.Endpoint, tokens.AccessToken)
+	organizations, err := requestClient.GetOrganizations(cfg.TinaCloud.Endpoint, tokens.AccessToken)
 	if err != nil {
 		return listJSONOutput{}, err
 	}

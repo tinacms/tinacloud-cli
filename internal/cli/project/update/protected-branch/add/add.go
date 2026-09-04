@@ -22,7 +22,7 @@ type protectedBranchAddJSONOutput struct {
 	ProtectedBranches []string `json:"protected_branches"`
 }
 
-func Command(cfg config.Config, track posthog.Tracker) *command.Command {
+func Command(cfg config.Config, requestClient *requests.Client, track posthog.Tracker) *command.Command {
 	flagSet := flag.NewFlagSet("add", flag.ContinueOnError)
 	var protectedBranchesFlag domain.BranchesFlag
 	flagSet.Var(&protectedBranchesFlag, "branch", "A protected branch to add to your TinaCloud project")
@@ -36,7 +36,7 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 		Description: "Add protected branches",
 		Flags:       flagSet,
 		Run: func(args []string) error {
-			out, err := runAdd(cfg, protectedBranchesFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
+			out, err := runAdd(cfg, requestClient, protectedBranchesFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
 			if err == nil && out.LoggedIn {
 				track(posthog.ProtectedBranchAdded(protectedBranchesFlag))
 			}
@@ -59,7 +59,7 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	}
 }
 
-func runAdd(cfg config.Config, newProtectedBranches []string, orgID, projectID, tinaDir string) (protectedBranchAddJSONOutput, error) {
+func runAdd(cfg config.Config, requestClient *requests.Client, newProtectedBranches []string, orgID, projectID, tinaDir string) (protectedBranchAddJSONOutput, error) {
 	bothProvided := projectID != "" && orgID != ""
 	bothEmpty := projectID == "" && orgID == ""
 
@@ -96,7 +96,7 @@ func runAdd(cfg config.Config, newProtectedBranches []string, orgID, projectID, 
 		return protectedBranchAddJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
-	project, err := requests.GetProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, projectID)
+	project, err := requestClient.GetProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, projectID)
 	if err != nil {
 		return protectedBranchAddJSONOutput{}, err
 	}
@@ -137,7 +137,7 @@ func runAdd(cfg config.Config, newProtectedBranches []string, orgID, projectID, 
 		ProtectedBranches: &uniqueProtectedBranches,
 	}
 
-	err = requests.PutProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, projectID, body)
+	err = requestClient.PutProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, projectID, body)
 	if err != nil {
 		return protectedBranchAddJSONOutput{}, err
 	}

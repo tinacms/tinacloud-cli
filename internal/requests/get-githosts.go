@@ -10,8 +10,7 @@ import (
 	"tina.io/tinacloud-cli/internal/domain"
 )
 
-func GetGitHosts(endpoint, accessToken, orgID string) (domain.GetV2GitHostsResponse, error) {
-	client := http.Client{}
+func (c *Client) GetGitHosts(endpoint, accessToken, orgID string) (domain.GetV2GitHostsResponse, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/organizations/%s/githosts", endpoint, orgID), nil)
 	if err != nil {
 		return domain.GetV2GitHostsResponse{}, fmt.Errorf("failed to initialize request: %w", err)
@@ -19,9 +18,9 @@ func GetGitHosts(endpoint, accessToken, orgID string) (domain.GetV2GitHostsRespo
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
-		return domain.GetV2GitHostsResponse{}, fmt.Errorf("failed to get githosts: %w", err)
+		return domain.GetV2GitHostsResponse{}, c.requestError("get git hosts", err)
 	}
 	defer resp.Body.Close()
 
@@ -31,7 +30,7 @@ func GetGitHosts(endpoint, accessToken, orgID string) (domain.GetV2GitHostsRespo
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return domain.GetV2GitHostsResponse{}, fmt.Errorf("failed to read get githosts response: %w", err)
+		return domain.GetV2GitHostsResponse{}, c.requestError("get git hosts", err)
 	}
 
 	if resp.StatusCode > 299 {

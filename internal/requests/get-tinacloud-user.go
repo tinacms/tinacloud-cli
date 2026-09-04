@@ -10,8 +10,7 @@ import (
 	"tina.io/tinacloud-cli/internal/domain"
 )
 
-func GetTinaCloudUser(endpoint, accessToken, userID string) (domain.TinaCloudUser, error) {
-	client := http.Client{}
+func (c *Client) GetTinaCloudUser(endpoint, accessToken, userID string) (domain.TinaCloudUser, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/users/%s", endpoint, userID), nil)
 	if err != nil {
 		return domain.TinaCloudUser{}, fmt.Errorf("failed to initialize request: %w", err)
@@ -19,9 +18,9 @@ func GetTinaCloudUser(endpoint, accessToken, userID string) (domain.TinaCloudUse
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
-		return domain.TinaCloudUser{}, fmt.Errorf("failed to get user information: %w", err)
+		return domain.TinaCloudUser{}, c.requestError("get TinaCloud user", err)
 	}
 	defer resp.Body.Close()
 
@@ -31,7 +30,7 @@ func GetTinaCloudUser(endpoint, accessToken, userID string) (domain.TinaCloudUse
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return domain.TinaCloudUser{}, fmt.Errorf("failed to read get user information response: %w", err)
+		return domain.TinaCloudUser{}, c.requestError("get TinaCloud user", err)
 	}
 
 	if resp.StatusCode > 299 {

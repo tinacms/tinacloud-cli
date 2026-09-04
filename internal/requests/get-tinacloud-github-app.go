@@ -10,17 +10,16 @@ import (
 	"tina.io/tinacloud-cli/internal/domain"
 )
 
-func GetTinaCloudGitHubApp(endpoint string) (domain.GetV2TinaCloudGitHubAppResponse, error) {
-	client := http.Client{}
+func (c *Client) GetTinaCloudGitHubApp(endpoint string) (domain.GetV2TinaCloudGitHubAppResponse, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/github/app", endpoint), nil)
 	if err != nil {
 		return domain.GetV2TinaCloudGitHubAppResponse{}, fmt.Errorf("failed to initialize request: %w", err)
 	}
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
-		return domain.GetV2TinaCloudGitHubAppResponse{}, fmt.Errorf("failed to get github app name: %w", err)
+		return domain.GetV2TinaCloudGitHubAppResponse{}, c.requestError("get TinaCloud GitHub app", err)
 	}
 	defer resp.Body.Close()
 
@@ -30,7 +29,7 @@ func GetTinaCloudGitHubApp(endpoint string) (domain.GetV2TinaCloudGitHubAppRespo
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return domain.GetV2TinaCloudGitHubAppResponse{}, fmt.Errorf("failed to read get github app name response: %w", err)
+		return domain.GetV2TinaCloudGitHubAppResponse{}, c.requestError("get TinaCloud GitHub app", err)
 	}
 
 	if resp.StatusCode > 299 {
