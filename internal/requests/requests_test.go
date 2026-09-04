@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/domain"
@@ -35,7 +36,7 @@ func jsonServer(t *testing.T, status int, body string) (*httptest.Server, *recor
 func TestGetOrganizations(t *testing.T) {
 	server, rec := jsonServer(t, http.StatusOK, `[{"organization":{"id":"org-1","name":"Acme"},"role":"admin"}]`)
 
-	got, err := GetOrganizations(server.URL, "tok")
+	got, err := NewClient().GetOrganizations(server.URL, "tok")
 	if err != nil {
 		t.Fatalf("GetOrganizations() = %v, want nil error", err)
 	}
@@ -54,7 +55,7 @@ func TestGetOrganizationsErrors(t *testing.T) {
 	t.Run("returns error on non-2xx response", func(t *testing.T) {
 		server, _ := jsonServer(t, http.StatusInternalServerError, "boom")
 
-		if _, err := GetOrganizations(server.URL, "tok"); err == nil {
+		if _, err := NewClient().GetOrganizations(server.URL, "tok"); err == nil {
 			t.Fatal("GetOrganizations() = nil error, want error")
 		}
 	})
@@ -69,16 +70,16 @@ func TestRequestsMap401ToErrUnauthorized(t *testing.T) {
 		name string
 		call func() error
 	}{
-		{"GetOrganizations", func() error { _, err := GetOrganizations(server.URL, "tok"); return err }},
-		{"GetProjects", func() error { _, err := GetProjects(server.URL, "tok", "org-1"); return err }},
-		{"GetProject", func() error { _, err := GetProject(server.URL, "tok", "project-1"); return err }},
-		{"GetTinaCloudUser", func() error { _, err := GetTinaCloudUser(server.URL, "tok", "user-1"); return err }},
+		{"GetOrganizations", func() error { _, err := NewClient().GetOrganizations(server.URL, "tok"); return err }},
+		{"GetProjects", func() error { _, err := NewClient().GetProjects(server.URL, "tok", "org-1"); return err }},
+		{"GetProject", func() error { _, err := NewClient().GetProject(server.URL, "tok", "project-1"); return err }},
+		{"GetTinaCloudUser", func() error { _, err := NewClient().GetTinaCloudUser(server.URL, "tok", "user-1"); return err }},
 		{"CreateProject", func() error {
-			_, err := CreateProject(server.URL, "tok", "org-1", domain.PostV2ProjectsBody{})
+			_, err := NewClient().CreateProject(server.URL, "tok", "org-1", domain.PostV2ProjectsBody{})
 			return err
 		}},
 		{"PutProject", func() error {
-			return PutProject(server.URL, "tok", "org-1", "project-1", domain.PutV2ProjectBody{})
+			return NewClient().PutProject(server.URL, "tok", "org-1", "project-1", domain.PutV2ProjectBody{})
 		}},
 	}
 
@@ -94,7 +95,7 @@ func TestRequestsMap401ToErrUnauthorized(t *testing.T) {
 func TestGetProjects(t *testing.T) {
 	server, rec := jsonServer(t, http.StatusOK, `[{"id":"project-1","name":"Site"}]`)
 
-	got, err := GetProjects(server.URL, "tok", "org-1")
+	got, err := NewClient().GetProjects(server.URL, "tok", "org-1")
 	if err != nil {
 		t.Fatalf("GetProjects() = %v, want nil error", err)
 	}
@@ -109,7 +110,7 @@ func TestGetProjects(t *testing.T) {
 func TestGetProject(t *testing.T) {
 	server, rec := jsonServer(t, http.StatusOK, `{"id":"project-1","name":"Site","orgId":"org-1"}`)
 
-	got, err := GetProject(server.URL, "tok", "project-1")
+	got, err := NewClient().GetProject(server.URL, "tok", "project-1")
 	if err != nil {
 		t.Fatalf("GetProject() = %v, want nil error", err)
 	}
@@ -124,7 +125,7 @@ func TestGetProject(t *testing.T) {
 func TestGetTinaCloudUser(t *testing.T) {
 	server, rec := jsonServer(t, http.StatusOK, `{"email":"a@b.com","fullName":"Ada"}`)
 
-	got, err := GetTinaCloudUser(server.URL, "tok", "user-1")
+	got, err := NewClient().GetTinaCloudUser(server.URL, "tok", "user-1")
 	if err != nil {
 		t.Fatalf("GetTinaCloudUser() = %v, want nil error", err)
 	}
@@ -141,7 +142,7 @@ func TestCreateProject(t *testing.T) {
 	server, rec := jsonServer(t, http.StatusOK, `{"created_app":{"id":"project-1","name":"Site"}}`)
 
 	body := domain.PostV2ProjectsBody{Name: "Site", RepoURL: "https://github.com/a/b", SiteURL: "https://b.com"}
-	got, err := CreateProject(server.URL, "tok", "org-1", body)
+	got, err := NewClient().CreateProject(server.URL, "tok", "org-1", body)
 	if err != nil {
 		t.Fatalf("CreateProject() = %v, want nil error", err)
 	}
@@ -156,11 +157,75 @@ func TestCreateProject(t *testing.T) {
 	}
 }
 
+func TestRequestTimeouts(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(50 * time.Millisecond)
+	}))
+	t.Cleanup(server.Close)
+
+	client := &Client{http: &http.Client{Timeout: 10 * time.Millisecond}}
+	tests := []struct {
+		name      string
+		operation string
+		call      func() error
+	}{
+		{name: "GetOrganizations", operation: "get organizations", call: func() error {
+			_, err := client.GetOrganizations(server.URL, "tok")
+			return err
+		}},
+		{name: "GetProjects", operation: "get projects", call: func() error {
+			_, err := client.GetProjects(server.URL, "tok", "org-1")
+			return err
+		}},
+		{name: "GetProject", operation: "get project", call: func() error {
+			_, err := client.GetProject(server.URL, "tok", "project-1")
+			return err
+		}},
+		{name: "GetTinaCloudUser", operation: "get TinaCloud user", call: func() error {
+			_, err := client.GetTinaCloudUser(server.URL, "tok", "user-1")
+			return err
+		}},
+		{name: "CreateProject", operation: "create project", call: func() error {
+			_, err := client.CreateProject(server.URL, "tok", "org-1", domain.PostV2ProjectsBody{})
+			return err
+		}},
+		{name: "PutProject", operation: "update project", call: func() error {
+			return client.PutProject(server.URL, "tok", "org-1", "project-1", domain.PutV2ProjectBody{})
+		}},
+		{name: "GetGitHosts", operation: "get git hosts", call: func() error {
+			_, err := client.GetGitHosts(server.URL, "tok", "org-1")
+			return err
+		}},
+		{name: "GetTinaCloudGitHubApp", operation: "get TinaCloud GitHub app", call: func() error {
+			_, err := client.GetTinaCloudGitHubApp(server.URL)
+			return err
+		}},
+		{name: "GetPostHogToken", operation: "get PostHog token", call: func() error {
+			_, err := client.GetPostHogToken(server.URL)
+			return err
+		}},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.call()
+			if !errors.Is(err, ErrRequestTimeout) {
+				t.Fatalf("%s() = %v, want ErrRequestTimeout", tc.name, err)
+			}
+
+			want := tc.operation + ": request timed out after 10ms"
+			if got := err.Error(); got != want {
+				t.Errorf("%s() error = %q, want %q", tc.name, got, want)
+			}
+		})
+	}
+}
+
 func TestPutProject(t *testing.T) {
 	server, rec := jsonServer(t, http.StatusOK, "")
 
 	body := domain.PutV2ProjectBody{Name: "Renamed"}
-	if err := PutProject(server.URL, "tok", "org-1", "project-1", body); err != nil {
+	if err := NewClient().PutProject(server.URL, "tok", "org-1", "project-1", body); err != nil {
 		t.Fatalf("PutProject() = %v, want nil error", err)
 	}
 	if rec.req.URL.Path != "/v2/organizations/org-1/apps/project-1" {
@@ -177,7 +242,7 @@ func TestPutProject(t *testing.T) {
 func TestGetPostHogToken(t *testing.T) {
 	server, rec := jsonServer(t, http.StatusOK, `{"api_key":"1234","endpoint":"https://ph.example"}`)
 
-	got, err := GetPostHogToken(server.URL)
+	got, err := NewClient().GetPostHogToken(server.URL)
 	if err != nil {
 		t.Fatalf("GetPostHogToken() = %v, want nil error", err)
 	}
