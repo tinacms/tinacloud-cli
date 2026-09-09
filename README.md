@@ -6,7 +6,7 @@ A CLI tool to interact with TinaCloud related services.
 
 ### Linux & MacOS
 The easiest way to install the TinaCloud CLI is via the provided install
-script.  To use the install script, run the following command in your terminal.
+script. To use the install script, run the following command in your terminal.
 This will install the TinaCloud CLI to `/usr/local/bin`.
 
 ```

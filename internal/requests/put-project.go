@@ -7,8 +7,8 @@ import (
 	"io"
 	"net/http"
 
-	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/httpclient"
 )
 
 func PutProject(endpoint, accessToken, orgID, projectID string, body domain.PutV2ProjectBody) error {
@@ -17,7 +17,6 @@ func PutProject(endpoint, accessToken, orgID, projectID string, body domain.PutV
 		return fmt.Errorf("failed to marshal request body: %w", err)
 	}
 
-	client := http.Client{}
 	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/v2/organizations/%s/apps/%s", endpoint, orgID, projectID), bytes.NewBuffer(putBody))
 	if err != nil {
 		return fmt.Errorf("failed to initialize request: %w", err)
@@ -26,14 +25,14 @@ func PutProject(endpoint, accessToken, orgID, projectID string, body domain.PutV
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := httpclient.Client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to update project: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		return auth.ErrUnauthorized
+		return httpclient.ErrUnauthorized
 	}
 
 	respBody, err := io.ReadAll(resp.Body)

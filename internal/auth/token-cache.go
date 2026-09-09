@@ -13,10 +13,10 @@ import (
 
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/httpclient"
 )
 
 var ErrUnauthenticated = errors.New("not logged in")
-var ErrUnauthorized = errors.New("no access")
 
 type TokenCache struct {
 	IDToken      string    `json:"id_token"`
@@ -106,14 +106,14 @@ func TokensFromCache(cfg config.Config) (TokenCache, error) {
 		params.Set("grant_type", "refresh_token")
 		params.Set("refresh_token", tokens.RefreshToken)
 
-		resp, err := http.PostForm(fmt.Sprintf("%s/oauth/token", cfg.TinaCloud.Endpoint), params)
+		resp, err := httpclient.Client.PostForm(fmt.Sprintf("%s/oauth/token", cfg.TinaCloud.Endpoint), params)
 		if err != nil {
 			return TokenCache{}, fmt.Errorf("failed to post code to cognito for refresh: %w", err)
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode == http.StatusUnauthorized {
-			return TokenCache{}, ErrUnauthorized
+			return TokenCache{}, httpclient.ErrUnauthorized
 		}
 
 		body, err := io.ReadAll(resp.Body)

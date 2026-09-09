@@ -7,17 +7,17 @@ import (
 	"net/http"
 
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/httpclient"
 )
 
 func GetPostHogToken(endpoint string) (domain.GetV2PostHogTokenResponse, error) {
-	client := http.Client{}
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/posthog-token", endpoint), nil)
 	if err != nil {
 		return domain.GetV2PostHogTokenResponse{}, fmt.Errorf("failed to initialize request: %w", err)
 	}
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := httpclient.Client.Do(req)
 	if err != nil {
 		return domain.GetV2PostHogTokenResponse{}, fmt.Errorf("failed to get posthog token: %w", err)
 	}

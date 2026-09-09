@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"strings"
 
-	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/httpclient"
 )
 
 var ErrMissingInstallationID error = errors.New("failed to retrieve installation ID")
@@ -21,7 +21,6 @@ func CreateProject(endpoint, accessToken, orgID string, body domain.PostV2Projec
 		return domain.PostV2ProjectResponse{}, fmt.Errorf("failed to marshal request body: %w", err)
 	}
 
-	client := http.Client{}
 	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/v2/organizations/%s/apps", endpoint, orgID), bytes.NewBuffer(postBody))
 	if err != nil {
 		return domain.PostV2ProjectResponse{}, fmt.Errorf("failed to initialize request: %w", err)
@@ -30,14 +29,14 @@ func CreateProject(endpoint, accessToken, orgID string, body domain.PostV2Projec
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := httpclient.Client.Do(req)
 	if err != nil {
 		return domain.PostV2ProjectResponse{}, fmt.Errorf("failed to create project: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		return domain.PostV2ProjectResponse{}, auth.ErrUnauthorized
+		return domain.PostV2ProjectResponse{}, httpclient.ErrUnauthorized
 	}
 
 	responseBody, err := io.ReadAll(resp.Body)

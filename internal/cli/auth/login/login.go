@@ -18,6 +18,7 @@ import (
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/httpclient"
 	"tina.io/tinacloud-cli/internal/posthog"
 	"tina.io/tinacloud-cli/internal/utils"
 )
@@ -50,6 +51,7 @@ func runLogin(cfg config.Config, openURL func(string) error, track posthog.Track
 		// to the authorization page. instead, we want to catch the redirect
 		// location to display to user.
 		client := http.Client{
+			Timeout: httpclient.Client.Timeout,
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				return http.ErrUseLastResponse
 			},
@@ -125,7 +127,7 @@ func runLogin(cfg config.Config, openURL func(string) error, track posthog.Track
 		defer resp.Body.Close()
 
 		if resp.StatusCode == http.StatusUnauthorized {
-			return auth.ErrUnauthorized
+			return httpclient.ErrUnauthorized
 		}
 
 		body, err := io.ReadAll(resp.Body)

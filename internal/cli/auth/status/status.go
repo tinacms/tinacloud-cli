@@ -9,6 +9,7 @@ import (
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
+	"tina.io/tinacloud-cli/internal/httpclient"
 	"tina.io/tinacloud-cli/internal/requests"
 	"tina.io/tinacloud-cli/internal/utils"
 )
@@ -50,7 +51,7 @@ func Command(cfg config.Config) *command.Command {
 func runStatus(cfg config.Config, loadTokens auth.TokenLoader) (statusJSONOutput, error) {
 	tokens, err := loadTokens(cfg)
 	if err != nil {
-		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
+		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, httpclient.ErrUnauthorized) {
 			return statusJSONOutput{LoggedIn: false}, nil
 		}
 		return statusJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)

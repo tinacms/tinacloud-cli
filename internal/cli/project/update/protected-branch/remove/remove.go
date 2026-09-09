@@ -12,6 +12,7 @@ import (
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/httpclient"
 	"tina.io/tinacloud-cli/internal/posthog"
 	"tina.io/tinacloud-cli/internal/requests"
 	"tina.io/tinacloud-cli/internal/utils"
@@ -90,7 +91,7 @@ func runRemove(cfg config.Config, removeProtectedBranches []string, orgID, proje
 
 	tokens, err := auth.TokensFromCache(cfg)
 	if err != nil {
-		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
+		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, httpclient.ErrUnauthorized) {
 			return protectedBranchRemoveJSONOutput{LoggedIn: false}, nil
 		}
 		return protectedBranchRemoveJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)

@@ -6,12 +6,11 @@ import (
 	"io"
 	"net/http"
 
-	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/httpclient"
 )
 
 func GetOrganizations(endpoint, accessToken string) ([]domain.OrganizationWithRole, error) {
-	client := http.Client{}
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/organizations", endpoint), nil)
 	if err != nil {
 		return []domain.OrganizationWithRole{}, fmt.Errorf("failed to initialize request: %w", err)
@@ -19,14 +18,14 @@ func GetOrganizations(endpoint, accessToken string) ([]domain.OrganizationWithRo
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := httpclient.Client.Do(req)
 	if err != nil {
 		return []domain.OrganizationWithRole{}, fmt.Errorf("failed to get organizations: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		return []domain.OrganizationWithRole{}, auth.ErrUnauthorized
+		return []domain.OrganizationWithRole{}, httpclient.ErrUnauthorized
 	}
 
 	body, err := io.ReadAll(resp.Body)

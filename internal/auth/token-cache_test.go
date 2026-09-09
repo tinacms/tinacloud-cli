@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"tina.io/tinacloud-cli/internal/config"
+	"tina.io/tinacloud-cli/internal/httpclient"
 )
 
 // tokenCachePath redirects the user config dir to a temp dir and returns the
@@ -184,7 +185,7 @@ func TestTokensFromCache(t *testing.T) {
 		defer server.Close()
 
 		cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: server.URL}}
-		if _, err := TokensFromCache(cfg); !errors.Is(err, ErrUnauthorized) {
+		if _, err := TokensFromCache(cfg); !errors.Is(err, httpclient.ErrUnauthorized) {
 			t.Fatalf("TokensFromCache() = %v, want ErrUnauthorized", err)
 		}
 	})
