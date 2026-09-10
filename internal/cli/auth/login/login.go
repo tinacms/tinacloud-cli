@@ -60,7 +60,7 @@ func runLogin(cfg config.Config, openURL func(string) error, track posthog.Track
 		oauthURL := fmt.Sprintf("%s/oauth/authorize?code_challenge=%s&redirect_uri=http://localhost:%d/callback", cfg.TinaCloud.Endpoint, challenge, port)
 		resp, err := client.Get(oauthURL)
 		if err != nil {
-			return fmt.Errorf("failed to authorize with tinacloud: %w", err)
+			return fmt.Errorf("failed to authorize with tinacloud: %w", httpclient.ClassifyHTTPError(err))
 		}
 
 		redirectURL := resp.Header.Get("location")
@@ -120,9 +120,9 @@ func runLogin(cfg config.Config, openURL func(string) error, track posthog.Track
 		params.Set("redirect_uri", fmt.Sprintf("http://localhost:%d/callback", port))
 		params.Set("code_verifier", verifier)
 
-		resp, err := http.PostForm(fmt.Sprintf("%s/oauth/token", cfg.TinaCloud.Endpoint), params)
+		resp, err := httpclient.Client.PostForm(fmt.Sprintf("%s/oauth/token", cfg.TinaCloud.Endpoint), params)
 		if err != nil {
-			return fmt.Errorf("failed to post code to cognito for verification: %w", err)
+			return fmt.Errorf("failed to post code to cognito for verification: %w", httpclient.ClassifyHTTPError(err))
 		}
 		defer resp.Body.Close()
 
@@ -132,7 +132,7 @@ func runLogin(cfg config.Config, openURL func(string) error, track posthog.Track
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return fmt.Errorf("failed to read auth validation response: %w", err)
+			return fmt.Errorf("failed to read auth validation response: %w", httpclient.ClassifyHTTPError(err))
 		}
 
 		if resp.StatusCode > 299 {
