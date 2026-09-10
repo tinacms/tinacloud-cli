@@ -22,7 +22,7 @@ func ClassifyHTTPError(err error) error {
 
 	var netErr net.Error
 	if errors.Is(err, context.DeadlineExceeded) || (errors.As(err, &netErr) && netErr.Timeout()) {
-		return ErrTimeout
+		return fmt.Errorf("%w: %v", ErrTimeout, err)
 	}
 
 	return err
