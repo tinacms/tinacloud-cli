@@ -19,13 +19,13 @@ func GetPostHogToken(endpoint string) (domain.GetV2PostHogTokenResponse, error) 
 
 	resp, err := httpclient.Client.Do(req)
 	if err != nil {
-		return domain.GetV2PostHogTokenResponse{}, fmt.Errorf("failed to get posthog token: %w", err)
+		return domain.GetV2PostHogTokenResponse{}, fmt.Errorf("failed to get posthog token: %w", httpclient.ClassifyHTTPError(err))
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return domain.GetV2PostHogTokenResponse{}, fmt.Errorf("failed to read get posthog token response: %w", err)
+		return domain.GetV2PostHogTokenResponse{}, fmt.Errorf("failed to read get posthog token response: %w", httpclient.ClassifyHTTPError(err))
 	}
 
 	if resp.StatusCode > 299 {

@@ -20,7 +20,7 @@ func GetTinaCloudUser(endpoint, accessToken, userID string) (domain.TinaCloudUse
 
 	resp, err := httpclient.Client.Do(req)
 	if err != nil {
-		return domain.TinaCloudUser{}, fmt.Errorf("failed to get user information: %w", err)
+		return domain.TinaCloudUser{}, fmt.Errorf("failed to get user information: %w", httpclient.ClassifyHTTPError(err))
 	}
 	defer resp.Body.Close()
 
@@ -30,7 +30,7 @@ func GetTinaCloudUser(endpoint, accessToken, userID string) (domain.TinaCloudUse
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return domain.TinaCloudUser{}, fmt.Errorf("failed to read get user information response: %w", err)
+		return domain.TinaCloudUser{}, fmt.Errorf("failed to read get user information response: %w", httpclient.ClassifyHTTPError(err))
 	}
 
 	if resp.StatusCode > 299 {

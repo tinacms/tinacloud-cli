@@ -19,7 +19,7 @@ func GetTinaCloudGitHubApp(endpoint string) (domain.GetV2TinaCloudGitHubAppRespo
 
 	resp, err := httpclient.Client.Do(req)
 	if err != nil {
-		return domain.GetV2TinaCloudGitHubAppResponse{}, fmt.Errorf("failed to get github app name: %w", err)
+		return domain.GetV2TinaCloudGitHubAppResponse{}, fmt.Errorf("failed to get github app name: %w", httpclient.ClassifyHTTPError(err))
 	}
 	defer resp.Body.Close()
 
@@ -29,7 +29,7 @@ func GetTinaCloudGitHubApp(endpoint string) (domain.GetV2TinaCloudGitHubAppRespo
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return domain.GetV2TinaCloudGitHubAppResponse{}, fmt.Errorf("failed to read get github app name response: %w", err)
+		return domain.GetV2TinaCloudGitHubAppResponse{}, fmt.Errorf("failed to read get github app name response: %w", httpclient.ClassifyHTTPError(err))
 	}
 
 	if resp.StatusCode > 299 {

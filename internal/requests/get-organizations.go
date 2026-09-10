@@ -20,7 +20,7 @@ func GetOrganizations(endpoint, accessToken string) ([]domain.OrganizationWithRo
 
 	resp, err := httpclient.Client.Do(req)
 	if err != nil {
-		return []domain.OrganizationWithRole{}, fmt.Errorf("failed to get organizations: %w", err)
+		return []domain.OrganizationWithRole{}, fmt.Errorf("failed to get organizations: %w", httpclient.ClassifyHTTPError(err))
 	}
 	defer resp.Body.Close()
 
@@ -30,7 +30,7 @@ func GetOrganizations(endpoint, accessToken string) ([]domain.OrganizationWithRo
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return []domain.OrganizationWithRole{}, fmt.Errorf("failed to read get organizations response: %w", err)
+		return []domain.OrganizationWithRole{}, fmt.Errorf("failed to read get organizations response: %w", httpclient.ClassifyHTTPError(err))
 	}
 
 	if resp.StatusCode > 299 {

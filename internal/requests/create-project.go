@@ -31,7 +31,7 @@ func CreateProject(endpoint, accessToken, orgID string, body domain.PostV2Projec
 
 	resp, err := httpclient.Client.Do(req)
 	if err != nil {
-		return domain.PostV2ProjectResponse{}, fmt.Errorf("failed to create project: %w", err)
+		return domain.PostV2ProjectResponse{}, fmt.Errorf("failed to create project: %w", httpclient.ClassifyHTTPError(err))
 	}
 	defer resp.Body.Close()
 
@@ -41,7 +41,7 @@ func CreateProject(endpoint, accessToken, orgID string, body domain.PostV2Projec
 
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return domain.PostV2ProjectResponse{}, fmt.Errorf("failed to read create project response: %w", err)
+		return domain.PostV2ProjectResponse{}, fmt.Errorf("failed to read create project response: %w", httpclient.ClassifyHTTPError(err))
 	}
 
 	if resp.StatusCode > 299 {

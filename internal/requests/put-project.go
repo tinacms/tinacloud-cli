@@ -27,7 +27,7 @@ func PutProject(endpoint, accessToken, orgID, projectID string, body domain.PutV
 
 	resp, err := httpclient.Client.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to update project: %w", err)
+		return fmt.Errorf("failed to update project: %w", httpclient.ClassifyHTTPError(err))
 	}
 	defer resp.Body.Close()
 
@@ -37,7 +37,7 @@ func PutProject(endpoint, accessToken, orgID, projectID string, body domain.PutV
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("failed to read update project response: %w", err)
+		return fmt.Errorf("failed to read update project response: %w", httpclient.ClassifyHTTPError(err))
 	}
 
 	if resp.StatusCode > 299 {

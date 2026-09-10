@@ -20,7 +20,7 @@ func GetGitHosts(endpoint, accessToken, orgID string) (domain.GetV2GitHostsRespo
 
 	resp, err := httpclient.Client.Do(req)
 	if err != nil {
-		return domain.GetV2GitHostsResponse{}, fmt.Errorf("failed to get githosts: %w", err)
+		return domain.GetV2GitHostsResponse{}, fmt.Errorf("failed to get githosts: %w", httpclient.ClassifyHTTPError(err))
 	}
 	defer resp.Body.Close()
 
@@ -30,7 +30,7 @@ func GetGitHosts(endpoint, accessToken, orgID string) (domain.GetV2GitHostsRespo
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return domain.GetV2GitHostsResponse{}, fmt.Errorf("failed to read get githosts response: %w", err)
+		return domain.GetV2GitHostsResponse{}, fmt.Errorf("failed to read get githosts response: %w", httpclient.ClassifyHTTPError(err))
 	}
 
 	if resp.StatusCode > 299 {

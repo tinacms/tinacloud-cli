@@ -108,7 +108,7 @@ func TokensFromCache(cfg config.Config) (TokenCache, error) {
 
 		resp, err := httpclient.Client.PostForm(fmt.Sprintf("%s/oauth/token", cfg.TinaCloud.Endpoint), params)
 		if err != nil {
-			return TokenCache{}, fmt.Errorf("failed to post code to cognito for refresh: %w", err)
+			return TokenCache{}, fmt.Errorf("failed to post code to cognito for refresh: %w", httpclient.ClassifyHTTPError(err))
 		}
 		defer resp.Body.Close()
 
@@ -118,7 +118,7 @@ func TokensFromCache(cfg config.Config) (TokenCache, error) {
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return TokenCache{}, fmt.Errorf("failed to read auth refresh response: %w", err)
+			return TokenCache{}, fmt.Errorf("failed to read auth refresh response: %w", httpclient.ClassifyHTTPError(err))
 		}
 
 		if resp.StatusCode > 299 {

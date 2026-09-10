@@ -20,7 +20,7 @@ func GetProject(endpoint, accessToken, projectID string) (domain.GetV2ProjectRes
 
 	resp, err := httpclient.Client.Do(req)
 	if err != nil {
-		return domain.GetV2ProjectResponse{}, fmt.Errorf("failed to get project: %w", err)
+		return domain.GetV2ProjectResponse{}, fmt.Errorf("failed to get project: %w", httpclient.ClassifyHTTPError(err))
 	}
 	defer resp.Body.Close()
 
@@ -30,7 +30,7 @@ func GetProject(endpoint, accessToken, projectID string) (domain.GetV2ProjectRes
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return domain.GetV2ProjectResponse{}, fmt.Errorf("failed to read get project response: %w", err)
+		return domain.GetV2ProjectResponse{}, fmt.Errorf("failed to read get project response: %w", httpclient.ClassifyHTTPError(err))
 	}
 
 	if resp.StatusCode > 299 {
