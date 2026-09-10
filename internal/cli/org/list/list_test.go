@@ -10,6 +10,7 @@ import (
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/httpclient"
 )
 
 func stubTokenLoader(tokens auth.TokenCache, err error) auth.TokenLoader {
@@ -31,8 +32,8 @@ func cfgWithServer(t *testing.T, handler http.HandlerFunc) config.Config {
 
 func TestRunList_Unauthenticated(t *testing.T) {
 	out, err := runList(config.Config{}, stubTokenLoader(auth.TokenCache{}, auth.ErrUnauthenticated))
-	if err != nil {
-		t.Fatalf("runList() = %v, want nil error", err)
+	if !errors.Is(err, auth.ErrUnauthenticated) {
+		t.Fatalf("runList() = %v, want ErrUnauthenticated", err)
 	}
 	if out.LoggedIn {
 		t.Errorf("runList().LoggedIn = true, want false")
@@ -87,7 +88,7 @@ func TestRunList_APIErrors(t *testing.T) {
 		statusCode int
 		wantErr    error
 	}{
-		{name: "unauthorized", statusCode: http.StatusUnauthorized, wantErr: auth.ErrUnauthorized},
+		{name: "unauthorized", statusCode: http.StatusUnauthorized, wantErr: httpclient.ErrUnauthorized},
 		{name: "server error", statusCode: http.StatusInternalServerError},
 	}
 

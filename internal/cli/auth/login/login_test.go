@@ -14,9 +14,11 @@ import (
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v4"
+
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/httpclient"
 	"tina.io/tinacloud-cli/internal/posthog"
 	"tina.io/tinacloud-cli/internal/utils"
 )
@@ -237,7 +239,7 @@ func TestLogin_Errors(t *testing.T) {
 			name:         "token endpoint unauthorized",
 			tokenHandler: func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusUnauthorized) },
 			callbackReq:  validCallback,
-			wantErr:      auth.ErrUnauthorized,
+			wantErr:      httpclient.ErrUnauthorized,
 		},
 		{
 			name:            "token endpoint server error",

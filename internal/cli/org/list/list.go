@@ -10,6 +10,7 @@ import (
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/httpclient"
 	"tina.io/tinacloud-cli/internal/requests"
 	"tina.io/tinacloud-cli/internal/utils"
 )
@@ -36,11 +37,6 @@ func Command(cfg config.Config) *command.Command {
 				return err
 			}
 
-			if !out.LoggedIn {
-				fmt.Println("You are not currently logged in")
-				return nil
-			}
-
 			fmt.Println("Organizations:")
 			for _, org := range out.Organizations {
 				fmt.Printf("\t- %s\n", org.String())
@@ -54,8 +50,8 @@ func Command(cfg config.Config) *command.Command {
 func runList(cfg config.Config, loadTokens auth.TokenLoader) (listJSONOutput, error) {
 	tokens, err := loadTokens(cfg)
 	if err != nil {
-		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
-			return listJSONOutput{LoggedIn: false}, nil
+		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, httpclient.ErrUnauthorized) {
+			return listJSONOutput{}, err
 		}
 		return listJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}

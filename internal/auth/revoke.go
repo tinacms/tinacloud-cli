@@ -3,10 +3,10 @@ package auth
 import (
 	"fmt"
 	"io"
-	"net/http"
 	"net/url"
 
 	"tina.io/tinacloud-cli/internal/config"
+	"tina.io/tinacloud-cli/internal/httpclient"
 )
 
 // RevokeToken revokes the refresh token upstream, invalidating the session
@@ -15,15 +15,15 @@ func RevokeToken(cfg config.Config, refreshToken string) error {
 	params := url.Values{}
 	params.Set("token", refreshToken)
 
-	resp, err := http.PostForm(fmt.Sprintf("%s/oauth/revoke", cfg.TinaCloud.Endpoint), params)
+	resp, err := httpclient.Client.PostForm(fmt.Sprintf("%s/oauth/revoke", cfg.TinaCloud.Endpoint), params)
 	if err != nil {
-		return fmt.Errorf("failed to post token for revocation: %w", err)
+		return fmt.Errorf("failed to post token for revocation: %w", httpclient.ClassifyHTTPError(err))
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("failed to read token revocation response: %w", err)
+		return fmt.Errorf("failed to read token revocation response: %w", httpclient.ClassifyHTTPError(err))
 	}
 
 	if resp.StatusCode > 299 {

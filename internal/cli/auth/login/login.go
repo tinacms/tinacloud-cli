@@ -18,6 +18,7 @@ import (
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/httpclient"
 	"tina.io/tinacloud-cli/internal/posthog"
 	"tina.io/tinacloud-cli/internal/utils"
 )
@@ -50,6 +51,7 @@ func runLogin(cfg config.Config, openURL func(string) error, track posthog.Track
 		// to the authorization page. instead, we want to catch the redirect
 		// location to display to user.
 		client := http.Client{
+			Timeout: httpclient.Client.Timeout,
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				return http.ErrUseLastResponse
 			},
@@ -58,8 +60,9 @@ func runLogin(cfg config.Config, openURL func(string) error, track posthog.Track
 		oauthURL := fmt.Sprintf("%s/oauth/authorize?code_challenge=%s&redirect_uri=http://localhost:%d/callback", cfg.TinaCloud.Endpoint, challenge, port)
 		resp, err := client.Get(oauthURL)
 		if err != nil {
-			return fmt.Errorf("failed to authorize with tinacloud: %w", err)
+			return fmt.Errorf("failed to authorize with tinacloud: %w", httpclient.ClassifyHTTPError(err))
 		}
+		defer resp.Body.Close()
 
 		redirectURL := resp.Header.Get("location")
 		if redirectURL == "" {
@@ -118,19 +121,19 @@ func runLogin(cfg config.Config, openURL func(string) error, track posthog.Track
 		params.Set("redirect_uri", fmt.Sprintf("http://localhost:%d/callback", port))
 		params.Set("code_verifier", verifier)
 
-		resp, err := http.PostForm(fmt.Sprintf("%s/oauth/token", cfg.TinaCloud.Endpoint), params)
+		resp, err := httpclient.Client.PostForm(fmt.Sprintf("%s/oauth/token", cfg.TinaCloud.Endpoint), params)
 		if err != nil {
-			return fmt.Errorf("failed to post code to cognito for verification: %w", err)
+			return fmt.Errorf("failed to post code to cognito for verification: %w", httpclient.ClassifyHTTPError(err))
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode == http.StatusUnauthorized {
-			return auth.ErrUnauthorized
+			return httpclient.ErrUnauthorized
 		}
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return fmt.Errorf("failed to read auth validation response: %w", err)
+			return fmt.Errorf("failed to read auth validation response: %w", httpclient.ClassifyHTTPError(err))
 		}
 
 		if resp.StatusCode > 299 {

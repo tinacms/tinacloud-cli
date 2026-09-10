@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/httpclient"
 )
 
 type recorder struct {
@@ -84,7 +84,7 @@ func TestRequestsMap401ToErrUnauthorized(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			if err := tc.call(); !errors.Is(err, auth.ErrUnauthorized) {
+			if err := tc.call(); !errors.Is(err, httpclient.ErrUnauthorized) {
 				t.Fatalf("%s = %v, want ErrUnauthorized", tc.name, err)
 			}
 		})

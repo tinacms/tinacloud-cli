@@ -11,11 +11,13 @@ import (
 	"strconv"
 
 	"github.com/manifoldco/promptui"
+
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/browser"
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/httpclient"
 	"tina.io/tinacloud-cli/internal/posthog"
 	"tina.io/tinacloud-cli/internal/requests"
 	"tina.io/tinacloud-cli/internal/utils"
@@ -49,11 +51,6 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 			}
 			if err != nil {
 				return err
-			}
-
-			if !out.LoggedIn {
-				fmt.Println("You are not currently logged in")
-				return nil
 			}
 
 			fmt.Println("✅️ Successfully created project!")
@@ -94,8 +91,8 @@ func runCreate(cfg config.Config, openURL func(string) error, orgID, projectName
 
 	tokens, err := auth.TokensFromCache(cfg)
 	if err != nil {
-		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, auth.ErrUnauthorized) {
-			return createJSONOutput{LoggedIn: false}, nil
+		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, httpclient.ErrUnauthorized) {
+			return createJSONOutput{}, err
 		}
 		return createJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}

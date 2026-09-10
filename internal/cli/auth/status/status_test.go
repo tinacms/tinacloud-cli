@@ -8,8 +8,10 @@ import (
 	"testing"
 
 	"github.com/golang-jwt/jwt/v4"
+
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
+	"tina.io/tinacloud-cli/internal/httpclient"
 )
 
 func makeJWT(t *testing.T, userID string) string {
@@ -98,7 +100,7 @@ func TestRunStatus_APIErrors(t *testing.T) {
 		statusCode int
 		wantErr    error
 	}{
-		{name: "unauthorized", statusCode: http.StatusUnauthorized, wantErr: auth.ErrUnauthorized},
+		{name: "unauthorized", statusCode: http.StatusUnauthorized, wantErr: httpclient.ErrUnauthorized},
 		{name: "server error", statusCode: http.StatusInternalServerError},
 	}
 
