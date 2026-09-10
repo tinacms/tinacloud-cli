@@ -62,6 +62,7 @@ func runLogin(cfg config.Config, openURL func(string) error, track posthog.Track
 		if err != nil {
 			return fmt.Errorf("failed to authorize with tinacloud: %w", httpclient.ClassifyHTTPError(err))
 		}
+		defer resp.Body.Close()
 
 		redirectURL := resp.Header.Get("location")
 		if redirectURL == "" {
