@@ -12,6 +12,7 @@ import (
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/httpclient"
 	"tina.io/tinacloud-cli/internal/posthog"
 )
 
@@ -119,8 +120,8 @@ func TestRunConfigureFlags(t *testing.T) {
 
 func TestRunConfigureUnauthenticated(t *testing.T) {
 	saved, err := runConfigure(config.Config{}, t.TempDir(), "", "", "tina", stubLoader(auth.TokenCache{}, auth.ErrUnauthenticated), posthog.NoopTracker)
-	if !errors.Is(err, auth.ErrUnauthenticated) {
-		t.Fatalf("runConfigure() = %v, want ErrUnauthenticated", err)
+	if !errors.Is(err, httpclient.ErrUnauthorized) {
+		t.Fatalf("runConfigure() = %v, want ErrUnauthorized", err)
 	}
 	if saved {
 		t.Error("runConfigure() saved = true, want false")

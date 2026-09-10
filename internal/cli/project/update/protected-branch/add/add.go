@@ -48,11 +48,6 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 				return err
 			}
 
-			if !out.LoggedIn {
-				fmt.Println("You are not currently logged in")
-				return nil
-			}
-
 			fmt.Printf("Project protected branch(es): %s\n", out.ProtectedBranches)
 
 			return nil
@@ -92,7 +87,7 @@ func runAdd(cfg config.Config, newProtectedBranches []string, orgID, projectID, 
 	tokens, err := auth.TokensFromCache(cfg)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, httpclient.ErrUnauthorized) {
-			return protectedBranchAddJSONOutput{LoggedIn: false}, nil
+			return protectedBranchAddJSONOutput{}, httpclient.ErrUnauthorized
 		}
 		return protectedBranchAddJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}

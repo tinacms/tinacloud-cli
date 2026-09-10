@@ -44,10 +44,6 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 
 			saved, err := runConfigure(cfg, cwd, *orgIDFlag, *projectIDFlag, *tinaDirFlag, auth.TokensFromCache, track)
 			if err != nil {
-				if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, httpclient.ErrUnauthorized) {
-					fmt.Println("You are not currently logged in")
-					return nil
-				}
 				return err
 			}
 
@@ -73,7 +69,7 @@ func runConfigure(cfg config.Config, cwd, orgID, projectID, tinaDir string, load
 	tokens, err := loadTokens(cfg)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, httpclient.ErrUnauthorized) {
-			return false, err
+			return false, httpclient.ErrUnauthorized
 		}
 		return false, fmt.Errorf("failed to initialize auth client: %w", err)
 	}

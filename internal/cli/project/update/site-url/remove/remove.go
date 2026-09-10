@@ -47,11 +47,6 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 				return err
 			}
 
-			if !out.LoggedIn {
-				fmt.Println("You are not currently logged in")
-				return nil
-			}
-
 			fmt.Printf("Project site URL(s): %s\n", out.SiteURLs)
 
 			return nil
@@ -95,7 +90,7 @@ func runRemove(cfg config.Config, removeSiteURLs domain.UrlsFlag, orgID, project
 	tokens, err := auth.TokensFromCache(cfg)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, httpclient.ErrUnauthorized) {
-			return siteURLRemoveJSONOutput{LoggedIn: false}, nil
+			return siteURLRemoveJSONOutput{}, httpclient.ErrUnauthorized
 		}
 		return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
