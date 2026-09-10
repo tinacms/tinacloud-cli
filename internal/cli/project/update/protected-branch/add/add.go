@@ -12,6 +12,7 @@ import (
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/httpclient"
 	"tina.io/tinacloud-cli/internal/posthog"
 	"tina.io/tinacloud-cli/internal/requests"
 	"tina.io/tinacloud-cli/internal/utils"
@@ -85,7 +86,10 @@ func runAdd(cfg config.Config, newProtectedBranches []string, orgID, projectID, 
 
 	tokens, err := auth.TokensFromCache(cfg)
 	if err != nil {
-		return protectedBranchAddJSONOutput{}, err
+		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, httpclient.ErrUnauthorized) {
+			return protectedBranchAddJSONOutput{}, err
+		}
+		return protectedBranchAddJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
 	project, err := requests.GetProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, projectID)

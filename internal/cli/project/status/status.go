@@ -10,6 +10,7 @@ import (
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/httpclient"
 	"tina.io/tinacloud-cli/internal/requests"
 	"tina.io/tinacloud-cli/internal/utils"
 )
@@ -60,7 +61,10 @@ func runStatus(cfg config.Config, projectID, tinaDir string) (statusJSONOutput, 
 
 	tokens, err := auth.TokensFromCache(cfg)
 	if err != nil {
-		return statusJSONOutput{}, err
+		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, httpclient.ErrUnauthorized) {
+			return statusJSONOutput{}, err
+		}
+		return statusJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
 	project, err := requests.GetProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, projectID)

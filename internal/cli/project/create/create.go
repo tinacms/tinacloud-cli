@@ -17,6 +17,7 @@ import (
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
+	"tina.io/tinacloud-cli/internal/httpclient"
 	"tina.io/tinacloud-cli/internal/posthog"
 	"tina.io/tinacloud-cli/internal/requests"
 	"tina.io/tinacloud-cli/internal/utils"
@@ -90,7 +91,10 @@ func runCreate(cfg config.Config, openURL func(string) error, orgID, projectName
 
 	tokens, err := auth.TokensFromCache(cfg)
 	if err != nil {
-		return createJSONOutput{}, err
+		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, httpclient.ErrUnauthorized) {
+			return createJSONOutput{}, err
+		}
+		return createJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
 	body := domain.PostV2ProjectsBody{
