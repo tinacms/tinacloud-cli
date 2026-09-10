@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var ErrUnauthorized = errors.New("no access")
+var ErrUnauthorized = errors.New("authorisation required, please run 'tinacloud auth login'")
 var ErrTimeout = errors.New("request timed out; please try again")
 
 var Client = http.Client{

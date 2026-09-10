@@ -53,11 +53,6 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 				return err
 			}
 
-			if !out.LoggedIn {
-				fmt.Println("You are not currently logged in")
-				return nil
-			}
-
 			fmt.Println("✅️ Successfully created project!")
 			fmt.Printf("\t- %s\n", out.Project.String())
 
@@ -97,7 +92,7 @@ func runCreate(cfg config.Config, openURL func(string) error, orgID, projectName
 	tokens, err := auth.TokensFromCache(cfg)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, httpclient.ErrUnauthorized) {
-			return createJSONOutput{LoggedIn: false}, nil
+			return createJSONOutput{LoggedIn: false}, httpclient.ErrUnauthorized
 		}
 		return createJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
