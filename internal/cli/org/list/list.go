@@ -37,11 +37,6 @@ func Command(cfg config.Config) *command.Command {
 				return err
 			}
 
-			if !out.LoggedIn {
-				fmt.Println("You are not currently logged in")
-				return nil
-			}
-
 			fmt.Println("Organizations:")
 			for _, org := range out.Organizations {
 				fmt.Printf("\t- %s\n", org.String())
@@ -56,7 +51,7 @@ func runList(cfg config.Config, loadTokens auth.TokenLoader) (listJSONOutput, er
 	tokens, err := loadTokens(cfg)
 	if err != nil {
 		if errors.Is(err, auth.ErrUnauthenticated) || errors.Is(err, httpclient.ErrUnauthorized) {
-			return listJSONOutput{LoggedIn: false}, nil
+			return listJSONOutput{}, httpclient.ErrUnauthorized
 		}
 		return listJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}

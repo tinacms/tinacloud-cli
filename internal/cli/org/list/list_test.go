@@ -32,8 +32,8 @@ func cfgWithServer(t *testing.T, handler http.HandlerFunc) config.Config {
 
 func TestRunList_Unauthenticated(t *testing.T) {
 	out, err := runList(config.Config{}, stubTokenLoader(auth.TokenCache{}, auth.ErrUnauthenticated))
-	if err != nil {
-		t.Fatalf("runList() = %v, want nil error", err)
+	if !errors.Is(err, httpclient.ErrUnauthorized) {
+		t.Fatalf("runList() = %v, want ErrUnauthorized", err)
 	}
 	if out.LoggedIn {
 		t.Errorf("runList().LoggedIn = true, want false")
