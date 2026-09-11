@@ -44,13 +44,12 @@ package-windows:
 	Remove-Item -Recurse -Force ./build/dist
 
 package-darwin:
-	mkdir -p ./build/dist
-	env GOOS=darwin GOARCH=amd64 go build $(RELEASE_FLAGS) -o ./build/dist/$(NAME) $(CMD)
-	./scripts/notarize-darwin.sh
-	tar -czf ./build/$(NAME)-darwin-x86_64.tar.gz -C ./build/dist $(NAME)
-	env GOOS=darwin GOARCH=arm64 go build $(RELEASE_FLAGS) -o ./build/dist/$(NAME) $(CMD)
-	./scripts/notarize-darwin.sh
-	tar -czf ./build/$(NAME)-darwin-aarch64.tar.gz -C ./build/dist $(NAME)
+	mkdir -p ./build/dist/x86_64 ./build/dist/aarch64
+	env GOOS=darwin GOARCH=amd64 go build $(RELEASE_FLAGS) -o ./build/dist/x86_64/$(NAME) $(CMD)
+	env GOOS=darwin GOARCH=arm64 go build $(RELEASE_FLAGS) -o ./build/dist/aarch64/$(NAME) $(CMD)
+	./scripts/notarize-darwin.sh ./build/dist/x86_64/$(NAME) ./build/dist/aarch64/$(NAME)
+	tar -czf ./build/$(NAME)-darwin-x86_64.tar.gz -C ./build/dist/x86_64 $(NAME)
+	tar -czf ./build/$(NAME)-darwin-aarch64.tar.gz -C ./build/dist/aarch64 $(NAME)
 	rm -rf ./build/dist
 
 package-linux:

@@ -28,11 +28,11 @@ jobs:
       - name: Package
         run: make package-${{ inputs.platform }} VERSION=${{ inputs.version }}
         env:
-          # TODO: These are placeholder values.
-          # https://github.com/tinacms/tinacloud-cli/issues/68
-          AC_USERNAME: ${{ inputs.platform == 'darwin' && secrets.AC_USERNAME || '' }}
-          AC_PASSWORD: ${{ inputs.platform == 'darwin' && secrets.AC_PASSWORD || '' }}
-          AC_TEAM_ID: ${{ inputs.platform == 'darwin' && secrets.AC_TEAM_ID || '' }}
+          APPLE_CERTIFICATE_BASE64: ${{ inputs.platform == 'darwin' && secrets.APPLE_CERTIFICATE_BASE64 || '' }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ inputs.platform == 'darwin' && secrets.APPLE_CERTIFICATE_PASSWORD || '' }}
+          APPLE_ID: ${{ inputs.platform == 'darwin' && secrets.APPLE_ID || '' }}
+          APPLE_TEAM_ID: ${{ inputs.platform == 'darwin' && secrets.APPLE_TEAM_ID || '' }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ inputs.platform == 'darwin' && secrets.APPLE_APP_SPECIFIC_PASSWORD || '' }}
           # TODO: These are placeholder values.
           # https://github.com/tinacms/tinacloud-cli/issues/67
           WINDOWS_CERTIFICATE: ${{ inputs.platform == 'windows' && secrets.WINDOWS_CERTIFICATE || '' }}
