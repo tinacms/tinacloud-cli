@@ -21,36 +21,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  release-it:
+  version:
     if: github.ref_name == 'main'
     runs-on: ubuntu-latest
+    outputs:
+      next_release: ${{ steps.version.outputs.next_release }}
     steps:
-      # using an app token to ensure the release publishes events
-      - name: Generate a token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        id: generate-token
-        with:
-          # uses https://github.com/organizations/tinacms/settings/apps/release-bot-allow-prs-and-push
-          client-id: ${{ secrets.BOT_CLIENT_ID }}
-          private-key: ${{ secrets.BOT_APP_SECRET }}
-
       - name: Checkout code
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
-          token: ${{ steps.generate-token.outputs.token }}
           fetch-depth: 0
           fetch-tags: true
-          ref: ${{ github.ref_name }}
-
-      - name: Set up Go
-        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
-        with:
-          go-version-file: go.mod
-
-      - name: Setup git credentials
-        run: |
-          git config --global user.email "bot@tina.io"
-          git config --global user.name "Tina Release Bot"
 
       - name: Determine next version
         id: version
@@ -82,44 +63,144 @@ jobs:
               ;;
           esac
 
-          echo "last_release=$CURRENT_RELEASE" >> "$GITHUB_OUTPUT"
-          echo "next_release=$NEXT_RELEASE" >> "$GITHUB_OUTPUT"
-
-      - name: Update version in .version
-        run: |
           if git rev-parse "refs/tags/$NEXT_RELEASE" >/dev/null 2>&1; then
             echo "Tag already exists: $NEXT_RELEASE"
             exit 1
           fi
+
+          echo "last_release=$CURRENT_RELEASE" >> "$GITHUB_OUTPUT"
+          echo "next_release=$NEXT_RELEASE" >> "$GITHUB_OUTPUT"
+
+  package-linux:
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+
+      - name: Package
+        run: make package-linux VERSION=${{ needs.version.outputs.next_release }}
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-linux
+          path: build/*.tar.gz
+          retention-days: 1
+
+  package-darwin:
+    needs: version
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+
+      - name: Package and notarize
+        run: make package-darwin VERSION=${{ needs.version.outputs.next_release }}
+        env:
+          # TODO: These are placeholder values.
+          # https://github.com/tinacms/tinacloud-cli/issues/68
+          AC_USERNAME: ${{ secrets.AC_USERNAME }}
+          AC_PASSWORD: ${{ secrets.AC_PASSWORD }}
+          AC_TEAM_ID: ${{ secrets.AC_TEAM_ID }}
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-darwin
+          path: build/*.tar.gz
+          retention-days: 1
+
+  package-windows:
+    needs: version
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+
+      - name: Package and sign
+        run: make package-windows VERSION=${{ needs.version.outputs.next_release }}
+        env:
+          # TODO: These are placeholder values.
+          # https://github.com/tinacms/tinacloud-cli/issues/67
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-windows
+          path: build/*.zip
+          retention-days: 1
+
+  release:
+    needs: [version, package-linux, package-darwin, package-windows]
+    runs-on: ubuntu-latest
+    steps:
+      # using an app token to ensure the release publishes events
+      - name: Generate a token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: generate-token
+        with:
+          # uses https://github.com/organizations/tinacms/settings/apps/release-bot-allow-prs-and-push
+          client-id: ${{ secrets.BOT_CLIENT_ID }}
+          private-key: ${{ secrets.BOT_APP_SECRET }}
+
+      - name: Checkout code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+
+      - name: Setup git credentials
+        run: |
+          git config --global user.email "bot@tina.io"
+          git config --global user.name "Tina Release Bot"
+
+      - name: Commit and push version bump
+        id: bump
+        run: |
           echo "$NEXT_RELEASE" > .version
           sed -i "s/^DEFAULT_VERSION=.*/DEFAULT_VERSION=\"$NEXT_RELEASE\"/" scripts/install.sh
           git add .version scripts/install.sh
           git commit -m "chore: release $NEXT_RELEASE [skip ci]"
-        env:
-          NEXT_RELEASE: ${{ steps.version.outputs.next_release }}
-
-      - name: Package release assets
-        run: make package
-        env:
-          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
-
-      - name: Push commit
-        id: push
-        run: |
           git push origin HEAD:${{ github.ref_name }}
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+        env:
+          NEXT_RELEASE: ${{ needs.version.outputs.next_release }}
+
+      - name: Download release assets
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: release-*
+          path: build
+          merge-multiple: true
 
       - name: Create release
         run: |
           gh release create "$NEW_TAG" build/*.tar.gz build/*.zip \
-            --target "${{ steps.push.outputs.sha }}" \
+            --target "${{ steps.bump.outputs.sha }}" \
             --title "Release $NEW_TAG" \
             --generate-notes \
             --latest=true
 
           echo "### New release" >> "$GITHUB_STEP_SUMMARY"
-          echo "Version: ${{ steps.version.outputs.next_release }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Version: ${{ needs.version.outputs.next_release }}" >> "$GITHUB_STEP_SUMMARY"
           echo "Release URL: <https://github.com/${{ github.repository }}/releases/tag/$NEW_TAG>" >> "$GITHUB_STEP_SUMMARY"
         env:
           GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
-          NEW_TAG: ${{ steps.version.outputs.next_release }}
+          NEW_TAG: ${{ needs.version.outputs.next_release }}
