@@ -2,8 +2,8 @@ NAME	= tinacloud
 CMD		= ./cmd/tinacloud
 VERSION	= $(shell cat .version)
 # Provided by the release pipeline from a GitHub secret; empty for local builds.
-FLAGS	= -ldflags="-X main.version=$(VERSION)"
-RELEASE_FLAGS = -trimpath -buildvcs=false -ldflags="-s -w -X main.version=$(VERSION) -X main.dev=false"
+FLAGS	= -ldflags='-X main.version=$(VERSION)'
+RELEASE_FLAGS = -trimpath -buildvcs=false -ldflags='-s -w -X main.version=$(VERSION) -X main.dev=false'
 
 ifeq ($(OS),Windows_NT)
 	BINARY_NAME	= $(NAME).exe
@@ -17,7 +17,7 @@ else
 	CLEAN_BUILD = rm -rf ./build/*
 endif
 
-.PHONY: fmt fmt-ci build build-ci package run security vet test clean
+.PHONY: fmt fmt-ci build build-ci package-windows package-darwin package-linux run security vet test clean
 
 all: build
 
@@ -33,20 +33,32 @@ build: fmt security vet test
 build-ci:
 	go build $(FLAGS) -o ./build/$(BINARY_NAME) $(CMD)
 
-package:
+package-windows:
+	New-Item -ItemType Directory -Force -Path ./build/dist | Out-Null
+	$$env:GOOS='windows'; $$env:GOARCH='amd64'; go build $(RELEASE_FLAGS) -o ./build/dist/$(NAME).exe $(CMD)
+	powershell -ExecutionPolicy Bypass -File ./scripts/sign-windows.ps1
+	Compress-Archive -Force -Path ./build/dist/$(NAME).exe -DestinationPath ./build/$(NAME)-windows-x86_64.zip
+	$$env:GOOS='windows'; $$env:GOARCH='arm64'; go build $(RELEASE_FLAGS) -o ./build/dist/$(NAME).exe $(CMD)
+	powershell -ExecutionPolicy Bypass -File ./scripts/sign-windows.ps1
+	Compress-Archive -Force -Path ./build/dist/$(NAME).exe -DestinationPath ./build/$(NAME)-windows-aarch64.zip
+	Remove-Item -Recurse -Force ./build/dist
+
+package-darwin:
 	mkdir -p ./build/dist
 	env GOOS=darwin GOARCH=amd64 go build $(RELEASE_FLAGS) -o ./build/dist/$(NAME) $(CMD)
+	./scripts/notarize-darwin.sh
 	tar -czf ./build/$(NAME)-darwin-x86_64.tar.gz -C ./build/dist $(NAME)
 	env GOOS=darwin GOARCH=arm64 go build $(RELEASE_FLAGS) -o ./build/dist/$(NAME) $(CMD)
+	./scripts/notarize-darwin.sh
 	tar -czf ./build/$(NAME)-darwin-aarch64.tar.gz -C ./build/dist $(NAME)
+	rm -rf ./build/dist
+
+package-linux:
+	mkdir -p ./build/dist
 	env GOOS=linux GOARCH=amd64 go build $(RELEASE_FLAGS) -o ./build/dist/$(NAME) $(CMD)
 	tar -czf ./build/$(NAME)-linux-x86_64.tar.gz -C ./build/dist $(NAME)
 	env GOOS=linux GOARCH=arm64 go build $(RELEASE_FLAGS) -o ./build/dist/$(NAME) $(CMD)
 	tar -czf ./build/$(NAME)-linux-aarch64.tar.gz -C ./build/dist $(NAME)
-	env GOOS=windows GOARCH=amd64 go build $(RELEASE_FLAGS) -o ./build/dist/$(NAME).exe $(CMD)
-	zip -j ./build/$(NAME)-windows-x86_64.zip ./build/dist/$(NAME).exe
-	env GOOS=windows GOARCH=arm64 go build $(RELEASE_FLAGS) -o ./build/dist/$(NAME).exe $(CMD)
-	zip -j ./build/$(NAME)-windows-aarch64.zip ./build/dist/$(NAME).exe
 	rm -rf ./build/dist
 
 run:
