@@ -1,0 +1,46 @@
+name: build
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        required: true
+        type: string
+      runner:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+
+jobs:
+  package:
+    runs-on: ${{ inputs.runner }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+
+      - name: Package
+        run: make package-${{ inputs.platform }} VERSION=${{ inputs.version }}
+        env:
+          # TODO: These are placeholder values.
+          # https://github.com/tinacms/tinacloud-cli/issues/68
+          AC_USERNAME: ${{ inputs.platform == 'darwin' && secrets.AC_USERNAME || '' }}
+          AC_PASSWORD: ${{ inputs.platform == 'darwin' && secrets.AC_PASSWORD || '' }}
+          AC_TEAM_ID: ${{ inputs.platform == 'darwin' && secrets.AC_TEAM_ID || '' }}
+          # TODO: These are placeholder values.
+          # https://github.com/tinacms/tinacloud-cli/issues/67
+          WINDOWS_CERTIFICATE: ${{ inputs.platform == 'windows' && secrets.WINDOWS_CERTIFICATE || '' }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ inputs.platform == 'windows' && secrets.WINDOWS_CERTIFICATE_PASSWORD || '' }}
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-${{ inputs.platform }}
+          path: build/*
+          retention-days: 1
