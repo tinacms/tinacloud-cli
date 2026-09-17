@@ -33,7 +33,7 @@ fi
 
 log "Selecting version..."
 
-DEFAULT_VERSION="v0.1.1"
+DEFAULT_VERSION="v0.1.2"
 version=${VERSION:-$DEFAULT_VERSION}
 
 log "Selected version: $version"
