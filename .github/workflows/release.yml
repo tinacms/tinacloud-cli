@@ -12,7 +12,7 @@ on:
           - patch
           - minor
           - major
-      production:
+      release:
         description: 'Deploy to production'
         required: false
         default: false
@@ -27,7 +27,7 @@ concurrency:
 
 jobs:
   version:
-    if: github.ref_name == 'main' || !inputs.production
+    if: github.ref_name == 'main' || !inputs.release
     runs-on: ubuntu-latest
     outputs:
       next_release: ${{ steps.version.outputs.next_release }}
@@ -104,7 +104,7 @@ jobs:
     secrets: inherit
 
   release:
-    if: inputs.production
+    if: inputs.release
     needs: [version, package-linux, package-darwin, package-windows]
     runs-on: ubuntu-latest
     steps:
