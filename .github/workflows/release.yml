@@ -12,6 +12,11 @@ on:
           - patch
           - minor
           - major
+      dry_run:
+        description: 'Build and upload assets without publishing a release'
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -22,7 +27,7 @@ concurrency:
 
 jobs:
   version:
-    if: github.ref_name == 'main'
+    if: github.ref_name == 'main' || inputs.dry_run
     runs-on: ubuntu-latest
     outputs:
       next_release: ${{ steps.version.outputs.next_release }}
@@ -99,6 +104,7 @@ jobs:
     secrets: inherit
 
   release:
+    if: inputs.dry_run == false
     needs: [version, package-linux, package-darwin, package-windows]
     runs-on: ubuntu-latest
     steps:
