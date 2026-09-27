@@ -20,7 +20,7 @@ type Command struct {
 func (c *Command) Dispatch(args []string, path []string) error {
 	if c.Flags != nil {
 		c.Flags.Usage = func() {
-			c.PrintUsage(os.Stderr, path)
+			c.PrintUsage(os.Stdout, path)
 		}
 		if err := c.Flags.Parse(args); err != nil {
 			if err == flag.ErrHelp {
@@ -33,7 +33,7 @@ func (c *Command) Dispatch(args []string, path []string) error {
 
 	if len(args) == 0 {
 		if c.Run == nil {
-			c.PrintUsage(os.Stderr, path)
+			c.PrintUsage(os.Stdout, path)
 			return nil
 		}
 		return c.Run(args)
@@ -57,7 +57,7 @@ func (c *Command) Dispatch(args []string, path []string) error {
 	}
 
 	fmt.Fprintf(os.Stderr, "unrecognized command %q\n\n", name)
-	c.PrintUsage(os.Stderr, path)
+	c.PrintUsage(os.Stdout, path)
 	return fmt.Errorf("unrecognized command %q", name)
 }
 

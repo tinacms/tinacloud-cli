@@ -46,7 +46,7 @@ func (s *State) rootCommand(version string) *command.Command {
 			fmt.Println(version)
 			return nil
 		}
-		root.PrintUsage(os.Stderr, nil)
+		root.PrintUsage(os.Stdout, nil)
 		return nil
 	}
 
