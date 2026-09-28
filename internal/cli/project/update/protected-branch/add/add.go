@@ -42,7 +42,7 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 				track(posthog.ProtectedBranchAdded(protectedBranchesFlag))
 			}
 			if *jsonFlag {
-				return utils.WriteJSONResult(os.Stdout, out, err)
+				return utils.WriteJSONResult(out, err)
 			}
 			if err != nil {
 				return err

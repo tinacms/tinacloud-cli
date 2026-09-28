@@ -1,48 +1,79 @@
 package utils
 
 import (
-	"bytes"
 	"errors"
+	"io"
+	"os"
 	"testing"
 )
 
 func TestWriteJSONResult(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		var buf bytes.Buffer
 		v := struct {
 			Name string `json:"name"`
 		}{Name: "Acme"}
 
-		if err := WriteJSONResult(&buf, v, nil); err != nil {
+		var err error
+		got := captureOutput(t, &os.Stdout, func() {
+			err = WriteJSONResult(v, nil)
+		})
+		if err != nil {
 			t.Fatalf("WriteJSONResult() = %v, want nil error", err)
 		}
-		if want := "{\"name\":\"Acme\"}\n"; buf.String() != want {
-			t.Errorf("WriteJSONResult() wrote %q, want %q", buf.String(), want)
+		if want := "{\"name\":\"Acme\"}\n"; got != want {
+			t.Errorf("WriteJSONResult() wrote %q, want %q", got, want)
 		}
 	})
 
 	t.Run("input error", func(t *testing.T) {
-		var buf bytes.Buffer
 		wantErr := errors.New("boom")
 
-		err := WriteJSONResult(&buf, nil, wantErr)
+		var err error
+		got := captureOutput(t, &os.Stderr, func() {
+			err = WriteJSONResult(nil, wantErr)
+		})
 		if !errors.Is(err, wantErr) {
 			t.Fatalf("WriteJSONResult() = %v, want %v", err, wantErr)
 		}
-		if want := "{\"error\":\"boom\"}\n"; buf.String() != want {
-			t.Errorf("WriteJSONResult() wrote %q, want %q", buf.String(), want)
+		var outputErr *OutputError
+		if !errors.As(err, &outputErr) {
+			t.Errorf("WriteJSONResult() error = %T, want *OutputError", err)
+		}
+		if want := "{\"error\":\"boom\"}\n"; got != want {
+			t.Errorf("WriteJSONResult() wrote %q, want %q", got, want)
 		}
 	})
 
 	t.Run("unmarshalable value", func(t *testing.T) {
-		var buf bytes.Buffer
-
-		err := WriteJSONResult(&buf, make(chan int), nil)
+		err := WriteJSONResult(make(chan int), nil)
 		if err == nil {
 			t.Fatal("WriteJSONResult() = nil error, want marshal error")
 		}
-		if buf.Len() != 0 {
-			t.Errorf("WriteJSONResult() wrote %q on marshal failure, want nothing", buf.String())
-		}
 	})
+}
+
+func captureOutput(t *testing.T, output **os.File, fn func()) string {
+	t.Helper()
+
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("os.Pipe() = %v", err)
+	}
+
+	original := *output
+	*output = writer
+	fn()
+	*output = original
+
+	if err := writer.Close(); err != nil {
+		t.Fatalf("Close() = %v", err)
+	}
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		t.Fatalf("ReadAll() = %v", err)
+	}
+	if err := reader.Close(); err != nil {
+		t.Fatalf("Close() = %v", err)
+	}
+	return string(data)
 }

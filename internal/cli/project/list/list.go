@@ -33,7 +33,7 @@ func Command(cfg config.Config) *command.Command {
 		Run: func(args []string) error {
 			out, err := runList(cfg, *orgIDFlag, *tinaDirFlag)
 			if *jsonFlag {
-				return utils.WriteJSONResult(os.Stdout, out, err)
+				return utils.WriteJSONResult(out, err)
 			}
 			if err != nil {
 				return err

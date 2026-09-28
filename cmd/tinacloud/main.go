@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
+	"os"
 
 	"tina.io/tinacloud-cli/internal/cli"
+	"tina.io/tinacloud-cli/internal/utils"
 )
 
 var (
@@ -25,6 +28,10 @@ func main() {
 	state.Close()
 
 	if rootErr != nil {
+		var outputErr *utils.OutputError
+		if errors.As(rootErr, &outputErr) {
+			os.Exit(1)
+		}
 		log.Fatal(rootErr)
 	}
 }
