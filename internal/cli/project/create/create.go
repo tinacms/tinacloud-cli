@@ -217,7 +217,7 @@ Attempting to open your default browser. If the browser does not open, open the 
 	if cwd, err := os.Getwd(); err == nil {
 		err = domain.SaveTinaCloudConfig(cwd, tinaDir, orgID, resp.CreatedProject.ProjectID)
 		if err != nil && !errors.Is(err, domain.ErrNotTinaProject) {
-			fmt.Fprintf(os.Stderr, "warning: project created but failed to write tinacloud config: %v\n", err)
+			fmt.Fprintf(os.Stderr, "failed to write tinacloud config: %v\n", err)
 		}
 	}
 

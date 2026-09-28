@@ -26,10 +26,10 @@ func runLogout(cfg config.Config, track posthog.Tracker) error {
 	tokens, err := auth.PeekTokens()
 	if err == nil {
 		if err := auth.RevokeToken(cfg, tokens.RefreshToken); err != nil {
-			fmt.Fprintf(os.Stderr, "warning: failed to revoke token upstream, it will expire on its own: %v\n", err)
+			fmt.Fprintf(os.Stderr, "failed to revoke token: %v\n", err)
 		}
 	} else if !errors.Is(err, auth.ErrUnauthenticated) {
-		fmt.Fprintf(os.Stderr, "warning: failed to read token cache for revocation: %v\n", err)
+		fmt.Fprintf(os.Stderr, "failed to read token cache: %v\n", err)
 	}
 
 	if err := auth.ClearTokens(); err != nil {
