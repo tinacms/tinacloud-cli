@@ -1,0 +1,45 @@
+tinacloud-completion(1) -- Generate shell completion scripts
+============================================================
+
+## SYNOPSIS
+
+`tinacloud completion` <shell>
+
+## DESCRIPTION
+
+Generate a completion script for a supported shell. Follow the selected
+shell's instructions to enable completions for the current session or future
+sessions.
+
+## COMMANDS
+
+  * `bash`:
+    Generate a Bash completion script.
+
+  * `zsh`:
+    Generate a Zsh completion script.
+
+  * `fish`:
+    Generate a Fish completion script.
+
+  * `powershell`:
+    Generate a PowerShell completion script.
+
+## EXAMPLES
+
+Enable Bash completions for the current session:
+
+	$ source <(tinacloud completion bash)
+
+Install Fish completions:
+
+	$ tinacloud completion fish > ~/.config/fish/completions/tinacloud.fish
+
+## COPYRIGHT
+
+Copyright 2026 TinaCMS
+
+## SEE ALSO
+
+tinacloud-completion-bash(1), tinacloud-completion-zsh(1),
+tinacloud-completion-fish(1), tinacloud-completion-powershell(1)

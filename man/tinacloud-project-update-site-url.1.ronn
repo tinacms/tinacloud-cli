@@ -1,0 +1,39 @@
+tinacloud-project-update-site-url(1) -- Manage TinaCloud project site URLs
+==========================================================================
+
+## SYNOPSIS
+
+`tinacloud project update site-url` <command>
+
+## DESCRIPTION
+
+Add or remove site URLs for a TinaCloud project.
+
+## COMMANDS
+
+  * `add`:
+    Register one or more site URLs.
+
+  * `remove`:
+    Remove one or more site URLs.
+
+## EXAMPLES
+
+Register a local development and production URL:
+
+	$ tinacloud project update site-url add \
+		--url http://localhost:3000 \
+		--url https://example.com
+
+Remove a retired site URL:
+
+	$ tinacloud project update site-url remove --url https://old.example.com
+
+## COPYRIGHT
+
+Copyright 2026 TinaCMS
+
+## SEE ALSO
+
+tinacloud-project-update-site-url-add(1),
+tinacloud-project-update-site-url-remove(1), tinacloud-project-update(1)

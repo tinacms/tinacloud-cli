@@ -3,6 +3,7 @@
 ## Required tools
 - [go](https://go.dev/doc/install)
 - [gosec](https://github.com/securego/gosec#local-installation)
+- [ronn](https://github.com/rtomayko/ronn) (for generating man pages)
 
 ## Running tinacloud-cli
 
@@ -39,4 +40,9 @@ gosec ./...
 To run the tests:
 ```bash
 go test ./...
+```
+
+To generate man pages:
+```bash
+ronn --roff --output-dir ./build/man ./man/*.1.ronn
 ```

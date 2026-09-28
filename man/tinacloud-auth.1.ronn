@@ -1,0 +1,40 @@
+tinacloud-auth(1) -- Authenticate with TinaCloud
+================================================
+
+## SYNOPSIS
+
+`tinacloud auth` <command>
+
+## DESCRIPTION
+
+Manage TinaCloud authentication for the current user.
+
+## COMMANDS
+
+  * `login`:
+    Sign in through a browser.
+
+  * `logout`:
+    Remove locally cached credentials.
+
+  * `status`:
+    Display the current authentication status.
+
+## EXAMPLES
+
+Sign in, then confirm the active account:
+
+	$ tinacloud auth login
+	$ tinacloud auth status
+
+Sign out on a shared machine:
+
+	$ tinacloud auth logout
+
+## COPYRIGHT
+
+Copyright 2026 TinaCMS
+
+## SEE ALSO
+
+tinacloud-auth-login(1), tinacloud-auth-logout(1), tinacloud-auth-status(1)

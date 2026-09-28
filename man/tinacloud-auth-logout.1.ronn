@@ -1,0 +1,24 @@
+tinacloud-auth-logout(1) -- Logout of a TinaCloud account
+=========================================================
+
+## DESCRIPTION
+
+Logout from TinaCloud.
+
+## SYNOPSIS
+
+`tinacloud auth logout`
+
+## EXAMPLES
+
+Remove the locally cached TinaCloud credentials:
+
+	$ tinacloud auth logout
+
+## COPYRIGHT
+
+Copyright 2026 TinaCMS
+
+## SEE ALSO
+
+tinacloud-auth-login(1), tinacloud-auth-status(1)

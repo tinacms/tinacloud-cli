@@ -1,0 +1,38 @@
+tinacloud-project-status(1) -- List a project's status
+======================================================
+
+## DESCRIPTION
+
+List the status of the given project.
+
+## SYNOPSIS
+
+`tinacloud project status`
+
+## OPTIONS
+
+  * `--project-id`:
+    TinaCloud project ID
+
+  * `--json`:
+    Print the result as JSON
+
+  * `--tina-dir`:
+    Path to the tina folder (default "tina")
+
+## EXAMPLES
+
+	$ tinacloud project status \
+		--project-id 1e1d3398-8255-4812-9f67-388993734a01
+
+## COPYRIGHT
+
+Copyright 2026 TinaCMS
+
+## SEE ALSO
+
+tinacloud-project-list(1), tinacloud-project-create(1),
+tinacloud-project-update-site-url-add(1),
+tinacloud-project-update-site-url-remove(1),
+tinacloud-project-update-protected-branch-add(1),
+tinacloud-project-update-protected-branch-remove(1)

@@ -1,0 +1,41 @@
+tinacloud-project-update-protected-branch(1) -- Manage protected branches
+==========================================================================
+
+## SYNOPSIS
+
+`tinacloud project update protected-branch` <command>
+
+## DESCRIPTION
+
+Add or remove protected branches for a TinaCloud project. This feature is
+available only to projects with editorial workflow.
+
+## COMMANDS
+
+  * `add`:
+    Add one or more protected branches.
+
+  * `remove`:
+    Remove one or more protected branches.
+
+## EXAMPLES
+
+Protect the main and development branches:
+
+	$ tinacloud project update protected-branch add \
+		--branch main \
+		--branch develop
+
+Remove a branch that no longer needs protection:
+
+	$ tinacloud project update protected-branch remove --branch develop
+
+## COPYRIGHT
+
+Copyright 2026 TinaCMS
+
+## SEE ALSO
+
+tinacloud-project-update-protected-branch-add(1),
+tinacloud-project-update-protected-branch-remove(1),
+tinacloud-project-update(1)

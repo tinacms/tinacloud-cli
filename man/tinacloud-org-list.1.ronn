@@ -1,0 +1,29 @@
+tinacloud-org-list(1) -- List organizations
+===========================================
+
+## DESCRIPTION
+
+List all organizations tied to the current logged in TinaCloud user.
+
+## SYNOPSIS
+
+`tinacloud org list`
+
+## OPTIONS
+
+  * `--json`:
+    Print the result as JSON
+
+## EXAMPLES
+
+List organisations available to the signed-in account:
+
+	$ tinacloud org list
+
+Print the same result as JSON:
+
+	$ tinacloud org list --json
+
+## COPYRIGHT
+
+Copyright 2026 TinaCMS

@@ -1,0 +1,33 @@
+tinacloud-auth-status(1) -- Display TinaCloud account status
+============================================================
+
+## DESCRIPTION
+
+Display authentication status and TinaCloud account information.
+
+## SYNOPSIS
+
+`tinacloud auth status`
+
+## OPTIONS
+
+  * `--json`:
+    Print the result as JSON
+
+## EXAMPLES
+
+Show the account currently signed in to TinaCloud:
+
+	$ tinacloud auth status
+
+Use the JSON result in a script:
+
+	$ tinacloud auth status --json
+
+## COPYRIGHT
+
+Copyright 2026 TinaCMS
+
+## SEE ALSO
+
+tinacloud-auth-login(1), tinacloud-auth-logout(1)

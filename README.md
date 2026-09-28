@@ -32,8 +32,8 @@ page](https://github.com/tinacms/tinacloud-cli/releases/).
 - Windows (x86_64): tinacloud-windows-x86_64.zip
 - Windows (ARM): tinacloud-windows-aarch64.zip
 
-The archive file contains a compressed version of the TinaCloud CLI binary. If
-you would like to add it to your PATH then you must do this yourself.
+The archive contains the TinaCloud CLI binary and its manual pages in `man/`.
+To add the binary to your PATH, you must do this yourself.
 
 ### Build from source
 ```

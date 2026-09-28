@@ -1,0 +1,28 @@
+tinacloud-auth-login(1) -- Login to a TinaCloud account
+=======================================================
+
+## DESCRIPTION
+
+Authenticate against TinaCloud.
+
+## SYNOPSIS
+
+`tinacloud auth login`
+
+## EXAMPLES
+
+Open the browser sign-in flow:
+
+	$ tinacloud auth login
+
+After completing sign-in in the browser, verify the active account:
+
+	$ tinacloud auth status
+
+## COPYRIGHT
+
+Copyright 2026 TinaCMS
+
+## SEE ALSO
+
+tinacloud-auth-logout(1), tinacloud-auth-status(1)

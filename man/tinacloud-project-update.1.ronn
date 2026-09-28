@@ -1,0 +1,42 @@
+tinacloud-project-update(1) -- Update TinaCloud project settings
+===============================================================
+
+## SYNOPSIS
+
+`tinacloud project update` <command>
+
+## DESCRIPTION
+
+Update site URLs and protected branches for a TinaCloud project. Commands use
+the current project's `tina/tinacloud.json` unless both organisation and
+project IDs are supplied.
+
+## COMMANDS
+
+  * `site-url`:
+    Add or remove site URLs.
+
+  * `protected-branch`:
+    Add or remove protected branches for projects with editorial workflow.
+
+## EXAMPLES
+
+Add a production site URL to the configured project:
+
+	$ tinacloud project update site-url add --url https://example.com
+
+Add a protected branch with explicit project IDs:
+
+	$ tinacloud project update protected-branch add \
+		--org-id <organization-id> \
+		--project-id <project-id> \
+		--branch main
+
+## COPYRIGHT
+
+Copyright 2026 TinaCMS
+
+## SEE ALSO
+
+tinacloud-project-update-site-url(1),
+tinacloud-project-update-protected-branch(1), tinacloud-configure(1)

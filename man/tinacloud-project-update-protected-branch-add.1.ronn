@@ -1,0 +1,47 @@
+tinacloud-project-update-protected-branch-add(1) -- Add a protected branch
+==========================================================================
+
+## DESCRIPTION
+
+Add a protected branch to the given project.
+
+This command is only available if your project has access to the editorial
+workflow feature.
+
+## SYNOPSIS
+
+`tinacloud project update protected-branch add`
+
+## OPTIONS
+
+  * `--branch`:
+    A protected branch
+
+  * `--org-id`:
+    TinaCloud organization ID
+
+  * `--project-id`:
+    TinaCloud project ID
+
+  * `--tina-dir`:
+    Path to the tina folder (default "tina")
+
+  * `--json`:
+    Print the result as JSON
+
+## EXAMPLES
+
+	$ tinacloud project update protected-branch add \
+		--branch "main" \
+		--branch "develop"
+
+## COPYRIGHT
+
+Copyright 2026 TinaCMS
+
+## SEE ALSO
+
+tinacloud-project-list(1), tinacloud-project-create(1),
+tinacloud-project-status(1), tinacloud-project-update-site-url-add(1),
+tinacloud-project-update-site-url-remove(1),
+tinacloud-project-update-protected-branch-remove(1)

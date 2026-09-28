@@ -1,0 +1,33 @@
+tinacloud-org(1) -- Interact with TinaCloud organisations
+==========================================================
+
+## SYNOPSIS
+
+`tinacloud org` <command>
+
+## DESCRIPTION
+
+View organisations available to the signed-in TinaCloud user.
+
+## COMMANDS
+
+  * `list`:
+    List organisations.
+
+## EXAMPLES
+
+List the organisations available to the signed-in account:
+
+	$ tinacloud org list
+
+Print the result as JSON:
+
+	$ tinacloud org list --json
+
+## COPYRIGHT
+
+Copyright 2026 TinaCMS
+
+## SEE ALSO
+
+tinacloud-org-list(1), tinacloud-auth(1)

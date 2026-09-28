@@ -1,0 +1,30 @@
+tinacloud-completion-zsh(1) -- Generate zsh completion script
+=============================================================
+
+## DESCRIPTION
+
+Generate a zsh completion script.
+
+Generate a "_tinacloud" completion script and put it somewhere in your $fpath:
+	tinacloud completion zsh > "${fpath[1]}/_tinacloud"
+
+Ensure the following is present in your ~/.zshrc:
+	autoload -U compinit
+	compinit -i
+
+## SYNOPSIS
+
+`tinacloud completion zsh`
+
+## EXAMPLES
+
+	$ tinacloud completion zsh > "${fpath[1]}/_tinacloud"
+
+## COPYRIGHT
+
+Copyright 2026 TinaCMS
+
+## SEE ALSO
+
+tinacloud-completion-bash(1), tinacloud-completion-fish(1),
+tinacloud-completion-powershell(1)

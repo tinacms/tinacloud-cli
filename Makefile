@@ -17,7 +17,7 @@ else
 	CLEAN_BUILD = rm -rf ./build/*
 endif
 
-.PHONY: fmt fmt-ci build build-ci package-windows package-darwin package-linux run security vet test clean
+.PHONY: fmt fmt-ci build build-ci man package-windows package-darwin package-linux run security vet test clean
 
 all: build
 
@@ -33,31 +33,44 @@ build: fmt security vet test
 build-ci:
 	go build $(FLAGS) -o ./build/$(BINARY_NAME) $(CMD)
 
-package-windows:
+man:
+ifeq ($(OS),Windows_NT)
+	New-Item -ItemType Directory -Force -Path ./build/man | Out-Null
+	Get-ChildItem -Path ./man -Filter *.1.ronn | ForEach-Object { ronn --roff --output-dir ./build/man $$_.FullName }
+else
+	mkdir -p ./build/man
+	ronn --roff --output-dir ./build/man ./man/*.1.ronn
+endif
+
+package-windows: man
 	New-Item -ItemType Directory -Force -Path ./build/dist | Out-Null
 	$$env:GOOS='windows'; $$env:GOARCH='amd64'; go build $(RELEASE_FLAGS) -o ./build/dist/$(NAME).exe $(CMD)
 	powershell -ExecutionPolicy Bypass -File ./scripts/sign-windows.ps1
-	Compress-Archive -Force -Path ./build/dist/$(NAME).exe -DestinationPath ./build/$(NAME)-windows-x86_64.zip
+	Copy-Item -Recurse ./build/man ./build/dist/man
+	Compress-Archive -Force -Path ./build/dist/$(NAME).exe, ./build/dist/man -DestinationPath ./build/$(NAME)-windows-x86_64.zip
 	$$env:GOOS='windows'; $$env:GOARCH='arm64'; go build $(RELEASE_FLAGS) -o ./build/dist/$(NAME).exe $(CMD)
 	powershell -ExecutionPolicy Bypass -File ./scripts/sign-windows.ps1
-	Compress-Archive -Force -Path ./build/dist/$(NAME).exe -DestinationPath ./build/$(NAME)-windows-aarch64.zip
+	Compress-Archive -Force -Path ./build/dist/$(NAME).exe, ./build/dist/man -DestinationPath ./build/$(NAME)-windows-aarch64.zip
 	Remove-Item -Recurse -Force ./build/dist
 
-package-darwin:
+package-darwin: man
 	mkdir -p ./build/dist/x86_64 ./build/dist/aarch64
 	env GOOS=darwin GOARCH=amd64 go build $(RELEASE_FLAGS) -o ./build/dist/x86_64/$(NAME) $(CMD)
 	env GOOS=darwin GOARCH=arm64 go build $(RELEASE_FLAGS) -o ./build/dist/aarch64/$(NAME) $(CMD)
 	./scripts/notarize-darwin.sh ./build/dist/x86_64/$(NAME) ./build/dist/aarch64/$(NAME)
-	tar -czf ./build/$(NAME)-darwin-x86_64.tar.gz -C ./build/dist/x86_64 $(NAME)
-	tar -czf ./build/$(NAME)-darwin-aarch64.tar.gz -C ./build/dist/aarch64 $(NAME)
+	cp -R ./build/man ./build/dist/x86_64/man
+	cp -R ./build/man ./build/dist/aarch64/man
+	tar -czf ./build/$(NAME)-darwin-x86_64.tar.gz -C ./build/dist/x86_64 $(NAME) man
+	tar -czf ./build/$(NAME)-darwin-aarch64.tar.gz -C ./build/dist/aarch64 $(NAME) man
 	rm -rf ./build/dist
 
-package-linux:
+package-linux: man
 	mkdir -p ./build/dist
 	env GOOS=linux GOARCH=amd64 go build $(RELEASE_FLAGS) -o ./build/dist/$(NAME) $(CMD)
-	tar -czf ./build/$(NAME)-linux-x86_64.tar.gz -C ./build/dist $(NAME)
+	cp -R ./build/man ./build/dist/man
+	tar -czf ./build/$(NAME)-linux-x86_64.tar.gz -C ./build/dist $(NAME) man
 	env GOOS=linux GOARCH=arm64 go build $(RELEASE_FLAGS) -o ./build/dist/$(NAME) $(CMD)
-	tar -czf ./build/$(NAME)-linux-aarch64.tar.gz -C ./build/dist $(NAME)
+	tar -czf ./build/$(NAME)-linux-aarch64.tar.gz -C ./build/dist $(NAME) man
 	rm -rf ./build/dist
 
 run:

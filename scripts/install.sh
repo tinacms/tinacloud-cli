@@ -15,6 +15,7 @@ YELLOW='\033[0;33m'
 NC='\033[0m'
 
 INSTALL_PATH=${INSTALL_PATH:-"/usr/local/bin"}
+MAN_PATH=${MAN_PATH:-"/usr/local/share/man/man1"}
 NEED_SUDO=0
 
 function maybe_sudo() {
@@ -47,7 +48,7 @@ log "${NC}"
 hasCli=$(which tinacloud)
 if [ "$?" = "0" ]; then
     log ""
-    log "${GREEN}You already have the TinaCloud cli at '${hasCli}'${NC}"
+    log "${GREEN}You already have the TinaCloud CLI at '${hasCli}'${NC}"
     export n=3
     log "${YELLOW}Downloading again in $n seconds... Press Ctrl+C to cancel.${NC}"
     log ""
@@ -81,6 +82,7 @@ fi
 suffix="-${platform}-${arch}.tar.gz"
 targetFile="/tmp/tinacloud$suffix"
 targetExe="/tmp/tinacloud"
+targetMan="/tmp/tinacloud-man"
 
 if [ -e "$targetFile" ]; then
     rm "$targetFile"
@@ -90,7 +92,11 @@ if [ -e "$targetExe" ]; then
   rm "$targetExe"
 fi
 
-log "${PURPLE}Downloading TinaCloud cli for $platform-$arch to ${targetFile}${NC}"
+if [ -e "$targetMan" ]; then
+  rm -rf "$targetMan"
+fi
+
+log "${PURPLE}Downloading TinaCloud CLI for $platform-$arch to ${targetFile}${NC}"
 url=https://github.com/tinacms/tinacloud-cli/releases/download/$version/tinacloud$suffix
 
 try curl -L# -f -o "$targetFile" "$url"
@@ -99,16 +105,22 @@ try chmod +x "$targetExe"
 
 log "${GREEN}Download complete!${NC}"
 
-# check for sudo
-needSudo=$(mkdir -p "${INSTALL_PATH}" && touch "${INSTALL_PATH}/.tinacloudinstall" &> /dev/null)
-if [[ "$?" != "0" ]]; then
+# Check whether either install destination needs sudo.
+can_write() {
+    local install_dir="$1"
+    local marker="${install_dir}/.tinacloudinstall"
+    mkdir -p "${install_dir}" &> /dev/null &&
+        touch "${marker}" &> /dev/null &&
+        rm -f "${marker}"
+}
+
+if ! can_write "${INSTALL_PATH}" || ! can_write "${MAN_PATH}"; then
     NEED_SUDO=1
 fi
-rm "${INSTALL_PATH}/.tinacloudinstall" &> /dev/null
 
 if [[ "$NEED_SUDO" == '1' ]]; then
     log
-    log "${YELLOW}Path '$INSTALL_PATH' requires root access to write."
+    log "${YELLOW}An installation path requires root access to write."
     log "${YELLOW}This script will attempt to execute the move command with sudo.${NC}"
     if [ -t 0 ]; then
         log "${YELLOW}Are you ok with that? (y/N)${NC}"
@@ -123,18 +135,24 @@ if [[ "$NEED_SUDO" == '1' ]]; then
     else
         log
         log "  ${BLUE}sudo mv $targetExe ${INSTALL_PATH}/tinacloud${NC}"
+        log "  ${BLUE}sudo mv $targetMan/* ${MAN_PATH}/"
         log
         die "Please move the binary manually using the command above."
     fi
 fi
 
-log "Moving TinaCloud cli from $targetExe to ${INSTALL_PATH}"
+log "Moving TinaCloud CLI from $targetExe to ${INSTALL_PATH}"
 
 try maybe_sudo mkdir -p "${INSTALL_PATH}"
 try maybe_sudo mv "$targetExe" "${INSTALL_PATH}/tinacloud"
 
+log "Moving TinaCloud CLI MAN pages from $targetMan/* to ${MAN_PATH}"
+
+try maybe_sudo mkdir -p "${MAN_PATH}"
+try maybe_sudo mv ${targetMan}/* "${MAN_PATH}/"
+
 log
-log "${GREEN}TinaCloud cli installed to ${INSTALL_PATH}${NC}"
+log "${GREEN}TinaCloud CLI installed to ${INSTALL_PATH}${NC}"
 log
 
 if [ -e "$targetFile" ]; then
@@ -143,6 +161,10 @@ fi
 
 if [ -e "$targetExe" ]; then
   rm "$targetExe"
+fi
+
+if [ -e "$targetMan" ]; then
+  rm -rf "$targetMan"
 fi
 
 log "Running ${BLUE}tinacloud -v${NC}"
