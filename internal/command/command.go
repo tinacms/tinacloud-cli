@@ -18,6 +18,11 @@ type Command struct {
 }
 
 func (c *Command) Dispatch(args []string, path []string) error {
+	if len(c.SubCommands) == 0 && helpRequested(args) {
+		c.PrintUsage(os.Stdout, path)
+		return nil
+	}
+
 	if c.Flags != nil {
 		c.Flags.Usage = func() {}
 		c.Flags.SetOutput(io.Discard)
@@ -54,11 +59,25 @@ func (c *Command) Dispatch(args []string, path []string) error {
 	}
 
 	if len(c.SubCommands) == 0 && c.Run != nil {
+		if len(args) > 0 {
+			c.PrintUsage(os.Stderr, path)
+			return fmt.Errorf("unexpected argument %q", args[0])
+		}
 		return c.Run(args)
 	}
 
 	c.PrintUsage(os.Stderr, path)
 	return fmt.Errorf("unrecognized command %q", name)
+}
+
+func helpRequested(args []string) bool {
+	for _, arg := range args {
+		if arg == "-h" || arg == "--help" {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (c *Command) PrintUsage(w io.Writer, path []string) {

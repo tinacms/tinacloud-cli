@@ -40,8 +40,6 @@ func TestDispatch(t *testing.T) {
 		wantLog []string
 	}{
 		{name: "runs leaf subcommand", args: []string{"org", "list"}, wantLog: []string{"list/"}},
-		{name: "passes positional args to leaf", args: []string{"org", "list", "extra"}, wantLog: []string{"list/extra"}},
-		{name: "flag-less command receives all args", args: []string{"bare", "one", "two"}, wantLog: []string{"bare/one,two"}},
 		{name: "flags parsed before subcommand dispatch", args: []string{"--name", "foo", "org", "list"}, wantLog: []string{"list/"}},
 		{name: "help flag is handled gracefully", args: []string{"--help"}},
 		{name: "help arg is handled gracefully", args: []string{"bare", "--help"}},
@@ -59,6 +57,41 @@ func TestDispatch(t *testing.T) {
 			}
 			if !slices.Equal(called, tc.wantLog) {
 				t.Errorf("Dispatch(%v) called %v, want %v", tc.args, called, tc.wantLog)
+			}
+		})
+	}
+}
+
+func TestDispatchDoesNotRunOnTrailingHelpOrArguments(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    []string
+		wantErr bool
+	}{
+		{name: "trailing help", args: []string{"--project-id", "project-1", "unexpected", "--help"}},
+		{name: "unexpected arguments", args: []string{"--project-id", "project-1", "unexpected", "--bogus"}, wantErr: true},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			flags := flag.NewFlagSet("configure", flag.ContinueOnError)
+			flags.String("project-id", "", "project ID")
+			called := false
+			cmd := &Command{
+				Name:  "configure",
+				Flags: flags,
+				Run: func([]string) error {
+					called = true
+					return nil
+				},
+			}
+
+			err := cmd.Dispatch(tc.args, []string{"configure"})
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("Dispatch(%v) = %v, wantErr %v", tc.args, err, tc.wantErr)
+			}
+			if called {
+				t.Errorf("Dispatch(%v) ran the command, want no execution", tc.args)
 			}
 		})
 	}
