@@ -43,6 +43,17 @@ $ go build -o tinacloud ./cmd/tinacloud
 $ go install ./cmd/tinacloud
 ```
 
+### Uninstall
+
+For the default installation, remove the binary and its manual pages:
+
+```
+sudo rm -f /usr/local/bin/tinacloud /usr/local/share/man/man1/tinacloud*.1
+```
+
+If you set `INSTALL_PATH` or `MAN_PATH` when installing, remove
+`$INSTALL_PATH/tinacloud` and `$MAN_PATH/tinacloud*.1` instead.
+
 ## Getting started
 Before using `tinacloud`, you need to authenticate with TinaCloud:
 ```
