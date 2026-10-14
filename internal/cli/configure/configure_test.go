@@ -127,6 +127,14 @@ func TestRunConfigureUnauthenticated(t *testing.T) {
 	}
 }
 
+func TestCommandNoInput(t *testing.T) {
+	cmd := Command(config.Config{}, posthog.NoopTracker)
+	err := cmd.Dispatch([]string{"--no-input"}, []string{"configure"})
+	if err == nil || !strings.Contains(err.Error(), "requires a terminal") {
+		t.Fatalf("Dispatch(--no-input) = %v, want terminal error", err)
+	}
+}
+
 // TestRunConfigureTracking verifies the event is emitted only after a successful save.
 func TestRunConfigureTracking(t *testing.T) {
 	t.Run("emits user-configured after a successful save", func(t *testing.T) {

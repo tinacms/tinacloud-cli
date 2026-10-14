@@ -29,6 +29,9 @@ Create a new TinaCloud project.
   * `--json`:
     Print the result as JSON
 
+  * `--no-input`:
+    Fail instead of prompting for GitHub App installation.
+
 ## EXAMPLES
 
 	$ tinacloud project create \

@@ -26,6 +26,9 @@ read from said file first.
   * `--tina-dir`:
     Path to the tina folder (default "tina")
 
+  * `--no-input`:
+    Fail instead of prompting for project selection.
+
 ## EXAMPLES
 
 Interactively choose a project for the TinaCMS project in the current directory:

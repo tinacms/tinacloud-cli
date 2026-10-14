@@ -36,6 +36,7 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	var repoURLFlag = flagSet.String("repo-url", "", "GitHub Repo URL")
 	var siteURLFlag = flagSet.String("site-url", "http://localhost:3000", "Site URL")
 	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
+	var noInputFlag = flagSet.Bool("no-input", false, "Fail instead of prompting for input")
 
 	return &command.Command{
 		Name:          "create",
@@ -44,7 +45,7 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 		RequiresInput: true,
 		Flags:         flagSet,
 		Run: func(args []string) error {
-			out, err := runCreate(cfg, browser.OpenURL, *orgIDFlag, *projectNameFlag, *repoURLFlag, *siteURLFlag, *tinaDirFlag)
+			out, err := runCreate(cfg, browser.OpenURL, !*noInputFlag && utils.IsTerminal(os.Stdin), *orgIDFlag, *projectNameFlag, *repoURLFlag, *siteURLFlag, *tinaDirFlag)
 			if err == nil && out.LoggedIn {
 				track(posthog.ProjectCreated(out.Project.OrgID, out.Project.ProjectID, out.Project.Name, out.Project.RepoURL, out.Project.SiteURLs))
 			}
@@ -63,7 +64,7 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	}
 }
 
-func runCreate(cfg config.Config, openURL func(string) error, orgID, projectName, repoURL, siteURL, tinaDir string) (createJSONOutput, error) {
+func runCreate(cfg config.Config, openURL func(string) error, allowPrompt bool, orgID, projectName, repoURL, siteURL, tinaDir string) (createJSONOutput, error) {
 	if orgID == "" {
 		if cwd, err := os.Getwd(); err == nil {
 			if tinacloudConfig, err := domain.TinaCloudConfigFromDisk(cwd, tinaDir); err == nil {
@@ -110,6 +111,9 @@ func runCreate(cfg config.Config, openURL func(string) error, orgID, projectName
 	if err != nil {
 		if !errors.Is(err, requests.ErrMissingInstallationID) {
 			return createJSONOutput{}, err
+		}
+		if !allowPrompt {
+			return createJSONOutput{}, errors.New("GitHub App installation is required; rerun interactively to complete installation")
 		}
 
 		ln, port, err := utils.CallbackListener()
@@ -162,7 +166,7 @@ func runCreate(cfg config.Config, openURL func(string) error, orgID, projectName
 			// User can copy string from terminal if this fails
 			_ = openURL(installationURL)
 
-			fmt.Printf(`Install the TinaCloud GitHub App.
+			fmt.Fprintf(os.Stderr, `Install the TinaCloud GitHub App.
 Attempting to open your default browser. If the browser does not open, open the following URL.
 
 %s
