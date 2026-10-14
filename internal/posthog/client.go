@@ -7,18 +7,14 @@ import (
 	"sync"
 	"time"
 
+	"tina.io/tinacloud-cli/internal/httpclient"
 	sysinfo "tina.io/tinacloud-cli/internal/sys-info"
 )
 
 const (
-	libName    = "tinacloud-cli-posthog"
-	libVersion = "1.0.0"
+	libName = "tinacloud-cli"
 
-	// requestTimeout must stay below closeTimeout so a request always finishes
-	// (or fails) in time for Close to observe it, instead of Close abandoning
-	// a request that was still going to complete.
-	requestTimeout = 4 * time.Second
-	closeTimeout   = 5 * time.Second
+	closeTimeout = 5 * time.Second
 )
 
 type Client struct {
@@ -32,11 +28,11 @@ func NewClient(apiKey, endpoint string) *Client {
 	return &Client{
 		apiKey:   apiKey,
 		endpoint: endpoint,
-		http:     &http.Client{Timeout: requestTimeout},
+		http:     httpclient.NewClient(),
 	}
 }
 
-// Enqueue sends a capture event in the background.
+// Send a capture event in the background.
 func (c *Client) Enqueue(event Capture) {
 	c.send(map[string]any{
 		"event":       event.Event,
@@ -45,7 +41,7 @@ func (c *Client) Enqueue(event Capture) {
 	})
 }
 
-// Alias links distinctID to alias via a $create_alias event.
+// Link a distinctID to alias via a $create_alias event.
 func (c *Client) Alias(distinctID, alias string) {
 	c.send(map[string]any{
 		"event": "$create_alias",
@@ -62,8 +58,9 @@ func (c *Client) send(event map[string]any) {
 		props = map[string]any{}
 	}
 	props["$lib"] = libName
-	props["$lib_version"] = libVersion
-	// PostHog geolocates by request IP unless this is set; posthog-go sent it by default.
+	props["$lib_version"] = httpclient.Version()
+	// PostHog geolocates by request IP unless this is set; posthog-go sent it
+	// by default.
 	props["$geoip_disable"] = true
 	for k, v := range sysinfo.GetSystemContext().ToProperties() {
 		props[k] = v

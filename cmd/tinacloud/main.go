@@ -7,6 +7,7 @@ import (
 
 	"tina.io/tinacloud-cli/internal/cli"
 	"tina.io/tinacloud-cli/internal/config"
+	"tina.io/tinacloud-cli/internal/httpclient"
 	"tina.io/tinacloud-cli/internal/utils"
 )
 
@@ -17,6 +18,8 @@ var (
 )
 
 func main() {
+	httpclient.SetVersion(version)
+
 	cfg := config.Config{
 		Core: config.CoreConfig{
 			Dev: dev != "false",

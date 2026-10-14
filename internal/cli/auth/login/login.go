@@ -50,11 +50,9 @@ func runLogin(cfg config.Config, openURL func(string) error, track posthog.Track
 		// <tinacloud-host>:oauth/authorize will attempt to redirect the client
 		// to the authorization page. instead, we want to catch the redirect
 		// location to display to user.
-		client := http.Client{
-			Timeout: httpclient.Client.Timeout,
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
+		client := httpclient.NewClient()
+		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
 		}
 
 		oauthURL := fmt.Sprintf("%s/oauth/authorize?code_challenge=%s&redirect_uri=http://localhost:%d/callback", cfg.TinaCloud.Endpoint, challenge, port)
