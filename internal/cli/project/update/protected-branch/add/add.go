@@ -33,9 +33,11 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
 
 	return &command.Command{
-		Name:        "add",
-		Description: "Add protected branches",
-		Flags:       flagSet,
+		Name:          "add",
+		Description:   "Add protected branches",
+		Example:       "tinacloud project update protected-branch add --branch main",
+		RequiresInput: true,
+		Flags:         flagSet,
 		Run: func(args []string) error {
 			out, err := runAdd(cfg, protectedBranchesFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
 			if err == nil && out.LoggedIn {

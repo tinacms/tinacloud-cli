@@ -32,9 +32,11 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
 
 	return &command.Command{
-		Name:        "add",
-		Description: "Add site URLs",
-		Flags:       flagSet,
+		Name:          "add",
+		Description:   "Add site URLs",
+		Example:       "tinacloud project update site-url add --url https://example.com",
+		RequiresInput: true,
+		Flags:         flagSet,
 		Run: func(args []string) error {
 			out, err := runAdd(cfg, siteURLsFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
 			if err == nil && out.LoggedIn {

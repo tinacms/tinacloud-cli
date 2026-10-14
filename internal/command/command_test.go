@@ -97,6 +97,43 @@ func TestDispatchDoesNotRunOnTrailingHelpOrArguments(t *testing.T) {
 	}
 }
 
+func TestDispatchRequiresInput(t *testing.T) {
+	newCommand := func() (*Command, *bool) {
+		flags := flag.NewFlagSet("create", flag.ContinueOnError)
+		flags.String("name", "", "project name")
+		called := false
+		return &Command{
+			Name:          "create",
+			Flags:         flags,
+			RequiresInput: true,
+			Run: func([]string) error {
+				called = true
+				return nil
+			},
+		}, &called
+	}
+
+	t.Run("shows help without input", func(t *testing.T) {
+		cmd, called := newCommand()
+		if err := cmd.Dispatch(nil, []string{"project", "create"}); err != nil {
+			t.Fatalf("Dispatch() = %v", err)
+		}
+		if *called {
+			t.Error("Dispatch() ran a command without input")
+		}
+	})
+
+	t.Run("runs with input", func(t *testing.T) {
+		cmd, called := newCommand()
+		if err := cmd.Dispatch([]string{"--name", "example"}, []string{"project", "create"}); err != nil {
+			t.Fatalf("Dispatch() = %v", err)
+		}
+		if !*called {
+			t.Error("Dispatch() did not run a command with input")
+		}
+	})
+}
+
 func TestPrintUsage(t *testing.T) {
 	t.Run("command with subcommands", func(t *testing.T) {
 		var buf bytes.Buffer
@@ -125,6 +162,7 @@ func TestPrintUsage(t *testing.T) {
 			Name:            "configure",
 			Description:     "Configure a local Tina project",
 			LongDescription: "Long help text.",
+			Example:         "tinacloud configure --org-id org-123 --project-id project-123",
 			Flags:           flags,
 		}
 
@@ -133,6 +171,7 @@ func TestPrintUsage(t *testing.T) {
 		got := buf.String()
 		for _, want := range []string{
 			"Configure a local Tina project\n\nUsage:\n  tinacloud configure\n\nLong help text.\n",
+			"Example:\n  tinacloud configure --org-id org-123 --project-id project-123\n",
 			"Flags:\n",
 			"-tina-dir",
 		} {

@@ -35,6 +35,7 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	return &command.Command{
 		Name:        "configure",
 		Description: "Configure a local Tina project",
+		Example:     "tinacloud configure --org-id org-123 --project-id project-123",
 		Flags:       flagSet,
 		Run: func(args []string) error {
 			cwd, err := os.Getwd()

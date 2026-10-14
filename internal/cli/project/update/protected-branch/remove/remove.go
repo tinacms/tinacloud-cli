@@ -33,9 +33,11 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
 
 	return &command.Command{
-		Name:        "remove",
-		Description: "Remove protected branches",
-		Flags:       flagSet,
+		Name:          "remove",
+		Description:   "Remove protected branches",
+		Example:       "tinacloud project update protected-branch remove --branch main",
+		RequiresInput: true,
+		Flags:         flagSet,
 		Run: func(args []string) error {
 			out, err := runRemove(cfg, protectedBranchesFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
 			if err == nil && out.LoggedIn {

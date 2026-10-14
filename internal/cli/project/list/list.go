@@ -29,6 +29,7 @@ func Command(cfg config.Config) *command.Command {
 	return &command.Command{
 		Name:        "list",
 		Description: "List projects",
+		Example:     "tinacloud project list --org-id org-123",
 		Flags:       flagSet,
 		Run: func(args []string) error {
 			out, err := runList(cfg, *orgIDFlag, *tinaDirFlag)

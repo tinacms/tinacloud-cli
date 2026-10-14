@@ -12,6 +12,8 @@ type Command struct {
 	Name            string
 	Description     string
 	LongDescription string
+	Example         string
+	RequiresInput   bool
 	Flags           *flag.FlagSet
 	SubCommands     []*Command
 	Run             func(args []string) error
@@ -38,6 +40,10 @@ func (c *Command) Dispatch(args []string, path []string) error {
 	}
 
 	if len(args) == 0 {
+		if c.RequiresInput && c.Flags != nil && c.Flags.NFlag() == 0 {
+			c.PrintUsage(os.Stdout, path)
+			return nil
+		}
 		if c.Run == nil {
 			c.PrintUsage(os.Stdout, path)
 			return nil
@@ -94,6 +100,9 @@ func (c *Command) PrintUsage(w io.Writer, path []string) {
 
 	if c.LongDescription != "" {
 		fmt.Fprintf(w, "\n%s\n", c.LongDescription)
+	}
+	if c.Example != "" {
+		fmt.Fprintf(w, "\nExample:\n  %s\n", c.Example)
 	}
 
 	if len(c.SubCommands) > 0 {
