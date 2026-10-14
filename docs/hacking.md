@@ -15,6 +15,8 @@ To run:
 go run ./cmd/tinacloud
 ```
 
+To use a development endpoint, run `make run ENDPOINT=https://example.test`.
+
 <details>
 <summary>Note: Passing arguments via the Makefile</summary>
 Makefiles are unable to pass command-line arguments through. <br>To get around

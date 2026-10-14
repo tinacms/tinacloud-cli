@@ -1,28 +1,32 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"os"
 
 	"tina.io/tinacloud-cli/internal/cli"
+	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/utils"
 )
 
 var (
-	version = "undefined"
-	dev     string
+	version  = "undefined"
+	dev      string
+	endpoint string
 )
 
 func main() {
-	ctx := context.Background()
-
-	state, err := cli.New(ctx, dev)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create cli state: %v\n", err)
-		os.Exit(1)
+	cfg := config.Config{
+		Core: config.CoreConfig{
+			Dev: dev != "false",
+		},
+		TinaCloud: config.TinaCloudConfig{
+			Endpoint: endpoint,
+		},
 	}
+
+	state := cli.New(cfg)
 
 	rootErr := state.Root(version)
 

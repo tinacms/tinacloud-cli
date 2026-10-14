@@ -1,19 +1,17 @@
 NAME	= tinacloud
 CMD		= ./cmd/tinacloud
 VERSION	= $(shell cat .version)
-# Provided by the release pipeline from a GitHub secret; empty for local builds.
-FLAGS	= -ldflags='-X main.version=$(VERSION)'
+ENDPOINT ?= https://identity-v2.tinajs.io
+FLAGS	= -ldflags='-X main.version=$(VERSION) -X main.endpoint=$(ENDPOINT)'
 RELEASE_FLAGS = -trimpath -buildvcs=false -ldflags='-s -w -X main.version=$(VERSION) -X main.dev=false'
 
 ifeq ($(OS),Windows_NT)
 	BINARY_NAME	= $(NAME).exe
 	SHELL 		:= powershell.exe
 	.SHELLFLAGS := -Command
-	LOAD_ENV 	= Get-Content ./.env | ForEach-Object { if ($$_ -match '^([^\#][^=]*)=(.*)$$') { [System.Environment]::SetEnvironmentVariable($$matches[1].Trim(), $$matches[2].Trim(), 'Process') } };
 	CLEAN_BUILD = if (Test-Path ./build) { Remove-Item -Recurse -Force ./build/* }
 else
 	BINARY_NAME	= $(NAME)
-	LOAD_ENV 	= set -a && source ./.env && set +a &&
 	CLEAN_BUILD = rm -rf ./build/*
 endif
 
@@ -74,7 +72,7 @@ package-linux: man
 	rm -rf ./build/dist
 
 run:
-	$(LOAD_ENV) go run $(CMD) $(ARGS)
+	go run $(FLAGS) $(CMD) $(ARGS)
 
 security:
 	gosec ./...

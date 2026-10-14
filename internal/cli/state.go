@@ -1,12 +1,9 @@
 package cli
 
 import (
-	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
@@ -20,18 +17,7 @@ type State struct {
 	distinctID string
 }
 
-func New(ctx context.Context, dev string) (*State, error) {
-	cfg, err := config.LoadConfig(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load config: %w", err)
-	}
-
-	if strings.TrimSpace(dev) != "" {
-		if isDev, err := strconv.ParseBool(dev); err == nil {
-			cfg.Core.Dev = isDev
-		}
-	}
-
+func New(cfg config.Config) *State {
 	state := &State{config: cfg}
 
 	// Resolve the distinct ID only when telemetry is on; it is unused otherwise.
@@ -39,7 +25,7 @@ func New(ctx context.Context, dev string) (*State, error) {
 		state.distinctID = resolveDistinctID()
 	}
 
-	return state, nil
+	return state
 }
 
 // resolveDistinctID returns the logged-in user's TinaCloud ID, or a random per-invocation ID when anonymous.
