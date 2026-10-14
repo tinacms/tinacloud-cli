@@ -79,6 +79,11 @@ Available Commands:
   completion  Generate shell completion scripts
 ```
 
+## Telemetry
+
+Telemetry is disabled by default. To enable usage and error reporting, set
+`TINACLOUD_TELEMETRY=true` in the environment before running the CLI.
+
 ### Enable Autocomplete
 Autocomplete can be enabled by installing one of the provided autocomplete
 scripts into your shell profile, if not there already.

@@ -4,6 +4,8 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"os"
+	"strconv"
 
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
@@ -12,23 +14,34 @@ import (
 )
 
 type State struct {
-	config     config.Config
-	posthog    posthog.Sender
-	distinctID string
+	config           config.Config
+	posthog          posthog.Sender
+	distinctID       string
+	telemetryEnabled bool
 }
 
 func New(cfg config.Config) *State {
-	state := &State{config: cfg}
+	telemetryEnabled := telemetryEnabled(cfg.Core.Dev)
 
-	// Resolve the distinct ID only when telemetry is on; it is unused otherwise.
-	if !cfg.Core.Dev {
+	state := &State{
+		config:           cfg,
+		telemetryEnabled: telemetryEnabled,
+	}
+
+	if telemetryEnabled {
 		state.distinctID = resolveDistinctID()
 	}
 
 	return state
 }
 
-// resolveDistinctID returns the logged-in user's TinaCloud ID, or a random per-invocation ID when anonymous.
+func telemetryEnabled(development bool) bool {
+	enabled, err := strconv.ParseBool(os.Getenv("TINACLOUD_TELEMETRY"))
+	return !development && err == nil && enabled
+}
+
+// Return the logged-in user's TinaCloud ID, or a random per-invocation ID when
+// anonymous.
 func resolveDistinctID() string {
 	if tokens, err := auth.PeekTokens(); err == nil {
 		if claims, err := auth.DecodeAccessToken(tokens.AccessToken); err == nil {
@@ -59,9 +72,9 @@ func (s *State) InitialisePostHog() error {
 	return nil
 }
 
-// Track enqueues a telemetry event with the distinct ID. No-op when telemetry is off; never errors so it can't affect command flow.
+// Enqueue a telemetry event with the distinct ID. No-op when telemetry is off.
 func (s *State) Track(event posthog.Capture) {
-	if s.config.Core.Dev {
+	if !s.telemetryEnabled {
 		return
 	}
 
@@ -73,9 +86,10 @@ func (s *State) Track(event posthog.Capture) {
 	s.posthog.Enqueue(event)
 }
 
-// Identify links the anonymous distinct ID to the authenticated user so pre-login events are attributed to them.
+// Link the anonymous distinct ID to the authenticated user so pre-login events
+// are attributed to them.
 func (s *State) Identify(userID string) {
-	if s.config.Core.Dev || userID == "" || userID == s.distinctID {
+	if !s.telemetryEnabled || userID == "" || userID == s.distinctID {
 		return
 	}
 

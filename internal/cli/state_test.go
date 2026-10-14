@@ -3,7 +3,6 @@ package cli
 import (
 	"testing"
 
-	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/posthog"
 )
 
@@ -34,7 +33,7 @@ func TestTrack(t *testing.T) {
 
 	t.Run("enqueues with the distinct id when enabled", func(t *testing.T) {
 		client := &captureClient{}
-		s := &State{posthog: client, distinctID: "user-1"}
+		s := &State{posthog: client, distinctID: "user-1", telemetryEnabled: true}
 
 		s.Track(event)
 
@@ -46,18 +45,14 @@ func TestTrack(t *testing.T) {
 		}
 	})
 
-	t.Run("suppresses telemetry in dev mode", func(t *testing.T) {
+	t.Run("suppresses telemetry when not opted in", func(t *testing.T) {
 		client := &captureClient{}
-		s := &State{
-			posthog:    client,
-			distinctID: "user-1",
-			config:     config.Config{Core: config.CoreConfig{Dev: true}},
-		}
+		s := &State{posthog: client, distinctID: "user-1"}
 
 		s.Track(event)
 
 		if len(client.events) != 0 {
-			t.Errorf("enqueued %d events in dev mode, want 0", len(client.events))
+			t.Errorf("enqueued %d events without opt-in, want 0", len(client.events))
 		}
 	})
 
@@ -69,10 +64,34 @@ func TestTrack(t *testing.T) {
 	})
 }
 
+func TestTelemetryEnabled(t *testing.T) {
+	tests := []struct {
+		name        string
+		value       string
+		development bool
+		want        bool
+	}{
+		{name: "disabled by default"},
+		{name: "enabled", value: "true", want: true},
+		{name: "disabled", value: "false"},
+		{name: "invalid", value: "yes"},
+		{name: "disabled in development", value: "true", development: true},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("TINACLOUD_TELEMETRY", tc.value)
+			if got := telemetryEnabled(tc.development); got != tc.want {
+				t.Errorf("telemetryEnabled(%t) = %t, want %t", tc.development, got, tc.want)
+			}
+		})
+	}
+}
+
 func TestIdentify(t *testing.T) {
 	t.Run("aliases the anonymous id to the user when enabled", func(t *testing.T) {
 		client := &captureClient{}
-		s := &State{posthog: client, distinctID: "anon-1"}
+		s := &State{posthog: client, distinctID: "anon-1", telemetryEnabled: true}
 
 		s.Identify("user-1")
 
@@ -81,21 +100,6 @@ func TestIdentify(t *testing.T) {
 		}
 		if got := client.aliases[0]; got.DistinctId != "user-1" || got.Alias != "anon-1" {
 			t.Errorf("alias = %+v, want DistinctId=user-1 Alias=anon-1", got)
-		}
-	})
-
-	t.Run("suppresses the alias in dev mode", func(t *testing.T) {
-		client := &captureClient{}
-		s := &State{
-			posthog:    client,
-			distinctID: "anon-1",
-			config:     config.Config{Core: config.CoreConfig{Dev: true}},
-		}
-
-		s.Identify("user-1")
-
-		if len(client.aliases) != 0 {
-			t.Errorf("enqueued %d aliases in dev mode, want 0", len(client.aliases))
 		}
 	})
 
