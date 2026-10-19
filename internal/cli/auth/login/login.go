@@ -19,21 +19,20 @@ import (
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
 	"tina.io/tinacloud-cli/internal/httpclient"
-	"tina.io/tinacloud-cli/internal/posthog"
 	"tina.io/tinacloud-cli/internal/utils"
 )
 
-func Command(cfg config.Config, track posthog.Tracker, identify posthog.Identifier) *command.Command {
+func Command(cfg config.Config) *command.Command {
 	return &command.Command{
 		Name:        "login",
 		Description: "Log in to a TinaCloud account",
 		Run: func(args []string) error {
-			return runLogin(cfg, browser.OpenURL, track, identify)
+			return runLogin(cfg, browser.OpenURL)
 		},
 	}
 }
 
-func runLogin(cfg config.Config, openURL func(string) error, track posthog.Tracker, identify posthog.Identifier) error {
+func runLogin(cfg config.Config, openURL func(string) error) error {
 	verifier, err := generateVerifier()
 	if err != nil {
 		return fmt.Errorf("failed to generate verifier code: %w", err)
@@ -50,11 +49,9 @@ func runLogin(cfg config.Config, openURL func(string) error, track posthog.Track
 		// <tinacloud-host>:oauth/authorize will attempt to redirect the client
 		// to the authorization page. instead, we want to catch the redirect
 		// location to display to user.
-		client := http.Client{
-			Timeout: httpclient.Client.Timeout,
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
+		client := httpclient.NewClient()
+		client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
 		}
 
 		oauthURL := fmt.Sprintf("%s/oauth/authorize?code_challenge=%s&redirect_uri=http://localhost:%d/callback", cfg.TinaCloud.Endpoint, challenge, port)
@@ -72,8 +69,6 @@ func runLogin(cfg config.Config, openURL func(string) error, track posthog.Track
 
 		// User can copy string from terminal if this fails
 		_ = openURL(redirectURL)
-
-		track(posthog.UserSignInInitiated())
 
 		fmt.Printf(`Attempting to open your default browser. If the browser does not open, open the following URL.
 
@@ -159,13 +154,6 @@ func runLogin(cfg config.Config, openURL func(string) error, track posthog.Track
 	if err != nil {
 		return fmt.Errorf("failed to save tokens to file: %w", err)
 	}
-
-	// Attribute the pre-login sign-in events to the now-authenticated user (best-effort).
-	if claims, err := auth.DecodeAccessToken(tokens.AccessToken); err == nil {
-		identify(claims.TinaCloudUserID)
-	}
-
-	track(posthog.UserSignInSuccess())
 
 	fmt.Println("✅️ Successfully logged into TinaCloud!")
 

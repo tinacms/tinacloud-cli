@@ -4,7 +4,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"os"
 
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/command"
@@ -31,7 +30,7 @@ func Command(cfg config.Config) *command.Command {
 		Run: func(args []string) error {
 			out, err := runStatus(cfg, auth.TokensFromCache)
 			if *jsonFlag {
-				return utils.WriteJSONResult(os.Stdout, out, err)
+				return utils.WriteJSONResult(out, err)
 			}
 			if err != nil {
 				return err

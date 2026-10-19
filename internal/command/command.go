@@ -12,28 +12,40 @@ type Command struct {
 	Name            string
 	Description     string
 	LongDescription string
+	Example         string
+	RequiresInput   bool
 	Flags           *flag.FlagSet
 	SubCommands     []*Command
 	Run             func(args []string) error
 }
 
 func (c *Command) Dispatch(args []string, path []string) error {
+	if len(c.SubCommands) == 0 && helpRequested(args) {
+		c.PrintUsage(os.Stdout, path)
+		return nil
+	}
+
 	if c.Flags != nil {
-		c.Flags.Usage = func() {
-			c.PrintUsage(os.Stderr, path)
-		}
+		c.Flags.Usage = func() {}
+		c.Flags.SetOutput(io.Discard)
 		if err := c.Flags.Parse(args); err != nil {
 			if err == flag.ErrHelp {
+				c.PrintUsage(os.Stdout, path)
 				return nil
 			}
+			c.PrintUsage(os.Stderr, path)
 			return err
 		}
 		args = c.Flags.Args()
 	}
 
 	if len(args) == 0 {
+		if c.RequiresInput && c.Flags != nil && c.Flags.NFlag() == 0 {
+			c.PrintUsage(os.Stdout, path)
+			return nil
+		}
 		if c.Run == nil {
-			c.PrintUsage(os.Stderr, path)
+			c.PrintUsage(os.Stdout, path)
 			return nil
 		}
 		return c.Run(args)
@@ -53,12 +65,25 @@ func (c *Command) Dispatch(args []string, path []string) error {
 	}
 
 	if len(c.SubCommands) == 0 && c.Run != nil {
+		if len(args) > 0 {
+			c.PrintUsage(os.Stderr, path)
+			return fmt.Errorf("unexpected argument %q", args[0])
+		}
 		return c.Run(args)
 	}
 
-	fmt.Fprintf(os.Stderr, "unrecognized command %q\n\n", name)
 	c.PrintUsage(os.Stderr, path)
 	return fmt.Errorf("unrecognized command %q", name)
+}
+
+func helpRequested(args []string) bool {
+	for _, arg := range args {
+		if arg == "-h" || arg == "--help" {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (c *Command) PrintUsage(w io.Writer, path []string) {
@@ -75,6 +100,9 @@ func (c *Command) PrintUsage(w io.Writer, path []string) {
 
 	if c.LongDescription != "" {
 		fmt.Fprintf(w, "\n%s\n", c.LongDescription)
+	}
+	if c.Example != "" {
+		fmt.Fprintf(w, "\nExample:\n  %s\n", c.Example)
 	}
 
 	if len(c.SubCommands) > 0 {

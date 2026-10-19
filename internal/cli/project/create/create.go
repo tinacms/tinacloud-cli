@@ -18,7 +18,6 @@ import (
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
 	"tina.io/tinacloud-cli/internal/httpclient"
-	"tina.io/tinacloud-cli/internal/posthog"
 	"tina.io/tinacloud-cli/internal/requests"
 	"tina.io/tinacloud-cli/internal/utils"
 )
@@ -28,7 +27,7 @@ type createJSONOutput struct {
 	Project  domain.CreatedProject `json:"project"`
 }
 
-func Command(cfg config.Config, track posthog.Tracker) *command.Command {
+func Command(cfg config.Config) *command.Command {
 	flagSet := flag.NewFlagSet("list", flag.ContinueOnError)
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
 	var orgIDFlag = flagSet.String("org-id", "", "TinaCloud organization ID")
@@ -36,18 +35,18 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	var repoURLFlag = flagSet.String("repo-url", "", "GitHub Repo URL")
 	var siteURLFlag = flagSet.String("site-url", "http://localhost:3000", "Site URL")
 	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
+	var noInputFlag = flagSet.Bool("no-input", false, "Fail instead of prompting for input")
 
 	return &command.Command{
-		Name:        "create",
-		Description: "Create a new project",
-		Flags:       flagSet,
+		Name:          "create",
+		Description:   "Create a new project",
+		Example:       "tinacloud project create --name my-project --repo-url https://github.com/acme/my-project",
+		RequiresInput: true,
+		Flags:         flagSet,
 		Run: func(args []string) error {
-			out, err := runCreate(cfg, browser.OpenURL, *orgIDFlag, *projectNameFlag, *repoURLFlag, *siteURLFlag, *tinaDirFlag)
-			if err == nil && out.LoggedIn {
-				track(posthog.ProjectCreated(out.Project.OrgID, out.Project.ProjectID, out.Project.Name, out.Project.RepoURL, out.Project.SiteURLs))
-			}
+			out, err := runCreate(cfg, browser.OpenURL, !*noInputFlag && utils.IsTerminal(os.Stdin), *orgIDFlag, *projectNameFlag, *repoURLFlag, *siteURLFlag, *tinaDirFlag)
 			if *jsonFlag {
-				return utils.WriteJSONResult(os.Stdout, out, err)
+				return utils.WriteJSONResult(out, err)
 			}
 			if err != nil {
 				return err
@@ -61,7 +60,7 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	}
 }
 
-func runCreate(cfg config.Config, openURL func(string) error, orgID, projectName, repoURL, siteURL, tinaDir string) (createJSONOutput, error) {
+func runCreate(cfg config.Config, openURL func(string) error, allowPrompt bool, orgID, projectName, repoURL, siteURL, tinaDir string) (createJSONOutput, error) {
 	if orgID == "" {
 		if cwd, err := os.Getwd(); err == nil {
 			if tinacloudConfig, err := domain.TinaCloudConfigFromDisk(cwd, tinaDir); err == nil {
@@ -108,6 +107,9 @@ func runCreate(cfg config.Config, openURL func(string) error, orgID, projectName
 	if err != nil {
 		if !errors.Is(err, requests.ErrMissingInstallationID) {
 			return createJSONOutput{}, err
+		}
+		if !allowPrompt {
+			return createJSONOutput{}, errors.New("GitHub App installation is required; rerun interactively to complete installation")
 		}
 
 		ln, port, err := utils.CallbackListener()
@@ -160,7 +162,7 @@ func runCreate(cfg config.Config, openURL func(string) error, orgID, projectName
 			// User can copy string from terminal if this fails
 			_ = openURL(installationURL)
 
-			fmt.Printf(`Install the TinaCloud GitHub App.
+			fmt.Fprintf(os.Stderr, `Install the TinaCloud GitHub App.
 Attempting to open your default browser. If the browser does not open, open the following URL.
 
 %s
@@ -217,7 +219,7 @@ Attempting to open your default browser. If the browser does not open, open the 
 	if cwd, err := os.Getwd(); err == nil {
 		err = domain.SaveTinaCloudConfig(cwd, tinaDir, orgID, resp.CreatedProject.ProjectID)
 		if err != nil && !errors.Is(err, domain.ErrNotTinaProject) {
-			fmt.Fprintf(os.Stderr, "warning: project created but failed to write tinacloud config: %v\n", err)
+			fmt.Fprintf(os.Stderr, "failed to write tinacloud config: %v\n", err)
 		}
 	}
 

@@ -5,16 +5,15 @@ import (
 	siteurl "tina.io/tinacloud-cli/internal/cli/project/update/site-url"
 	"tina.io/tinacloud-cli/internal/command"
 	"tina.io/tinacloud-cli/internal/config"
-	"tina.io/tinacloud-cli/internal/posthog"
 )
 
-func Command(cfg config.Config, track posthog.Tracker) *command.Command {
+func Command(cfg config.Config) *command.Command {
 	return &command.Command{
 		Name:        "update",
 		Description: "Update a projects information",
 		SubCommands: []*command.Command{
-			siteurl.Command(cfg, track),
-			protectedbranch.Command(cfg, track),
+			siteurl.Command(cfg),
+			protectedbranch.Command(cfg),
 		},
 	}
 }

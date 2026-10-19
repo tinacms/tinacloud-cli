@@ -101,7 +101,7 @@ func TestLogin_AuthorizeRequestFails(t *testing.T) {
 	cfg := config.Config{}
 	cfg.TinaCloud.Endpoint = "http://127.0.0.1:1"
 
-	err := runLogin(cfg, nil, posthog.NoopTracker, posthog.NoopIdentifier)
+	err := runLogin(cfg, nil)
 	if err == nil {
 		t.Fatal("Login() = nil error, want error when authorize request fails")
 	}
@@ -156,7 +156,7 @@ func driveLogin(t *testing.T, tokenHandler http.HandlerFunc, callbackReq string)
 	cfg := config.Config{}
 	cfg.TinaCloud.Endpoint = srv.URL
 	tracker := &captureTracker{}
-	return tracker, runLogin(cfg, fakeOpener, tracker.track, tracker.identify)
+	return tracker, runLogin(cfg, fakeOpener)
 }
 
 // deliverCallback connects to the local callback server and sends request,
@@ -191,16 +191,9 @@ func fakeTokenHandler(w http.ResponseWriter, _ *http.Request) {
 }
 
 func TestLogin_Success(t *testing.T) {
-	tracker, err := driveLogin(t, fakeTokenHandler, validCallback)
+	_, err := driveLogin(t, fakeTokenHandler, validCallback)
 	if err != nil {
 		t.Fatalf("Login() = %v, want nil error", err)
-	}
-
-	if n := tracker.count(posthog.UserSignInSuccessEvent); n != 1 {
-		t.Errorf("UserSignInSuccess emitted %d times, want 1", n)
-	}
-	if want := []string{fakeUserID}; len(tracker.identified) != 1 || tracker.identified[0] != fakeUserID {
-		t.Errorf("identified = %v, want %v", tracker.identified, want)
 	}
 
 	tokens, err := auth.TokensFromCache(config.Config{})
@@ -263,7 +256,7 @@ func TestLogin_Errors(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			tracker, err := driveLogin(t, tc.tokenHandler, tc.callbackReq)
+			_, err := driveLogin(t, tc.tokenHandler, tc.callbackReq)
 			if err == nil {
 				t.Fatalf("Login() = nil error, want error")
 			}
@@ -272,12 +265,6 @@ func TestLogin_Errors(t *testing.T) {
 			}
 			if tc.wantErrContains != "" && !strings.Contains(err.Error(), tc.wantErrContains) {
 				t.Errorf("Login() = %v, want error containing %q", err, tc.wantErrContains)
-			}
-			if n := tracker.count(posthog.UserSignInSuccessEvent); n != 0 {
-				t.Errorf("UserSignInSuccess emitted %d times on a failed login, want 0", n)
-			}
-			if len(tracker.identified) != 0 {
-				t.Errorf("identified %v on a failed login, want none", tracker.identified)
 			}
 		})
 	}

@@ -40,3 +40,24 @@ func TestClientTimeout(t *testing.T) {
 		t.Errorf("Client.Get() = %v, want ErrTimeout", err)
 	}
 }
+
+func TestClientUserAgent(t *testing.T) {
+	SetVersion("v1.2.3")
+	t.Cleanup(func() { SetVersion("undefined") })
+	if got, want := Version(), "v1.2.3"; got != want {
+		t.Errorf("Version() = %q, want %q", got, want)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got, want := r.UserAgent(), "tinacloud-cli/v1.2.3"; got != want {
+			t.Errorf("User-Agent = %q, want %q", got, want)
+		}
+	}))
+	t.Cleanup(server.Close)
+
+	resp, err := Client.Get(server.URL)
+	if err != nil {
+		t.Fatalf("Client.Get() = %v", err)
+	}
+	resp.Body.Close()
+}

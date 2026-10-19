@@ -1,0 +1,53 @@
+tinacloud-configure(1) -- Configure a local Tina project
+========================================================
+
+## DESCRIPTION
+
+Most commands require you to pass in your TinaCloud organization ID and/or
+project ID. To make this process less repetitive, if inside a TinaCMS project,
+running `tinacloud configure` will write these two IDs to
+`<project-root>/<tina-dir>/tinacloud.json`. 
+
+Once written, commands that require any of these two values will attempt to
+read from said file first.
+
+## SYNOPSIS
+
+`tinacloud configure`
+
+## OPTIONS
+
+  * `--org-id`:
+    TinaCloud organization ID
+
+  * `--project-id`:
+    TinaCloud project ID
+
+  * `--tina-dir`:
+    Path to the tina folder (default "tina")
+
+  * `--no-input`:
+    Fail instead of prompting for project selection.
+
+## EXAMPLES
+
+Interactively choose a project for the TinaCMS project in the current directory:
+
+	$ tinacloud configure
+
+Configure the current project without a prompt:
+
+	$ tinacloud configure \
+		--org-id <organization-id> \
+		--project-id <project-id>
+
+Use a Tina directory other than the default:
+
+	$ tinacloud configure \
+		--org-id <organization-id> \
+		--project-id <project-id> \
+		--tina-dir .tina
+
+## COPYRIGHT
+
+Copyright 2026 TinaCMS

@@ -12,7 +12,6 @@ import (
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
 	"tina.io/tinacloud-cli/internal/httpclient"
-	"tina.io/tinacloud-cli/internal/posthog"
 	"tina.io/tinacloud-cli/internal/requests"
 	"tina.io/tinacloud-cli/internal/utils"
 )
@@ -22,7 +21,7 @@ type siteURLRemoveJSONOutput struct {
 	SiteURLs []string `json:"site_urls"`
 }
 
-func Command(cfg config.Config, track posthog.Tracker) *command.Command {
+func Command(cfg config.Config) *command.Command {
 	flagSet := flag.NewFlagSet("remove", flag.ContinueOnError)
 	var siteURLsFlag domain.UrlsFlag
 	flagSet.Var(&siteURLsFlag, "url", "A URL to remove from your TinaCloud project")
@@ -32,16 +31,15 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
 
 	return &command.Command{
-		Name:        "remove",
-		Description: "Remove site URLs",
-		Flags:       flagSet,
+		Name:          "remove",
+		Description:   "Remove site URLs",
+		Example:       "tinacloud project update site-url remove --url https://example.com",
+		RequiresInput: true,
+		Flags:         flagSet,
 		Run: func(args []string) error {
 			out, err := runRemove(cfg, siteURLsFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
-			if err == nil && out.LoggedIn {
-				track(posthog.SiteURLRemoved(siteURLsFlag))
-			}
 			if *jsonFlag {
-				return utils.WriteJSONResult(os.Stdout, out, err)
+				return utils.WriteJSONResult(out, err)
 			}
 			if err != nil {
 				return err

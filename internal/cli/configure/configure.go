@@ -19,6 +19,7 @@ import (
 	"tina.io/tinacloud-cli/internal/httpclient"
 	"tina.io/tinacloud-cli/internal/posthog"
 	"tina.io/tinacloud-cli/internal/requests"
+	"tina.io/tinacloud-cli/internal/utils"
 )
 
 type projectOption struct {
@@ -31,12 +32,17 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	var projectIDFlag = flagSet.String("project-id", "", "TinaCloud project ID")
 	var orgIDFlag = flagSet.String("org-id", "", "TinaCloud organization ID")
 	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
+	var noInputFlag = flagSet.Bool("no-input", false, "Fail instead of prompting for input")
 
 	return &command.Command{
 		Name:        "configure",
 		Description: "Configure a local Tina project",
+		Example:     "tinacloud configure --org-id org-123 --project-id project-123",
 		Flags:       flagSet,
 		Run: func(args []string) error {
+			if (*noInputFlag || !utils.IsTerminal(os.Stdin)) && *orgIDFlag == "" && *projectIDFlag == "" {
+				return errors.New("interactive configuration requires a terminal; pass --org-id and --project-id")
+			}
 			cwd, err := os.Getwd()
 			if err != nil {
 				return fmt.Errorf("failed to get current directory: %w", err)

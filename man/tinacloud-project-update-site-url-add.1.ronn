@@ -1,0 +1,44 @@
+tinacloud-project-update-site-url-add(1) -- Add a site URL
+==========================================================
+
+## DESCRIPTION
+
+Register a new site URL to the given project.
+
+## SYNOPSIS
+
+`tinacloud project update site-url add`
+
+## OPTIONS
+
+  * `--org-id`:
+    TinaCloud organization ID
+
+  * `--project-id`:
+    TinaCloud project ID
+
+  * `--tina-dir`:
+    Path to the tina folder (default "tina")
+
+  * `--url`:
+    A URL to register against your TinaCloud project
+
+  * `--json`:
+    Print the result as JSON
+
+## EXAMPLES
+
+	$ tinacloud project update site-url add \
+		--url "https://localhost:3000" \
+		--url "https://mysite.com"
+
+## COPYRIGHT
+
+Copyright 2026 TinaCMS
+
+## SEE ALSO
+
+tinacloud-project-list(1), tinacloud-project-create(1),
+tinacloud-project-status(1), tinacloud-project-update-site-url-remove(1),
+tinacloud-project-update-protected-branch-add(1),
+tinacloud-project-update-protected-branch-remove(1)

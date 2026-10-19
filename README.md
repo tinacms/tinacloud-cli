@@ -32,8 +32,8 @@ page](https://github.com/tinacms/tinacloud-cli/releases/).
 - Windows (x86_64): tinacloud-windows-x86_64.zip
 - Windows (ARM): tinacloud-windows-aarch64.zip
 
-The archive file contains a compressed version of the TinaCloud CLI binary. If
-you would like to add it to your PATH then you must do this yourself.
+The archive contains the TinaCloud CLI binary and its manual pages in `man/`.
+To add the binary to your PATH, you must do this yourself.
 
 ### Build from source
 ```
@@ -42,6 +42,17 @@ $ cd tinacloud-cli
 $ go build -o tinacloud ./cmd/tinacloud
 $ go install ./cmd/tinacloud
 ```
+
+### Uninstall
+
+For the default installation, remove the binary and its manual pages:
+
+```
+sudo rm -f /usr/local/bin/tinacloud /usr/local/share/man/man1/tinacloud*.1
+```
+
+If you set `INSTALL_PATH` or `MAN_PATH` when installing, remove
+`$INSTALL_PATH/tinacloud` and `$MAN_PATH/tinacloud*.1` instead.
 
 ## Getting started
 Before using `tinacloud`, you need to authenticate with TinaCloud:
@@ -67,6 +78,20 @@ Available Commands:
   configure   Configure a local Tina project
   completion  Generate shell completion scripts
 ```
+
+## Telemetry
+
+Telemetry is disabled by default. To enable usage and error reporting, set
+`TINACLOUD_TELEMETRY=true` in the environment before running the CLI.
+
+When enabled, the CLI sends:
+
+- A configuration-completed event with the configuration method.
+- A failed-command event with the command path, error message, and command
+  arguments.
+
+Events are associated with the signed-in TinaCloud user when available;
+otherwise, they use a random ID for that CLI invocation.
 
 ### Enable Autocomplete
 Autocomplete can be enabled by installing one of the provided autocomplete

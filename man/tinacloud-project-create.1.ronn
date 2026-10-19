@@ -1,0 +1,53 @@
+tinacloud-project-create(1) -- Create a project
+===============================================
+
+## DESCRIPTION
+
+Create a new TinaCloud project.
+
+## SYNOPSIS
+
+`tinacloud project create`
+
+## OPTIONS
+
+  * `--name`:
+    Project name
+
+  * `--org-id`:
+    TinaCloud organization ID
+
+  * `--repo-url`:
+    GitHub repo URL
+
+  * `--site-url`:
+    Site URL (default "http://localhost:3000")
+
+  * `--tina-dir`:
+    Path to the tina folder (default "tina")
+
+  * `--json`:
+    Print the result as JSON
+
+  * `--no-input`:
+    Fail instead of prompting for GitHub App installation.
+
+## EXAMPLES
+
+	$ tinacloud project create \
+		--name "My awesome site" \
+		--org-id 1e1d3398-8255-4812-9f67-388993734a01 \
+		--repo-url "https://github.com/<user>/<repo>" \
+		--site-url "https://mysite.com"
+
+## COPYRIGHT
+
+Copyright 2026 TinaCMS
+
+## SEE ALSO
+
+tinacloud-project-status(1), tinacloud-project-list(1),
+tinacloud-project-update-site-url-add(1),
+tinacloud-project-update-site-url-remove(1),
+tinacloud-project-update-protected-branch-add(1),
+tinacloud-project-update-protected-branch-remove(1)

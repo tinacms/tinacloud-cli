@@ -1,0 +1,23 @@
+tinacloud-completion-fish(1) -- Generate fish completion script
+===============================================================
+
+## DESCRIPTION
+
+Generate a fish completion script.
+
+## SYNOPSIS
+
+`tinacloud completion fish`
+
+## EXAMPLES
+
+	$ tinacloud completion fish > ~/.config/fish/completions/tinacloud.fish
+
+## COPYRIGHT
+
+Copyright 2026 TinaCMS
+
+## SEE ALSO
+
+tinacloud-completion-bash(1), tinacloud-completion-zsh(1),
+tinacloud-completion-powershell(1)

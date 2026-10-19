@@ -40,8 +40,6 @@ func TestDispatch(t *testing.T) {
 		wantLog []string
 	}{
 		{name: "runs leaf subcommand", args: []string{"org", "list"}, wantLog: []string{"list/"}},
-		{name: "passes positional args to leaf", args: []string{"org", "list", "extra"}, wantLog: []string{"list/extra"}},
-		{name: "flag-less command receives all args", args: []string{"bare", "one", "two"}, wantLog: []string{"bare/one,two"}},
 		{name: "flags parsed before subcommand dispatch", args: []string{"--name", "foo", "org", "list"}, wantLog: []string{"list/"}},
 		{name: "help flag is handled gracefully", args: []string{"--help"}},
 		{name: "help arg is handled gracefully", args: []string{"bare", "--help"}},
@@ -62,6 +60,78 @@ func TestDispatch(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDispatchDoesNotRunOnTrailingHelpOrArguments(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    []string
+		wantErr bool
+	}{
+		{name: "trailing help", args: []string{"--project-id", "project-1", "unexpected", "--help"}},
+		{name: "unexpected arguments", args: []string{"--project-id", "project-1", "unexpected", "--bogus"}, wantErr: true},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			flags := flag.NewFlagSet("configure", flag.ContinueOnError)
+			flags.String("project-id", "", "project ID")
+			called := false
+			cmd := &Command{
+				Name:  "configure",
+				Flags: flags,
+				Run: func([]string) error {
+					called = true
+					return nil
+				},
+			}
+
+			err := cmd.Dispatch(tc.args, []string{"configure"})
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("Dispatch(%v) = %v, wantErr %v", tc.args, err, tc.wantErr)
+			}
+			if called {
+				t.Errorf("Dispatch(%v) ran the command, want no execution", tc.args)
+			}
+		})
+	}
+}
+
+func TestDispatchRequiresInput(t *testing.T) {
+	newCommand := func() (*Command, *bool) {
+		flags := flag.NewFlagSet("create", flag.ContinueOnError)
+		flags.String("name", "", "project name")
+		called := false
+		return &Command{
+			Name:          "create",
+			Flags:         flags,
+			RequiresInput: true,
+			Run: func([]string) error {
+				called = true
+				return nil
+			},
+		}, &called
+	}
+
+	t.Run("shows help without input", func(t *testing.T) {
+		cmd, called := newCommand()
+		if err := cmd.Dispatch(nil, []string{"project", "create"}); err != nil {
+			t.Fatalf("Dispatch() = %v", err)
+		}
+		if *called {
+			t.Error("Dispatch() ran a command without input")
+		}
+	})
+
+	t.Run("runs with input", func(t *testing.T) {
+		cmd, called := newCommand()
+		if err := cmd.Dispatch([]string{"--name", "example"}, []string{"project", "create"}); err != nil {
+			t.Fatalf("Dispatch() = %v", err)
+		}
+		if !*called {
+			t.Error("Dispatch() did not run a command with input")
+		}
+	})
 }
 
 func TestPrintUsage(t *testing.T) {
@@ -92,6 +162,7 @@ func TestPrintUsage(t *testing.T) {
 			Name:            "configure",
 			Description:     "Configure a local Tina project",
 			LongDescription: "Long help text.",
+			Example:         "tinacloud configure --org-id org-123 --project-id project-123",
 			Flags:           flags,
 		}
 
@@ -100,6 +171,7 @@ func TestPrintUsage(t *testing.T) {
 		got := buf.String()
 		for _, want := range []string{
 			"Configure a local Tina project\n\nUsage:\n  tinacloud configure\n\nLong help text.\n",
+			"Example:\n  tinacloud configure --org-id org-123 --project-id project-123\n",
 			"Flags:\n",
 			"-tina-dir",
 		} {

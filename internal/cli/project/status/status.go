@@ -29,11 +29,12 @@ func Command(cfg config.Config) *command.Command {
 	return &command.Command{
 		Name:        "status",
 		Description: "List a project's status",
+		Example:     "tinacloud project status --project-id project-123",
 		Flags:       flagSet,
 		Run: func(args []string) error {
 			out, err := runStatus(cfg, *projectIDFlag, *tinaDirFlag)
 			if *jsonFlag {
-				return utils.WriteJSONResult(os.Stdout, out, err)
+				return utils.WriteJSONResult(out, err)
 			}
 			if err != nil {
 				return err

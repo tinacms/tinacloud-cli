@@ -1,0 +1,58 @@
+tinacloud(1) -- A CLI tool to interact with TinaCloud related services
+======================================================================
+
+## SYNOPSIS
+
+`tinacloud` [command]
+
+## DESCRIPTION
+
+`tinacloud` allows the management of organisations, projects, and other
+TinaCloud related actions from the CLI.
+
+## OPTIONS
+
+  * `auth`:
+    Authenticate with TinaCloud
+
+  * `org`:
+    Interact with organizations
+
+  * `project`:
+    Interact with projects
+
+  * `configure`:
+    Configure a local Tina project
+
+  * `completion`:
+    Generate shell completion scripts
+
+  * `-v`, `--version`:
+    Print the current installed version
+
+  * `-h`, `--help`:
+    Print the help menu
+
+## EXAMPLES
+
+Sign in, then configure the TinaCMS project in the current directory:
+
+	$ tinacloud auth login
+	$ tinacloud configure
+
+List the projects for an organisation:
+
+	$ tinacloud project list --org-id <organization-id>
+
+Print a machine-readable result:
+
+	$ tinacloud org list --json
+
+## SEE ALSO
+
+tinacloud-auth-login(1), tinacloud-configure(1), tinacloud-org-list(1),
+tinacloud-project-list(1), tinacloud-project-create(1)
+
+## COPYRIGHT
+
+Copyright 2026 TinaCMS

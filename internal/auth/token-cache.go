@@ -101,7 +101,6 @@ func TokensFromCache(cfg config.Config) (TokenCache, error) {
 	}
 
 	if tokens.ExpiresAt.Before(time.Now()) {
-		fmt.Fprintln(os.Stderr, "auth token expired, refreshing...")
 		params := url.Values{}
 		params.Set("grant_type", "refresh_token")
 		params.Set("refresh_token", tokens.RefreshToken)
@@ -141,7 +140,6 @@ func TokensFromCache(cfg config.Config) (TokenCache, error) {
 		if err := SaveTokens(tokens); err != nil {
 			return TokenCache{}, fmt.Errorf("failed to save tokens to file: %w", err)
 		}
-		fmt.Fprintln(os.Stderr, "successfully refreshed auth token")
 	}
 
 	return tokens, nil

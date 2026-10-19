@@ -1,0 +1,31 @@
+tinacloud-completion-bash(1) -- Generate bash completion script
+===============================================================
+
+## DESCRIPTION
+
+Generate a bash completion script.
+
+First, ensure "bash-completion" is installed via your package manager.
+
+Try it for the current session:
+	source <(tinacloud completion bash)
+
+Persist it by adding this to your ~/.bash_profile:
+	eval "$(tinacloud completion bash)"
+
+## SYNOPSIS
+
+`tinacloud completion bash`
+
+## EXAMPLES
+
+	$ echo 'eval "$(tinacloud completion bash)"' >> ~/.bash_profile
+
+## COPYRIGHT
+
+Copyright 2026 TinaCMS
+
+## SEE ALSO
+
+tinacloud-completion-zsh(1), tinacloud-completion-fish(1),
+tinacloud-completion-powershell(1)

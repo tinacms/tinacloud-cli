@@ -3,17 +3,24 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"io"
+	"os"
 )
 
-func WriteJSONResult(w io.Writer, v any, err error) error {
+type OutputError struct {
+	err error
+}
+
+func (e *OutputError) Error() string { return e.err.Error() }
+func (e *OutputError) Unwrap() error { return e.err }
+
+func WriteJSONResult(v any, err error) error {
 	if err != nil {
 		data, _ := json.Marshal(struct {
 			Error string `json:"error"`
 		}{err.Error()})
 
-		fmt.Fprintln(w, string(data))
-		return err
+		fmt.Fprintln(os.Stderr, string(data))
+		return &OutputError{err: err}
 	}
 
 	data, marshalErr := json.Marshal(v)
@@ -21,6 +28,6 @@ func WriteJSONResult(w io.Writer, v any, err error) error {
 		return fmt.Errorf("failed to marshal output: %w", marshalErr)
 	}
 
-	fmt.Fprintln(w, string(data))
+	fmt.Fprintln(os.Stdout, string(data))
 	return nil
 }

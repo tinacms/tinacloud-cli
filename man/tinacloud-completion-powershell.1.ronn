@@ -1,0 +1,34 @@
+tinacloud-completion-powershell(1) -- Generate powershell completion script
+===========================================================================
+
+## DESCRIPTION
+
+Generate a powershell completion script.
+
+Open your profile script, creating it if necessary:
+	mkdir -Path (Split-Path -Parent $profile) -ErrorAction SilentlyContinue
+	notepad $profile
+
+Add this line and save the file:
+	Invoke-Expression -Command $(tinacloud completion powershell | Out-String)
+
+## SYNOPSIS
+
+`tinacloud completion powershell`
+
+## EXAMPLES
+
+Enable completions for the current PowerShell session:
+
+	PS> Invoke-Expression -Command $(tinacloud completion powershell | Out-String)
+
+To persist them, add that command to your PowerShell profile.
+
+## COPYRIGHT
+
+Copyright 2026 TinaCMS
+
+## SEE ALSO
+
+tinacloud-completion-bash(1), tinacloud-completion-zsh(1),
+tinacloud-completion-fish(1)

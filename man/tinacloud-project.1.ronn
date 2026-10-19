@@ -1,0 +1,46 @@
+tinacloud-project(1) -- Interact with TinaCloud projects
+========================================================
+
+## SYNOPSIS
+
+`tinacloud project` <command>
+
+## DESCRIPTION
+
+Create, inspect, and update TinaCloud projects. Commands that need a project
+or organisation ID read `tina/tinacloud.json` in the current project when IDs
+are not supplied explicitly.
+
+## COMMANDS
+
+  * `create`:
+    Create a project.
+
+  * `list`:
+    List projects for an organisation.
+
+  * `status`:
+    Display a project's status.
+
+  * `update`:
+    Update site URLs or protected branches.
+
+## EXAMPLES
+
+List projects for an organisation:
+
+	$ tinacloud project list --org-id <organization-id>
+
+Show the configured project's status:
+
+	$ tinacloud project status
+
+## COPYRIGHT
+
+Copyright 2026 TinaCMS
+
+## SEE ALSO
+
+tinacloud-project-create(1), tinacloud-project-list(1),
+tinacloud-project-status(1), tinacloud-project-update(1),
+tinacloud-configure(1)
