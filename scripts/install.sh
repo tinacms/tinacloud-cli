@@ -91,7 +91,7 @@ fi
 suffix="-${platform}-${arch}.tar.gz"
 targetFile="/tmp/tinacloud$suffix"
 targetExe="/tmp/tinacloud"
-targetMan="/tmp/tinacloud-man"
+targetMan="/tmp/man"
 
 if [ -e "$targetFile" ]; then
     rm "$targetFile"
