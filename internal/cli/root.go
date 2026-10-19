@@ -25,6 +25,16 @@ func (s *State) Root(version string) error {
 	return err
 }
 
+func commandPath(args []string) string {
+	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
+		return ""
+	}
+	if len(args) == 1 || strings.HasPrefix(args[1], "-") {
+		return args[0]
+	}
+	return args[0] + " " + args[1]
+}
+
 func (s *State) rootCommand(version string) *command.Command {
 	flagSet := flag.NewFlagSet("tinacloud", flag.ContinueOnError)
 	versionFlag := flagSet.Bool("version", false, "Print the current installed version")
@@ -34,9 +44,9 @@ func (s *State) rootCommand(version string) *command.Command {
 		Name:  "tinacloud",
 		Flags: flagSet,
 		SubCommands: []*command.Command{
-			auth.Command(s.config, s.Track, s.Identify),
+			auth.Command(s.config),
 			org.Command(s.config),
-			project.Command(s.config, s.Track),
+			project.Command(s.config),
 			configure.Command(s.config, s.Track),
 		},
 	}
@@ -53,19 +63,6 @@ func (s *State) rootCommand(version string) *command.Command {
 	root.SubCommands = append(root.SubCommands, completionCommand(root))
 
 	return root
-}
-
-// commandPath returns the command and subcommand (e.g. "project list"),
-// dropping flag values so events group by command rather than by arbitrary
-// user input.
-func commandPath(args []string) string {
-	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
-		return ""
-	}
-	if len(args) == 1 || strings.HasPrefix(args[1], "-") {
-		return args[0]
-	}
-	return args[0] + " " + args[1]
 }
 
 func completionCommand(root *command.Command) *command.Command {

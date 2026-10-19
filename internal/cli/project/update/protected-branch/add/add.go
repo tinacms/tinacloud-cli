@@ -13,7 +13,6 @@ import (
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
 	"tina.io/tinacloud-cli/internal/httpclient"
-	"tina.io/tinacloud-cli/internal/posthog"
 	"tina.io/tinacloud-cli/internal/requests"
 	"tina.io/tinacloud-cli/internal/utils"
 )
@@ -23,7 +22,7 @@ type protectedBranchAddJSONOutput struct {
 	ProtectedBranches []string `json:"protected_branches"`
 }
 
-func Command(cfg config.Config, track posthog.Tracker) *command.Command {
+func Command(cfg config.Config) *command.Command {
 	flagSet := flag.NewFlagSet("add", flag.ContinueOnError)
 	var protectedBranchesFlag domain.BranchesFlag
 	flagSet.Var(&protectedBranchesFlag, "branch", "A protected branch to add to your TinaCloud project")
@@ -40,9 +39,6 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 		Flags:         flagSet,
 		Run: func(args []string) error {
 			out, err := runAdd(cfg, protectedBranchesFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
-			if err == nil && out.LoggedIn {
-				track(posthog.ProtectedBranchAdded(protectedBranchesFlag))
-			}
 			if *jsonFlag {
 				return utils.WriteJSONResult(out, err)
 			}

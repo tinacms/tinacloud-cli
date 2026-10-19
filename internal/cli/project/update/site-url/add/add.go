@@ -12,7 +12,6 @@ import (
 	"tina.io/tinacloud-cli/internal/config"
 	"tina.io/tinacloud-cli/internal/domain"
 	"tina.io/tinacloud-cli/internal/httpclient"
-	"tina.io/tinacloud-cli/internal/posthog"
 	"tina.io/tinacloud-cli/internal/requests"
 	"tina.io/tinacloud-cli/internal/utils"
 )
@@ -22,7 +21,7 @@ type siteURLAddJSONOutput struct {
 	SiteURLs []string `json:"site_urls"`
 }
 
-func Command(cfg config.Config, track posthog.Tracker) *command.Command {
+func Command(cfg config.Config) *command.Command {
 	flagSet := flag.NewFlagSet("add", flag.ContinueOnError)
 	var siteURLsFlag domain.UrlsFlag
 	flagSet.Var(&siteURLsFlag, "url", "A URL to register against your TinaCloud project")
@@ -39,9 +38,6 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 		Flags:         flagSet,
 		Run: func(args []string) error {
 			out, err := runAdd(cfg, siteURLsFlag, *orgIDFlag, *projectIDFlag, *tinaDirFlag)
-			if err == nil && out.LoggedIn {
-				track(posthog.SiteURLAdded(siteURLsFlag))
-			}
 			if *jsonFlag {
 				return utils.WriteJSONResult(out, err)
 			}
