@@ -84,6 +84,15 @@ Available Commands:
 Telemetry is disabled by default. To enable usage and error reporting, set
 `TINACLOUD_TELEMETRY=true` in the environment before running the CLI.
 
+When enabled, the CLI sends:
+
+- A configuration-completed event with the configuration method.
+- A failed-command event with the command path, error message, and command
+  arguments.
+
+Events are associated with the signed-in TinaCloud user when available;
+otherwise, they use a random ID for that CLI invocation.
+
 ### Enable Autocomplete
 Autocomplete can be enabled by installing one of the provided autocomplete
 scripts into your shell profile, if not there already.
