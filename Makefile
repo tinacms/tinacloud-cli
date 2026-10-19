@@ -3,7 +3,7 @@ CMD		= ./cmd/tinacloud
 VERSION	= $(shell cat .version)
 ENDPOINT ?= https://identity-v2.tinajs.io
 FLAGS	= -ldflags='-X main.version=$(VERSION) -X main.endpoint=$(ENDPOINT)'
-RELEASE_FLAGS = -trimpath -buildvcs=false -ldflags='-s -w -X main.version=$(VERSION) -X main.dev=false'
+RELEASE_FLAGS = -trimpath -buildvcs=false -ldflags='-s -w -X main.version=$(VERSION) -X main.endpoint=$(ENDPOINT) -X main.dev=false'
 
 ifeq ($(OS),Windows_NT)
 	BINARY_NAME	= $(NAME).exe
