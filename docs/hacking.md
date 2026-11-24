@@ -30,7 +30,10 @@ go fmt ./...
 
 To build:
 ```bash
-go build -o ./build/tinacloud ./cmd/tinacloud
+go build \
+	-ldflags "-X main.version=$(cat .version) -X main.endpoint=https://identity-v2.tinajs.io" \
+	-o ./build/tinacloud \
+	./cmd/tinacloud
 ```
 
 To run security scans and code vets:
