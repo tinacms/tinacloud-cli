@@ -28,6 +28,10 @@ jobs:
       - name: Install ronn
         run: gem install ronn-ng --version 0.10.1
 
+      - name: Add gem executables to PATH
+        if: inputs.platform == 'linux'
+        run: echo "$(ruby -e 'puts Gem.bindir(Gem.user_dir)')" >> "$GITHUB_PATH"
+
       - name: Package
         run: make package-${{ inputs.platform }} VERSION=${{ inputs.version }}
         env:
