@@ -4,6 +4,7 @@
 - [go](https://go.dev/doc/install)
 - [gosec](https://github.com/securego/gosec#local-installation)
 - [ronn](https://github.com/rtomayko/ronn) (for generating man pages)
+- [groff](https://www.gnu.org/software/groff) (used by ronn when generating man pages on Linux and macOS)
 
 ## Running tinacloud-cli
 
@@ -51,3 +52,5 @@ To generate man pages:
 ```bash
 ronn --roff --output-dir ./build/man ./man/*.1.ronn
 ```
+
+On Windows, run `make man` to generate the pages using ronn's pipe mode.
