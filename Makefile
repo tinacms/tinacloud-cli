@@ -34,7 +34,7 @@ build-ci:
 man:
 ifeq ($(OS),Windows_NT)
 	New-Item -ItemType Directory -Force -Path ./build/man | Out-Null
-	Get-ChildItem -Path ./man -Filter *.1.ronn | ForEach-Object { ronn --roff --output-dir ./build/man $$_.FullName }
+	Get-ChildItem -Path ./man -Filter *.1.ronn | ForEach-Object { $$lines = @(ronn --pipe --roff $$_.FullName); if ($$LASTEXITCODE -ne 0) { throw "ronn failed for $$($$_.FullName)" }; [IO.File]::WriteAllLines((Join-Path ./build/man $$_.BaseName), [string[]]$$lines, [Text.UTF8Encoding]::new($$false)) }
 else
 	mkdir -p ./build/man
 	ronn --roff --output-dir ./build/man ./man/*.1.ronn
