@@ -39,8 +39,9 @@ To add the binary to your PATH, you must do this yourself.
 ```
 $ git clone https://github.com/tinacms/tinacloud-cli
 $ cd tinacloud-cli
-$ go build -o tinacloud ./cmd/tinacloud
-$ go install ./cmd/tinacloud
+$ make build man
+$ mv build/tinacloud /usr/local/bin/
+$ mv build/man/* /usr/local/share/man/man1/
 ```
 
 ### Uninstall
@@ -48,7 +49,7 @@ $ go install ./cmd/tinacloud
 For the default installation, remove the binary and its manual pages:
 
 ```
-sudo rm -f /usr/local/bin/tinacloud /usr/local/share/man/man1/tinacloud*.1
+rm /usr/local/bin/tinacloud /usr/local/share/man/man1/tinacloud*.1
 ```
 
 If you set `INSTALL_PATH` or `MAN_PATH` when installing, remove
