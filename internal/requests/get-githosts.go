@@ -11,7 +11,8 @@ import (
 )
 
 func GetGitHosts(endpoint, accessToken, orgID string) (domain.GetV2GitHostsResponse, error) {
-	if err := validateIDs(orgID); err != nil {
+	orgID, err := canonicalID(orgID)
+	if err != nil {
 		return domain.GetV2GitHostsResponse{}, err
 	}
 

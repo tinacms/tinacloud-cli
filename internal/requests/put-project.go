@@ -12,7 +12,12 @@ import (
 )
 
 func PutProject(endpoint, accessToken, orgID, projectID string, body domain.PutV2ProjectBody) error {
-	if err := validateIDs(orgID, projectID); err != nil {
+	orgID, err := canonicalID(orgID)
+	if err != nil {
+		return err
+	}
+	projectID, err = canonicalID(projectID)
+	if err != nil {
 		return err
 	}
 

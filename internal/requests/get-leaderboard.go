@@ -12,7 +12,8 @@ import (
 )
 
 func GetLeaderboard(endpoint, accessToken, orgID, to, from string) ([]domain.LeaderboardEntry, error) {
-	if err := validateIDs(orgID); err != nil {
+	orgID, err := canonicalID(orgID)
+	if err != nil {
 		return []domain.LeaderboardEntry{}, err
 	}
 

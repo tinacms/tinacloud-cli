@@ -11,7 +11,8 @@ import (
 )
 
 func GetProject(endpoint, accessToken, projectID string) (domain.GetV2ProjectResponse, error) {
-	if err := validateIDs(projectID); err != nil {
+	projectID, err := canonicalID(projectID)
+	if err != nil {
 		return domain.GetV2ProjectResponse{}, err
 	}
 

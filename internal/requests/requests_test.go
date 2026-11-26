@@ -221,26 +221,44 @@ func TestRequestsRejectInvalidIDs(t *testing.T) {
 	}
 }
 
-func TestValidateIDsUUIDv4(t *testing.T) {
-	for _, id := range []string{
-		"abcdefab-1234-4234-8234-abcdefabcdef",
-		"ABCDEFAB-1234-4234-9234-ABCDEFABCDEF",
-		"abcdefab-1234-4234-a234-abcdefabcdef",
-		"ABCDEFAB-1234-4234-B234-ABCDEFABCDEF",
-	} {
-		if err := validateIDs(id); err != nil {
-			t.Errorf("validateIDs(%q) = %v, want nil", id, err)
-		}
+func TestRequestsCanonicalizeIDs(t *testing.T) {
+	server, rec := jsonServer(t, http.StatusUnauthorized, "")
+	const id = "abcdefab-1234-8234-8234-abcdefabcdef"
+	const alternate = "{ABCDEFAB-1234-8234-8234-ABCDEFABCDEF}"
+	tests := []struct {
+		name string
+		path string
+		call func() error
+	}{
+		{name: "projects", path: "/v2/organizations/" + id + "/apps", call: func() error { _, err := GetProjects(server.URL, "token", alternate); return err }},
+		{name: "project", path: "/v2/apps/" + id, call: func() error { _, err := GetProject(server.URL, "token", alternate); return err }},
+		{name: "user", path: "/v2/users/" + id, call: func() error { _, err := GetTinaCloudUser(server.URL, "token", alternate); return err }},
+		{name: "hosts", path: "/v2/organizations/" + id + "/githosts", call: func() error { _, err := GetGitHosts(server.URL, "token", alternate); return err }},
+		{name: "create", path: "/v2/organizations/" + id + "/apps", call: func() error {
+			_, err := CreateProject(server.URL, "token", alternate, domain.PostV2ProjectsBody{})
+			return err
+		}},
+		{name: "update", path: "/v2/organizations/" + id + "/apps/" + id, call: func() error { return PutProject(server.URL, "token", alternate, alternate, domain.PutV2ProjectBody{}) }},
+		{name: "leaderboard", path: "/leaderboard/org/" + id, call: func() error { _, err := GetLeaderboard(server.URL, "token", alternate, "", ""); return err }},
 	}
-	for _, id := range []string{
-		"abcdefab-1234-1234-8234-abcdefabcdef",
-		"abcdefab-1234-4234-c234-abcdefabcdef",
-		"{abcdefab-1234-4234-8234-abcdefabcdef}",
-		"urn:uuid:abcdefab-1234-4234-8234-abcdefabcdef",
-		"abcdefab123442348234abcdefabcdef",
-	} {
-		if err := validateIDs(id); err == nil {
-			t.Errorf("validateIDs(%q) = nil, want error", id)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := tc.call(); !errors.Is(err, httpclient.ErrUnauthorized) {
+				t.Fatalf("request error = %v, want unauthorized", err)
+			}
+			if rec.req.URL.Path != tc.path {
+				t.Errorf("request path = %q, want %q", rec.req.URL.Path, tc.path)
+			}
+		})
+	}
+}
+
+func TestCanonicalID(t *testing.T) {
+	const want = "abcdefab-1234-8234-8234-abcdefabcdef"
+	for _, id := range []string{want, "ABCDEFAB-1234-8234-8234-ABCDEFABCDEF", "{abcdefab-1234-8234-8234-abcdefabcdef}", "urn:uuid:abcdefab-1234-8234-8234-abcdefabcdef", "abcdefab123482348234abcdefabcdef"} {
+		got, err := canonicalID(id)
+		if err != nil || got != want {
+			t.Errorf("canonicalID(%q) = %q, %v; want %q", id, got, err, want)
 		}
 	}
 }

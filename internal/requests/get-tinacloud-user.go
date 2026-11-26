@@ -11,7 +11,8 @@ import (
 )
 
 func GetTinaCloudUser(endpoint, accessToken, userID string) (domain.TinaCloudUser, error) {
-	if err := validateIDs(userID); err != nil {
+	userID, err := canonicalID(userID)
+	if err != nil {
 		return domain.TinaCloudUser{}, err
 	}
 

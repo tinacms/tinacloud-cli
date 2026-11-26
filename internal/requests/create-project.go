@@ -16,7 +16,8 @@ import (
 var ErrMissingInstallationID error = errors.New("failed to retrieve installation ID")
 
 func CreateProject(endpoint, accessToken, orgID string, body domain.PostV2ProjectsBody) (domain.PostV2ProjectResponse, error) {
-	if err := validateIDs(orgID); err != nil {
+	orgID, err := canonicalID(orgID)
+	if err != nil {
 		return domain.PostV2ProjectResponse{}, err
 	}
 
