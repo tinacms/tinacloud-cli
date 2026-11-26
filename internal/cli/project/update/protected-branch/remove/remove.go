@@ -90,7 +90,7 @@ func runRemove(cfg config.Config, removeProtectedBranches []string, orgID, proje
 		return protectedBranchRemoveJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
-	project, err := requests.GetProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, projectID)
+	project, err := requests.GetProject(cfg.TinaCloud.IdentityEndpoint, tokens.AccessToken, projectID)
 	if err != nil {
 		return protectedBranchRemoveJSONOutput{}, err
 	}
@@ -134,7 +134,7 @@ func runRemove(cfg config.Config, removeProtectedBranches []string, orgID, proje
 		ProtectedBranches: &protectedBranches,
 	}
 
-	err = requests.PutProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, projectID, body)
+	err = requests.PutProject(cfg.TinaCloud.IdentityEndpoint, tokens.AccessToken, orgID, projectID, body)
 	if err != nil {
 		return protectedBranchRemoveJSONOutput{}, err
 	}

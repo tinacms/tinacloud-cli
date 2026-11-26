@@ -183,7 +183,7 @@ func TestRunConfigureBackend(t *testing.T) {
 		}))
 		defer server.Close()
 
-		cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: server.URL}}
+		cfg := config.Config{TinaCloud: config.TinaCloudConfig{IdentityEndpoint: server.URL}}
 		if _, err := runConfigure(cfg, t.TempDir(), "", "", "tina", stubLoader(auth.TokenCache{AccessToken: "tok"}, nil), posthog.NoopTracker); err == nil {
 			t.Fatal("runConfigure() = nil error, want error")
 		}
@@ -202,7 +202,7 @@ func TestRunConfigureBackend(t *testing.T) {
 		}))
 		defer server.Close()
 
-		cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: server.URL}}
+		cfg := config.Config{TinaCloud: config.TinaCloudConfig{IdentityEndpoint: server.URL}}
 		_, err := runConfigure(cfg, t.TempDir(), "", "", "tina", stubLoader(auth.TokenCache{AccessToken: "tok"}, nil), posthog.NoopTracker)
 		if err == nil || !strings.Contains(err.Error(), "account has no projects") {
 			t.Fatalf("runConfigure() = %v, want \"account has no projects\" error", err)

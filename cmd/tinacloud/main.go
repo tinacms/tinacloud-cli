@@ -12,9 +12,10 @@ import (
 )
 
 var (
-	version  = "undefined"
-	dev      string
-	endpoint string
+	version           = "undefined"
+	dev               string
+	identity_endpoint string
+	content_endpoint  string
 )
 
 func main() {
@@ -25,7 +26,8 @@ func main() {
 			Dev: dev != "false",
 		},
 		TinaCloud: config.TinaCloudConfig{
-			Endpoint: endpoint,
+			IdentityEndpoint: identity_endpoint,
+			ContentEndpoint:  content_endpoint,
 		},
 	}
 

@@ -80,14 +80,14 @@ func runConfigure(cfg config.Config, cwd, orgID, projectID, tinaDir string, load
 		return false, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
-	organizations, err := requests.GetOrganizations(cfg.TinaCloud.Endpoint, tokens.AccessToken)
+	organizations, err := requests.GetOrganizations(cfg.TinaCloud.IdentityEndpoint, tokens.AccessToken)
 	if err != nil {
 		return false, err
 	}
 
 	var projectOptions []projectOption
 	for _, org := range organizations {
-		projects, err := requests.GetProjects(cfg.TinaCloud.Endpoint, tokens.AccessToken, org.Organization.ID)
+		projects, err := requests.GetProjects(cfg.TinaCloud.IdentityEndpoint, tokens.AccessToken, org.Organization.ID)
 		if err != nil {
 			return false, err
 		}

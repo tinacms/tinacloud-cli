@@ -65,7 +65,7 @@ func runStatus(cfg config.Config, loadTokens auth.TokenLoader) (statusJSONOutput
 		return statusJSONOutput{}, errors.New("failed to retrieve user id from access token")
 	}
 
-	user, err := requests.GetTinaCloudUser(cfg.TinaCloud.Endpoint, tokens.AccessToken, claims.TinaCloudUserID)
+	user, err := requests.GetTinaCloudUser(cfg.TinaCloud.IdentityEndpoint, tokens.AccessToken, claims.TinaCloudUserID)
 	if err != nil {
 		return statusJSONOutput{}, err
 	}

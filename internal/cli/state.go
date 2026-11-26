@@ -61,7 +61,7 @@ func resolveDistinctID() string {
 // No-op if already initialised.
 func (s *State) InitialisePostHog() error {
 	if s.posthog == nil {
-		posthogTokens, err := requests.GetPostHogToken(s.config.TinaCloud.Endpoint)
+		posthogTokens, err := requests.GetPostHogToken(s.config.TinaCloud.IdentityEndpoint)
 		if err != nil {
 			return fmt.Errorf("failed to get posthog tokens from tinacloud: %w", err)
 		}

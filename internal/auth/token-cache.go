@@ -105,7 +105,7 @@ func TokensFromCache(cfg config.Config) (TokenCache, error) {
 		params.Set("grant_type", "refresh_token")
 		params.Set("refresh_token", tokens.RefreshToken)
 
-		resp, err := httpclient.Client.PostForm(fmt.Sprintf("%s/oauth/token", cfg.TinaCloud.Endpoint), params)
+		resp, err := httpclient.Client.PostForm(fmt.Sprintf("%s/oauth/token", cfg.TinaCloud.IdentityEndpoint), params)
 		if err != nil {
 			return TokenCache{}, fmt.Errorf("failed to post code to cognito for refresh: %w", httpclient.ClassifyHTTPError(err))
 		}

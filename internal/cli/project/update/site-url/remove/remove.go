@@ -93,7 +93,7 @@ func runRemove(cfg config.Config, removeSiteURLs domain.UrlsFlag, orgID, project
 		return siteURLRemoveJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
-	project, err := requests.GetProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, projectID)
+	project, err := requests.GetProject(cfg.TinaCloud.IdentityEndpoint, tokens.AccessToken, projectID)
 	if err != nil {
 		return siteURLRemoveJSONOutput{}, err
 	}
@@ -132,7 +132,7 @@ func runRemove(cfg config.Config, removeSiteURLs domain.UrlsFlag, orgID, project
 		SiteURL:           strings.Join(uniqueSiteURLs, ","),
 	}
 
-	err = requests.PutProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, projectID, body)
+	err = requests.PutProject(cfg.TinaCloud.IdentityEndpoint, tokens.AccessToken, orgID, projectID, body)
 	if err != nil {
 		return siteURLRemoveJSONOutput{}, err
 	}

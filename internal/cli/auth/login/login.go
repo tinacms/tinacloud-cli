@@ -54,7 +54,7 @@ func runLogin(cfg config.Config, openURL func(string) error) error {
 			return http.ErrUseLastResponse
 		}
 
-		oauthURL := fmt.Sprintf("%s/oauth/authorize?code_challenge=%s&redirect_uri=http://localhost:%d/callback", cfg.TinaCloud.Endpoint, challenge, port)
+		oauthURL := fmt.Sprintf("%s/oauth/authorize?code_challenge=%s&redirect_uri=http://localhost:%d/callback", cfg.TinaCloud.IdentityEndpoint, challenge, port)
 		resp, err := client.Get(oauthURL)
 		if err != nil {
 			return fmt.Errorf("failed to authorize with tinacloud: %w", httpclient.ClassifyHTTPError(err))
@@ -116,7 +116,7 @@ func runLogin(cfg config.Config, openURL func(string) error) error {
 		params.Set("redirect_uri", fmt.Sprintf("http://localhost:%d/callback", port))
 		params.Set("code_verifier", verifier)
 
-		resp, err := httpclient.Client.PostForm(fmt.Sprintf("%s/oauth/token", cfg.TinaCloud.Endpoint), params)
+		resp, err := httpclient.Client.PostForm(fmt.Sprintf("%s/oauth/token", cfg.TinaCloud.IdentityEndpoint), params)
 		if err != nil {
 			return fmt.Errorf("failed to post code to cognito for verification: %w", httpclient.ClassifyHTTPError(err))
 		}
