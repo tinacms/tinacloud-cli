@@ -117,7 +117,7 @@ func TestTokensFromCache(t *testing.T) {
 		seedTokenCache(t, tokenPath, `{"access_token":"access-1","refresh_token":"refresh-1","expires_at":"`+future+`"}`)
 
 		// Endpoint points nowhere reachable; an unwanted refresh would fail.
-		cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: "http://127.0.0.1:1"}}
+		cfg := config.Config{TinaCloud: config.TinaCloudConfig{IdentityEndpoint: "http://127.0.0.1:1"}}
 		tokens, err := TokensFromCache(cfg)
 		if err != nil {
 			t.Fatalf("TokensFromCache() = %v, want nil error", err)
@@ -142,7 +142,7 @@ func TestTokensFromCache(t *testing.T) {
 		}))
 		defer server.Close()
 
-		cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: server.URL}}
+		cfg := config.Config{TinaCloud: config.TinaCloudConfig{IdentityEndpoint: server.URL}}
 		tokens, err := TokensFromCache(cfg)
 		if err != nil {
 			t.Fatalf("TokensFromCache() = %v, want nil error", err)
@@ -184,7 +184,7 @@ func TestTokensFromCache(t *testing.T) {
 		}))
 		defer server.Close()
 
-		cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: server.URL}}
+		cfg := config.Config{TinaCloud: config.TinaCloudConfig{IdentityEndpoint: server.URL}}
 		if _, err := TokensFromCache(cfg); !errors.Is(err, httpclient.ErrUnauthorized) {
 			t.Fatalf("TokensFromCache() = %v, want ErrUnauthorized", err)
 		}
@@ -201,7 +201,7 @@ func TestRevokeToken(t *testing.T) {
 		}))
 		defer server.Close()
 
-		cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: server.URL}}
+		cfg := config.Config{TinaCloud: config.TinaCloudConfig{IdentityEndpoint: server.URL}}
 
 		if err := RevokeToken(cfg, "refresh-1"); err != nil {
 			t.Fatalf("RevokeToken() = %v, want nil error", err)
@@ -220,7 +220,7 @@ func TestRevokeToken(t *testing.T) {
 		}))
 		defer server.Close()
 
-		cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: server.URL}}
+		cfg := config.Config{TinaCloud: config.TinaCloudConfig{IdentityEndpoint: server.URL}}
 
 		if err := RevokeToken(cfg, "refresh-1"); err == nil {
 			t.Fatal("RevokeToken() = nil error, want error")
@@ -228,7 +228,7 @@ func TestRevokeToken(t *testing.T) {
 	})
 
 	t.Run("returns error when server unreachable", func(t *testing.T) {
-		cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: "http://127.0.0.1:1"}}
+		cfg := config.Config{TinaCloud: config.TinaCloudConfig{IdentityEndpoint: "http://127.0.0.1:1"}}
 
 		if err := RevokeToken(cfg, "refresh-1"); err == nil {
 			t.Fatal("RevokeToken() = nil error, want error")

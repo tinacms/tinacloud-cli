@@ -90,7 +90,7 @@ func runAdd(cfg config.Config, newProtectedBranches []string, orgID, projectID, 
 		return protectedBranchAddJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
-	project, err := requests.GetProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, projectID)
+	project, err := requests.GetProject(cfg.TinaCloud.IdentityEndpoint, tokens.AccessToken, projectID)
 	if err != nil {
 		return protectedBranchAddJSONOutput{}, err
 	}
@@ -131,7 +131,7 @@ func runAdd(cfg config.Config, newProtectedBranches []string, orgID, projectID, 
 		ProtectedBranches: &uniqueProtectedBranches,
 	}
 
-	err = requests.PutProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, projectID, body)
+	err = requests.PutProject(cfg.TinaCloud.IdentityEndpoint, tokens.AccessToken, orgID, projectID, body)
 	if err != nil {
 		return protectedBranchAddJSONOutput{}, err
 	}

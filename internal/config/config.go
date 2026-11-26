@@ -5,7 +5,8 @@ type CoreConfig struct {
 }
 
 type TinaCloudConfig struct {
-	Endpoint string
+	IdentityEndpoint string
+	ContentEndpoint  string
 }
 
 type Config struct {

@@ -103,7 +103,7 @@ func runCreate(cfg config.Config, openURL func(string) error, allowPrompt bool, 
 	}
 
 	var resp domain.PostV2ProjectResponse
-	resp, err = requests.CreateProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, body)
+	resp, err = requests.CreateProject(cfg.TinaCloud.IdentityEndpoint, tokens.AccessToken, orgID, body)
 	if err != nil {
 		if !errors.Is(err, requests.ErrMissingInstallationID) {
 			return createJSONOutput{}, err
@@ -122,7 +122,7 @@ func runCreate(cfg config.Config, openURL func(string) error, allowPrompt bool, 
 			githubGitHost := domain.GitHost{ID: "github", Name: "GitHub", Server: "github.com"}
 			githosts := []domain.GitHost{githubGitHost}
 
-			githostResp, err := requests.GetGitHosts(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID)
+			githostResp, err := requests.GetGitHosts(cfg.TinaCloud.IdentityEndpoint, tokens.AccessToken, orgID)
 			if err != nil {
 				return createJSONOutput{}, fmt.Errorf("failed to retrieve githosts: %w", err)
 			}
@@ -207,7 +207,7 @@ Attempting to open your default browser. If the browser does not open, open the 
 		}
 
 		body.InstallationID = installationID
-		resp, err = requests.CreateProject(cfg.TinaCloud.Endpoint, tokens.AccessToken, orgID, body)
+		resp, err = requests.CreateProject(cfg.TinaCloud.IdentityEndpoint, tokens.AccessToken, orgID, body)
 		if err != nil {
 			return createJSONOutput{}, err
 		}
@@ -234,7 +234,7 @@ func githubAppInstallationURL(cfg config.Config, githost domain.GitHost, state s
 		return fmt.Sprintf("https://%s/github-apps/%s/installations/new?state=%s", githost.Server, githost.GitHubAppName, state), nil
 	}
 
-	githubApp, err := requests.GetTinaCloudGitHubApp(cfg.TinaCloud.Endpoint)
+	githubApp, err := requests.GetTinaCloudGitHubApp(cfg.TinaCloud.IdentityEndpoint)
 	if err != nil {
 		return "", fmt.Errorf("failed to retrieve tinacloud github app name: %w", err)
 	}

@@ -26,7 +26,7 @@ func cfgWithServer(t *testing.T, handler http.HandlerFunc) config.Config {
 	t.Cleanup(srv.Close)
 
 	cfg := config.Config{}
-	cfg.TinaCloud.Endpoint = srv.URL
+	cfg.TinaCloud.IdentityEndpoint = srv.URL
 	return cfg
 }
 

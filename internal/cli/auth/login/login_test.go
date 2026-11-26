@@ -99,7 +99,7 @@ func TestCallbackListener(t *testing.T) {
 // that error path without any browser side effects.
 func TestLogin_AuthorizeRequestFails(t *testing.T) {
 	cfg := config.Config{}
-	cfg.TinaCloud.Endpoint = "http://127.0.0.1:1"
+	cfg.TinaCloud.IdentityEndpoint = "http://127.0.0.1:1"
 
 	err := runLogin(cfg, nil)
 	if err == nil {
@@ -154,7 +154,7 @@ func driveLogin(t *testing.T, tokenHandler http.HandlerFunc, callbackReq string)
 	}
 
 	cfg := config.Config{}
-	cfg.TinaCloud.Endpoint = srv.URL
+	cfg.TinaCloud.IdentityEndpoint = srv.URL
 	tracker := &captureTracker{}
 	return tracker, runLogin(cfg, fakeOpener)
 }

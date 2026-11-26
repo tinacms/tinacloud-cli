@@ -16,7 +16,9 @@ To run:
 go run ./cmd/tinacloud
 ```
 
-To use a development endpoint, run `make run ENDPOINT=https://example.test`.
+The identity and content endpoints can be overriden by setting
+`IDENTITY_ENDPOINT` and `CONTENT_ENDPOINT`. For example `make run
+IDENTITY_ENDPOINT=https://example.test CONTENT_ENDPOINT=https://example.test`
 
 <details>
 <summary>Note: Passing arguments via the Makefile</summary>
@@ -32,7 +34,7 @@ go fmt ./...
 To build:
 ```bash
 go build \
-	-ldflags "-X main.version=$(cat .version) -X main.endpoint=https://identity-v2.tinajs.io" \
+	-ldflags "-X main.version=$(cat .version) -X main.identity_endpoint=https://identity-v2.tinajs.io -X main.content_endpoint=https://content-v2.tinajs.io" \
 	-o ./build/tinacloud \
 	./cmd/tinacloud
 ```

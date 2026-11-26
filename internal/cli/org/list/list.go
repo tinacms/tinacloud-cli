@@ -55,7 +55,7 @@ func runList(cfg config.Config, loadTokens auth.TokenLoader) (listJSONOutput, er
 		return listJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
-	organizations, err := requests.GetOrganizations(cfg.TinaCloud.Endpoint, tokens.AccessToken)
+	organizations, err := requests.GetOrganizations(cfg.TinaCloud.IdentityEndpoint, tokens.AccessToken)
 	if err != nil {
 		return listJSONOutput{}, err
 	}

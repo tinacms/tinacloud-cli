@@ -73,7 +73,7 @@ func TestLogout(t *testing.T) {
 			}))
 			defer server.Close()
 
-			cfg := config.Config{TinaCloud: config.TinaCloudConfig{Endpoint: server.URL}}
+			cfg := config.Config{TinaCloud: config.TinaCloudConfig{IdentityEndpoint: server.URL}}
 
 			if err := runLogout(cfg); err != nil {
 				t.Fatalf("Logout() = %v, want nil error", err)

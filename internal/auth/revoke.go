@@ -15,7 +15,7 @@ func RevokeToken(cfg config.Config, refreshToken string) error {
 	params := url.Values{}
 	params.Set("token", refreshToken)
 
-	resp, err := httpclient.Client.PostForm(fmt.Sprintf("%s/oauth/revoke", cfg.TinaCloud.Endpoint), params)
+	resp, err := httpclient.Client.PostForm(fmt.Sprintf("%s/oauth/revoke", cfg.TinaCloud.IdentityEndpoint), params)
 	if err != nil {
 		return fmt.Errorf("failed to post token for revocation: %w", httpclient.ClassifyHTTPError(err))
 	}
