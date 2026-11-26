@@ -30,15 +30,15 @@ func Command(cfg config.Config) *command.Command {
 	var jsonFlag = flagSet.Bool("json", false, "Print the result as JSON")
 	var orgIDFlag = flagSet.String("org-id", "", "TinaCloud organization ID")
 	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
-	var allFlag = flagSet.Bool("all", false, "Show all users")
+	var allFlag = flagSet.Bool("all", false, "Include users with zero activity")
 
 	now := time.Now()
-	var toFlag = flagSet.String("to", now.Format(time.DateOnly), "YYYY-MM-DD")
-	var fromFlag = flagSet.String("from", now.AddDate(0, 0, 1-now.Day()).Format(time.DateOnly), "YYYY-MM-DD")
+	var toFlag = flagSet.String("to", now.Format(time.DateOnly), "End date (YYYY-MM-DD; default today)")
+	var fromFlag = flagSet.String("from", now.AddDate(0, 0, 1-now.Day()).Format(time.DateOnly), "Start date (YYYY-MM-DD; default first day of this month)")
 
 	return &command.Command{
 		Name:        "leaderboard",
-		Description: "TODO",
+		Description: "Rank organization users by activity count",
 		Flags:       flagSet,
 		Run: func(args []string) error {
 			out, err := runLeaderboard(cfg, auth.TokensFromCache, *orgIDFlag, *tinaDirFlag, *toFlag, *fromFlag)
