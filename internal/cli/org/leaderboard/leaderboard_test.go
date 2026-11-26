@@ -157,6 +157,20 @@ func TestPeriodDates(t *testing.T) {
 			}
 		})
 	}
+	jan := time.Date(2025, time.January, 15, 12, 0, 0, 0, time.UTC)
+	for _, tc := range []struct {
+		period, from, to string
+	}{
+		{period: "last-month", from: "2024-12-01", to: "2024-12-31"},
+		{period: "3-months", from: "2024-11-01", to: "2025-01-15"},
+	} {
+		t.Run("january/"+tc.period, func(t *testing.T) {
+			from, to, err := periodDates(tc.period, jan)
+			if err != nil || from != tc.from || to != tc.to {
+				t.Errorf("periodDates(%q, %v) = %q, %q, %v; want %q, %q, nil", tc.period, jan, from, to, err, tc.from, tc.to)
+			}
+		})
+	}
 	if _, _, err := periodDates("invalid", now); err == nil {
 		t.Error("periodDates(invalid) succeeded, want error")
 	}
