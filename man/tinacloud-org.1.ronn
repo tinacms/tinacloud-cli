@@ -16,13 +16,13 @@ View organisations available to the signed-in TinaCloud user and rank their user
 
   * `leaderboard`:
     Rank organisation users by activity count. The date range defaults to the
-    first day of the current month through today.
+    first day of the current month through today, in UTC.
 
     Use `--from` and `--to` together to set dates in YYYY-MM-DD format, `--all` to
     include users with zero activity, `--org-id` to select an organisation,
     `--tina-dir` to set the path to the tina folder, and `--json` for JSON output.
 
-    Use `--period` to select `this-month`, `last-month`, `3-months`, or
+    Use `--period` to select the UTC calendar period `this-month`, `last-month`, `3-months`, or
     `12-months`. The three- and twelve-month periods include the current month
     through today. `last-month` covers the previous calendar month. `--period`
     cannot be combined with `--from` or `--to`.

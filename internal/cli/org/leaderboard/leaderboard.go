@@ -31,11 +31,11 @@ func Command(cfg config.Config) *command.Command {
 	var orgIDFlag = flagSet.String("org-id", "", "TinaCloud organization ID")
 	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
 	var allFlag = flagSet.Bool("all", false, "Include users with zero activity")
-	var periodFlag = flagSet.String("period", "", "Calendar period: this-month, last-month, 3-months, or 12-months (includes current month)")
+	var periodFlag = flagSet.String("period", "", "UTC calendar period: this-month, last-month, 3-months, or 12-months (includes current month)")
 
-	now := time.Now()
-	var toFlag = flagSet.String("to", now.Format(time.DateOnly), "End date (YYYY-MM-DD; default today)")
-	var fromFlag = flagSet.String("from", now.AddDate(0, 0, 1-now.Day()).Format(time.DateOnly), "Start date (YYYY-MM-DD; default first day of this month)")
+	now := time.Now().UTC()
+	var toFlag = flagSet.String("to", now.Format(time.DateOnly), "End date (YYYY-MM-DD; default today in UTC)")
+	var fromFlag = flagSet.String("from", now.AddDate(0, 0, 1-now.Day()).Format(time.DateOnly), "Start date (YYYY-MM-DD; default first day of this month in UTC)")
 
 	return &command.Command{
 		Name:        "leaderboard",

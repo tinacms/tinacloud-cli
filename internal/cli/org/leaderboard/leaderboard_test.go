@@ -84,6 +84,30 @@ func TestCommandRequiresBothDates(t *testing.T) {
 	}
 }
 
+func TestCommandDefaultDatesUseUTC(t *testing.T) {
+	original := time.Local
+	defer func() { time.Local = original }()
+	offset := -12 * 60 * 60
+	if time.Now().UTC().Hour() >= 10 {
+		offset = 14 * 60 * 60
+	}
+	time.Local = time.FixedZone("test", offset)
+	before := time.Now().UTC()
+	cmd := Command(config.Config{})
+	after := time.Now().UTC()
+	for _, tc := range []struct {
+		flag, before, after string
+	}{
+		{flag: "to", before: before.Format(time.DateOnly), after: after.Format(time.DateOnly)},
+		{flag: "from", before: before.AddDate(0, 0, 1-before.Day()).Format(time.DateOnly), after: after.AddDate(0, 0, 1-after.Day()).Format(time.DateOnly)},
+	} {
+		got := cmd.Flags.Lookup(tc.flag).DefValue
+		if got != tc.before && got != tc.after {
+			t.Errorf("default --%s = %q, want %q or %q", tc.flag, got, tc.before, tc.after)
+		}
+	}
+}
+
 func TestPeriodDates(t *testing.T) {
 	now := time.Date(2024, time.March, 31, 12, 0, 0, 0, time.UTC)
 	for _, tc := range []struct {
@@ -103,6 +127,11 @@ func TestPeriodDates(t *testing.T) {
 	}
 	if _, _, err := periodDates("invalid", now); err == nil {
 		t.Error("periodDates(invalid) succeeded, want error")
+	}
+	sydney := time.Date(2024, time.December, 1, 9, 0, 0, 0, time.FixedZone("Sydney", 11*60*60))
+	from, to, err := periodDates("this-month", sydney.UTC())
+	if err != nil || from != "2024-11-01" || to != "2024-11-30" {
+		t.Errorf("periodDates(this-month, %v UTC) = %q, %q, %v; want November 1 to 30", sydney.UTC(), from, to, err)
 	}
 }
 
@@ -127,7 +156,7 @@ func TestCommandPeriod(t *testing.T) {
 		t.Fatal(err)
 	}
 	r := <-requests
-	from, to, _ := periodDates("last-month", time.Now())
+	from, to, _ := periodDates("last-month", time.Now().UTC())
 	if r.URL.Query().Get("from") != from || r.URL.Query().Get("to") != to {
 		t.Errorf("request = %s, want from=%s and to=%s", r.URL, from, to)
 	}
