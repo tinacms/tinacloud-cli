@@ -5,15 +5,21 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"tina.io/tinacloud-cli/internal/domain"
 	"tina.io/tinacloud-cli/internal/httpclient"
 )
 
 func GetLeaderboard(endpoint, accessToken, orgID, to, from string) ([]domain.LeaderboardEntry, error) {
+	if err := validateIDs(orgID); err != nil {
+		return []domain.LeaderboardEntry{}, err
+	}
+
+	query := url.Values{"to": {to}, "from": {from}}
 	req, err := http.NewRequest(
 		http.MethodGet,
-		fmt.Sprintf("%s/leaderboard/org/%s?to=%s&from=%s", endpoint, orgID, to, from),
+		fmt.Sprintf("%s/leaderboard/org/%s?%s", endpoint, orgID, query.Encode()),
 		nil,
 	)
 	if err != nil {

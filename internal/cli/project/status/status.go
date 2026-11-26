@@ -29,7 +29,7 @@ func Command(cfg config.Config) *command.Command {
 	return &command.Command{
 		Name:        "status",
 		Description: "List a project's status",
-		Example:     "tinacloud project status --project-id project-123",
+		Example:     "tinacloud project status --project-id 1e1d3398-8255-4812-9f67-388993734a01",
 		Flags:       flagSet,
 		Run: func(args []string) error {
 			out, err := runStatus(cfg, *projectIDFlag, *tinaDirFlag)

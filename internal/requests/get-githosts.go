@@ -11,6 +11,10 @@ import (
 )
 
 func GetGitHosts(endpoint, accessToken, orgID string) (domain.GetV2GitHostsResponse, error) {
+	if err := validateIDs(orgID); err != nil {
+		return domain.GetV2GitHostsResponse{}, err
+	}
+
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/organizations/%s/githosts", endpoint, orgID), nil)
 	if err != nil {
 		return domain.GetV2GitHostsResponse{}, fmt.Errorf("failed to initialize request: %w", err)

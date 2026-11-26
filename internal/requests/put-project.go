@@ -12,6 +12,10 @@ import (
 )
 
 func PutProject(endpoint, accessToken, orgID, projectID string, body domain.PutV2ProjectBody) error {
+	if err := validateIDs(orgID, projectID); err != nil {
+		return err
+	}
+
 	putBody, err := json.Marshal(body)
 	if err != nil {
 		return fmt.Errorf("failed to marshal request body: %w", err)

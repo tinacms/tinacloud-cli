@@ -89,7 +89,7 @@ func TestRunConfigureFlags(t *testing.T) {
 			return auth.TokenCache{}, errors.New("unexpected")
 		}
 
-		saved, err := runConfigure(config.Config{}, cwd, "org-1", "project-1", "tina", loader, posthog.NoopTracker)
+		saved, err := runConfigure(config.Config{}, cwd, "11111111-1111-4111-8111-111111111111", "project-1", "tina", loader, posthog.NoopTracker)
 		if err != nil {
 			t.Fatalf("runConfigure() = %v, want nil error", err)
 		}
@@ -101,13 +101,13 @@ func TestRunConfigureFlags(t *testing.T) {
 		if err != nil {
 			t.Fatalf("TinaCloudConfigFromDisk() = %v, want nil error", err)
 		}
-		if want := (domain.TinaCloudConfig{OrgID: "org-1", ProjectID: "project-1"}); got != want {
+		if want := (domain.TinaCloudConfig{OrgID: "11111111-1111-4111-8111-111111111111", ProjectID: "project-1"}); got != want {
 			t.Errorf("written config = %+v, want %+v", got, want)
 		}
 	})
 
 	t.Run("errors when only one id is passed", func(t *testing.T) {
-		saved, err := runConfigure(config.Config{}, t.TempDir(), "org-1", "", "tina", stubLoader(auth.TokenCache{}, nil), posthog.NoopTracker)
+		saved, err := runConfigure(config.Config{}, t.TempDir(), "11111111-1111-4111-8111-111111111111", "", "tina", stubLoader(auth.TokenCache{}, nil), posthog.NoopTracker)
 		if err == nil {
 			t.Fatal("runConfigure() = nil error, want error")
 		}
@@ -146,7 +146,7 @@ func TestRunConfigureTracking(t *testing.T) {
 		var got []posthog.Capture
 		track := func(c posthog.Capture) { got = append(got, c) }
 
-		if _, err := runConfigure(config.Config{}, cwd, "org-1", "project-1", "tina", nil, track); err != nil {
+		if _, err := runConfigure(config.Config{}, cwd, "11111111-1111-4111-8111-111111111111", "project-1", "tina", nil, track); err != nil {
 			t.Fatalf("runConfigure() = %v, want nil error", err)
 		}
 
@@ -166,7 +166,7 @@ func TestRunConfigureTracking(t *testing.T) {
 		var got []posthog.Capture
 		track := func(c posthog.Capture) { got = append(got, c) }
 
-		if _, err := runConfigure(config.Config{}, t.TempDir(), "org-1", "project-1", "tina", nil, track); err == nil {
+		if _, err := runConfigure(config.Config{}, t.TempDir(), "11111111-1111-4111-8111-111111111111", "project-1", "tina", nil, track); err == nil {
 			t.Fatal("runConfigure() = nil error, want error")
 		}
 
@@ -193,7 +193,7 @@ func TestRunConfigureBackend(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			switch {
 			case r.URL.Path == "/v2/organizations":
-				_, _ = w.Write([]byte(`[{"organization":{"id":"org-1","name":"Acme"}}]`))
+				_, _ = w.Write([]byte(`[{"organization":{"id":"11111111-1111-4111-8111-111111111111","name":"Acme"}}]`))
 			case strings.HasSuffix(r.URL.Path, "/apps"):
 				_, _ = w.Write([]byte(`[]`))
 			default:

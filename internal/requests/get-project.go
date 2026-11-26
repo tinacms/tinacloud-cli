@@ -11,6 +11,10 @@ import (
 )
 
 func GetProject(endpoint, accessToken, projectID string) (domain.GetV2ProjectResponse, error) {
+	if err := validateIDs(projectID); err != nil {
+		return domain.GetV2ProjectResponse{}, err
+	}
+
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/apps/%s", endpoint, projectID), nil)
 	if err != nil {
 		return domain.GetV2ProjectResponse{}, fmt.Errorf("failed to initialize request: %w", err)
