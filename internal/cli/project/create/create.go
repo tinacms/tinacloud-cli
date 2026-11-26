@@ -168,9 +168,12 @@ Attempting to open your default browser. If the browser does not open, open the 
 `, installationURL)
 		}
 
-		params, err := utils.WaitForCallback(ln, "/", func(params url.Values) bool {
+		params, err := utils.WaitForCallback(ln, "/", func(params url.Values) (string, string) {
 			id, err := strconv.ParseInt(params.Get("installation_id"), 10, 64)
-			return err == nil && id > 0
+			if err != nil || id <= 0 {
+				return "", ""
+			}
+			return "Almost there!", "Return to your terminal to finish setting up your project."
 		})
 		if err != nil {
 			return createJSONOutput{}, fmt.Errorf("failed to receive installation callback: %w", err)

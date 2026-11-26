@@ -75,11 +75,20 @@ func runLogin(cfg config.Config, openURL func(string) error) error {
 `, redirectURL)
 	}
 
-	params, err := utils.WaitForCallback(ln, "/callback", func(params url.Values) bool {
-		return params.Get("code") != ""
+	params, err := utils.WaitForCallback(ln, "/callback", func(params url.Values) (string, string) {
+		if params.Get("error") != "" {
+			return "Sign-in was not completed", "Check your terminal for details."
+		}
+		if params.Get("code") != "" {
+			return "Almost there!", "Return to your terminal to finish signing in."
+		}
+		return "", ""
 	})
 	if err != nil {
 		return fmt.Errorf("failed to receive auth callback: %w", err)
+	}
+	if authErr := params.Get("error"); authErr != "" {
+		return fmt.Errorf("failed to login: %q", authErr)
 	}
 	code := params.Get("code")
 

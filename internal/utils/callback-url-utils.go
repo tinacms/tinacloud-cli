@@ -3,10 +3,12 @@ package utils
 import (
 	"bufio"
 	"fmt"
+	"html"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -23,14 +25,14 @@ func CallbackListener() (*net.TCPListener, int, error) {
 	return nil, 0, fmt.Errorf("failed to bind local callback server on port range :9999-:10011")
 }
 
-func WaitForCallback(ln *net.TCPListener, callbackPath string, valid func(url.Values) bool) (url.Values, error) {
-	return waitForCallback(ln, callbackPath, valid, 5*time.Minute, 5*time.Second)
+func WaitForCallback(ln *net.TCPListener, callbackPath string, message func(url.Values) (string, string)) (url.Values, error) {
+	return waitForCallback(ln, callbackPath, message, 5*time.Minute, 5*time.Second)
 }
 
 func waitForCallback(
 	ln *net.TCPListener,
 	callbackPath string,
-	valid func(url.Values) bool,
+	message func(url.Values) (string, string),
 	timeout, readTimeout time.Duration,
 ) (url.Values, error) {
 	deadline := time.Now().Add(timeout)
@@ -57,8 +59,13 @@ func waitForCallback(
 		req, err := http.ReadRequest(bufio.NewReader(io.LimitReader(conn, 16<<10)))
 		if err == nil && req.Method == http.MethodGet && req.URL.Path == callbackPath {
 			params, parseErr := url.ParseQuery(req.URL.RawQuery)
-			if parseErr == nil && valid(params) {
-				err = CallbackResponse(conn)
+			if parseErr == nil {
+				heading, detail := message(params)
+				if heading == "" {
+					_ = conn.Close()
+					continue
+				}
+				err = CallbackResponse(conn, heading, detail)
 				_ = conn.Close()
 				if err != nil {
 					return nil, err
@@ -71,13 +78,14 @@ func waitForCallback(
 	}
 }
 
-func CallbackResponse(connection net.Conn) error {
+func CallbackResponse(connection net.Conn, heading, detail string) error {
+	page := strings.NewReplacer("{{heading}}", html.EscapeString(heading), "{{detail}}", html.EscapeString(detail)).Replace(AuthCompleteHTML)
 	writer := bufio.NewWriter(connection)
 	_, err := writer.WriteString("HTTP/1.1 200 OK\r\n" +
 		"Content-Type: text/html; charset=utf-8\r\n" +
 		"Connection: close\r\n" +
 		"\r\n" +
-		AuthCompleteHTML)
+		page)
 	if err != nil {
 		return fmt.Errorf("failed to write back to connection: %w", err)
 	}
@@ -94,7 +102,7 @@ const AuthCompleteHTML = `<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Authentication Complete</title>
+<title>Return to your terminal</title>
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -196,8 +204,8 @@ const AuthCompleteHTML = `<!DOCTYPE html>
     </div>
     <div class="card-container">
       <div class="card">
-        <h3>✅️ CLI Authenticated</h3>
-		<p>You can close this tab now.</p>
+		<h3>{{heading}}</h3>
+		<p>{{detail}}</p>
       </div>
 	  <a class="website-link" href="tina.io">tina.io</a>
     </div>
