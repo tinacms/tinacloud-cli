@@ -31,16 +31,46 @@ func Command(cfg config.Config) *command.Command {
 	var orgIDFlag = flagSet.String("org-id", "", "TinaCloud organization ID")
 	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
 	var allFlag = flagSet.Bool("all", false, "Include users with zero activity")
+	var periodFlag = flagSet.String("period", "", "UTC calendar period: this-month, last-month, 3-months, or 12-months (includes current month)")
 
-	now := time.Now()
-	var toFlag = flagSet.String("to", now.Format(time.DateOnly), "End date (YYYY-MM-DD; default today)")
-	var fromFlag = flagSet.String("from", now.AddDate(0, 0, 1-now.Day()).Format(time.DateOnly), "Start date (YYYY-MM-DD; default first day of this month)")
+	now := time.Now().UTC()
+	var toFlag = flagSet.String("to", now.Format(time.DateOnly), "End date (YYYY-MM-DD; default today in UTC)")
+	var fromFlag = flagSet.String("from", now.AddDate(0, 0, 1-now.Day()).Format(time.DateOnly), "Start date (YYYY-MM-DD; default first day of this month in UTC)")
 
 	return &command.Command{
 		Name:        "leaderboard",
 		Description: "Rank organization users by activity count",
 		Flags:       flagSet,
 		Run: func(args []string) error {
+			var fromSet, toSet bool
+			flagSet.Visit(func(f *flag.Flag) {
+				fromSet = fromSet || f.Name == "from"
+				toSet = toSet || f.Name == "to"
+			})
+			if *periodFlag != "" {
+				if fromSet || toSet {
+					return errors.New("--period cannot be combined with --from or --to")
+				}
+				from, to, err := periodDates(*periodFlag, now)
+				if err != nil {
+					return err
+				}
+				*fromFlag, *toFlag = from, to
+			}
+			if fromSet != toSet {
+				return errors.New("--from and --to must be used together")
+			}
+			from, err := time.Parse(time.DateOnly, *fromFlag)
+			if err != nil {
+				return fmt.Errorf("invalid --from date %q: expected YYYY-MM-DD", *fromFlag)
+			}
+			to, err := time.Parse(time.DateOnly, *toFlag)
+			if err != nil {
+				return fmt.Errorf("invalid --to date %q: expected YYYY-MM-DD", *toFlag)
+			}
+			if from.After(to) {
+				return errors.New("--from must not be after --to")
+			}
 			out, err := runLeaderboard(cfg, auth.TokensFromCache, *orgIDFlag, *tinaDirFlag, *toFlag, *fromFlag)
 			if *jsonFlag {
 				if !*allFlag {
@@ -81,6 +111,25 @@ func Command(cfg config.Config) *command.Command {
 			return nil
 		},
 	}
+}
+
+func periodDates(period string, now time.Time) (string, string, error) {
+	parsedPeriod, err := domain.LeaderboardPeriodFromString(period)
+	if err != nil {
+		return "", "", err
+	}
+	start := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	end := now
+	switch parsedPeriod {
+	case domain.LastMonth:
+		end = start.AddDate(0, 0, -1)
+		start = start.AddDate(0, -1, 0)
+	case domain.ThreeMonths:
+		start = start.AddDate(0, -2, 0)
+	case domain.TwelveMonths:
+		start = start.AddDate(0, -11, 0)
+	}
+	return start.Format(time.DateOnly), end.Format(time.DateOnly), nil
 }
 
 func runLeaderboard(cfg config.Config, loadTokens auth.TokenLoader, orgID, tinaDir, to, from string) (leaderboardJSONOutput, error) {
