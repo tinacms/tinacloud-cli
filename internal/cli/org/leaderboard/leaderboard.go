@@ -42,14 +42,13 @@ func Command(cfg config.Config) *command.Command {
 		Description: "Rank organization users by activity count",
 		Flags:       flagSet,
 		Run: func(args []string) error {
+			var fromSet, toSet bool
+			flagSet.Visit(func(f *flag.Flag) {
+				fromSet = fromSet || f.Name == "from"
+				toSet = toSet || f.Name == "to"
+			})
 			if *periodFlag != "" {
-				var customDates bool
-				flagSet.Visit(func(f *flag.Flag) {
-					if f.Name == "from" || f.Name == "to" {
-						customDates = true
-					}
-				})
-				if customDates {
+				if fromSet || toSet {
 					return errors.New("--period cannot be combined with --from or --to")
 				}
 				from, to, err := periodDates(*periodFlag, now)
@@ -57,6 +56,9 @@ func Command(cfg config.Config) *command.Command {
 					return err
 				}
 				*fromFlag, *toFlag = from, to
+			}
+			if fromSet != toSet {
+				return errors.New("--from and --to must be used together")
 			}
 			out, err := runLeaderboard(cfg, auth.TokensFromCache, *orgIDFlag, *tinaDirFlag, *toFlag, *fromFlag)
 			if *jsonFlag {

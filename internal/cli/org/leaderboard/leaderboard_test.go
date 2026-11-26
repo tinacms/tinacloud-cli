@@ -75,6 +75,15 @@ func TestCommandLeaderboard(t *testing.T) {
 	}
 }
 
+func TestCommandRequiresBothDates(t *testing.T) {
+	for _, flags := range [][]string{{"--from", "2025-01-01"}, {"--to", "2025-01-31"}} {
+		err := Command(config.Config{}).Dispatch(flags, nil)
+		if err == nil || err.Error() != "--from and --to must be used together" {
+			t.Errorf("Dispatch(%v) = %v, want paired date error", flags, err)
+		}
+	}
+}
+
 func TestPeriodDates(t *testing.T) {
 	now := time.Date(2024, time.March, 31, 12, 0, 0, 0, time.UTC)
 	for _, tc := range []struct {
