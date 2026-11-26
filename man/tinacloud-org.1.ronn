@@ -7,12 +7,20 @@ tinacloud-org(1) -- Interact with TinaCloud organisations
 
 ## DESCRIPTION
 
-View organisations available to the signed-in TinaCloud user.
+View organisations available to the signed-in TinaCloud user and rank their users by activity count.
 
 ## COMMANDS
 
   * `list`:
     List organisations.
+
+  * `leaderboard`:
+    Rank organisation users by activity count. The date range defaults to the
+    first day of the current month through today.
+
+    Use `--from` and `--to` to set dates in YYYY-MM-DD format, `--all` to
+    include users with zero activity, `--org-id` to select an organisation,
+    `--tina-dir` to set the path to the tina folder, and `--json` for JSON output.
 
 ## EXAMPLES
 
@@ -23,6 +31,10 @@ List the organisations available to the signed-in account:
 Print the result as JSON:
 
 	$ tinacloud org list --json
+
+Show the leaderboard, including users with zero activity:
+
+	$ tinacloud org leaderboard --all
 
 ## COPYRIGHT
 
