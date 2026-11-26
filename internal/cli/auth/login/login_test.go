@@ -217,18 +217,6 @@ func TestLogin_Errors(t *testing.T) {
 		wantErrContains string
 	}{
 		{
-			name:            "missing code in callback",
-			tokenHandler:    fakeTokenHandler,
-			callbackReq:     "GET /callback HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n",
-			wantErrContains: "code is missing",
-		},
-		{
-			name:            "malformed callback request",
-			tokenHandler:    fakeTokenHandler,
-			callbackReq:     "this is not a valid http request\r\n\r\n",
-			wantErrContains: "failed to read auth callback",
-		},
-		{
 			name:         "token endpoint unauthorized",
 			tokenHandler: func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusUnauthorized) },
 			callbackReq:  validCallback,

@@ -1,11 +1,9 @@
 package create
 
 import (
-	"bufio"
 	"errors"
 	"flag"
 	"fmt"
-	"net/http"
 	"net/url"
 	"os"
 	"strconv"
@@ -170,41 +168,15 @@ Attempting to open your default browser. If the browser does not open, open the 
 `, installationURL)
 		}
 
-		var installationID *int64
-		{
-			conn, err := ln.Accept()
-			if err != nil {
-				return createJSONOutput{}, fmt.Errorf("failed to accept auth callback: %w", err)
-			}
-			defer conn.Close()
-
-			req, err := http.ReadRequest(bufio.NewReader(conn))
-			if err != nil {
-				return createJSONOutput{}, fmt.Errorf("failed to read auth callback: %w", err)
-			}
-
-			err = utils.CallbackResponse(conn)
-			if err != nil {
-				return createJSONOutput{}, err
-			}
-
-			params, err := url.ParseQuery(req.URL.RawQuery)
-			if err != nil {
-				return createJSONOutput{}, fmt.Errorf("failed to read installation_id from auth callback: %w", err)
-			}
-
-			installationIDParam := params.Get("installation_id")
-			if installationIDParam == "" {
-				return createJSONOutput{}, errors.New("installation_id is missing from client request")
-			}
-
-			id, err := strconv.ParseInt(installationIDParam, 10, 64)
-			if err != nil {
-				return createJSONOutput{}, fmt.Errorf("failed to parse installation_id from auth callback: %w", err)
-			}
-
-			installationID = &id
+		params, err := utils.WaitForCallback(ln, "/", func(params url.Values) bool {
+			id, err := strconv.ParseInt(params.Get("installation_id"), 10, 64)
+			return err == nil && id > 0
+		})
+		if err != nil {
+			return createJSONOutput{}, fmt.Errorf("failed to receive installation callback: %w", err)
 		}
+		id, _ := strconv.ParseInt(params.Get("installation_id"), 10, 64)
+		installationID := &id
 
 		body.InstallationID = installationID
 		resp, err = requests.CreateProject(cfg.TinaCloud.IdentityEndpoint, tokens.AccessToken, orgID, body)

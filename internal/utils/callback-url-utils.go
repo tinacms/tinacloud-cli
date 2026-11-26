@@ -3,13 +3,17 @@ package utils
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"net"
+	"net/http"
+	"net/url"
+	"time"
 )
 
 // Generate a listener and port [9999-10011]
-func CallbackListener() (net.Listener, int, error) {
+func CallbackListener() (*net.TCPListener, int, error) {
 	for port := 9999; port <= 10011; port++ {
-		ln, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+		ln, err := net.ListenTCP("tcp4", &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: port})
 		if err != nil {
 			continue
 		}
@@ -17,6 +21,54 @@ func CallbackListener() (net.Listener, int, error) {
 	}
 
 	return nil, 0, fmt.Errorf("failed to bind local callback server on port range :9999-:10011")
+}
+
+func WaitForCallback(ln *net.TCPListener, callbackPath string, valid func(url.Values) bool) (url.Values, error) {
+	return waitForCallback(ln, callbackPath, valid, 5*time.Minute, 5*time.Second)
+}
+
+func waitForCallback(
+	ln *net.TCPListener,
+	callbackPath string,
+	valid func(url.Values) bool,
+	timeout, readTimeout time.Duration,
+) (url.Values, error) {
+	deadline := time.Now().Add(timeout)
+	if err := ln.SetDeadline(deadline); err != nil {
+		return nil, fmt.Errorf("failed to set callback deadline: %w", err)
+	}
+
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			return nil, fmt.Errorf("failed to accept callback: %w", err)
+		}
+
+		connDeadline := time.Now().Add(readTimeout)
+		if deadline.Before(connDeadline) {
+			connDeadline = deadline
+		}
+
+		if err := conn.SetDeadline(connDeadline); err != nil {
+			_ = conn.Close()
+			return nil, fmt.Errorf("failed to set callback connection deadline: %w", err)
+		}
+
+		req, err := http.ReadRequest(bufio.NewReader(io.LimitReader(conn, 16<<10)))
+		if err == nil && req.Method == http.MethodGet && req.URL.Path == callbackPath {
+			params, parseErr := url.ParseQuery(req.URL.RawQuery)
+			if parseErr == nil && valid(params) {
+				err = CallbackResponse(conn)
+				_ = conn.Close()
+				if err != nil {
+					return nil, err
+				}
+				return params, nil
+			}
+		}
+
+		_ = conn.Close()
+	}
 }
 
 func CallbackResponse(connection net.Conn) error {
