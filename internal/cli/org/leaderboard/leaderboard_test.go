@@ -74,3 +74,57 @@ func TestCommandLeaderboard(t *testing.T) {
 		})
 	}
 }
+
+func TestPeriodDates(t *testing.T) {
+	now := time.Date(2024, time.March, 31, 12, 0, 0, 0, time.UTC)
+	for _, tc := range []struct {
+		period, from, to string
+	}{
+		{period: "this-month", from: "2024-03-01", to: "2024-03-31"},
+		{period: "last-month", from: "2024-02-01", to: "2024-02-29"},
+		{period: "3-months", from: "2024-01-01", to: "2024-03-31"},
+		{period: "12-months", from: "2023-04-01", to: "2024-03-31"},
+	} {
+		t.Run(tc.period, func(t *testing.T) {
+			from, to, err := periodDates(tc.period, now)
+			if err != nil || from != tc.from || to != tc.to {
+				t.Errorf("periodDates(%q) = %q, %q, %v; want %q, %q, nil", tc.period, from, to, err, tc.from, tc.to)
+			}
+		})
+	}
+	if _, _, err := periodDates("invalid", now); err == nil {
+		t.Error("periodDates(invalid) succeeded, want error")
+	}
+}
+
+func TestCommandPeriod(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	t.Setenv("AppData", dir)
+	if err := auth.SaveTokens(auth.TokenCache{AccessToken: "access-token", RefreshToken: "refresh-token", ExpiresAt: time.Now().Add(time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
+	requests := make(chan *http.Request, 1)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests <- r
+		fmt.Fprint(w, `{"entries":[]}`)
+	}))
+	defer server.Close()
+	cfg := config.Config{}
+	cfg.TinaCloud.ContentEndpoint = server.URL
+
+	if err := Command(cfg).Dispatch([]string{"--org-id", "org-123", "--period", "last-month", "--json"}, nil); err != nil {
+		t.Fatal(err)
+	}
+	r := <-requests
+	from, to, _ := periodDates("last-month", time.Now())
+	if r.URL.Query().Get("from") != from || r.URL.Query().Get("to") != to {
+		t.Errorf("request = %s, want from=%s and to=%s", r.URL, from, to)
+	}
+	for _, flags := range [][]string{{"--period", "invalid"}, {"--period", "this-month", "--from", "2025-01-01"}, {"--period", "this-month", "--to", "2025-01-01"}} {
+		if err := Command(cfg).Dispatch(flags, nil); err == nil {
+			t.Errorf("Dispatch(%v) succeeded, want error", flags)
+		}
+	}
+}

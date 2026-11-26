@@ -31,6 +31,7 @@ func Command(cfg config.Config) *command.Command {
 	var orgIDFlag = flagSet.String("org-id", "", "TinaCloud organization ID")
 	var tinaDirFlag = flagSet.String("tina-dir", domain.DefaultTinaDir, "Path to tina folder")
 	var allFlag = flagSet.Bool("all", false, "Include users with zero activity")
+	var periodFlag = flagSet.String("period", "", "Calendar period: this-month, last-month, 3-months, or 12-months (includes current month)")
 
 	now := time.Now()
 	var toFlag = flagSet.String("to", now.Format(time.DateOnly), "End date (YYYY-MM-DD; default today)")
@@ -41,6 +42,22 @@ func Command(cfg config.Config) *command.Command {
 		Description: "Rank organization users by activity count",
 		Flags:       flagSet,
 		Run: func(args []string) error {
+			if *periodFlag != "" {
+				var customDates bool
+				flagSet.Visit(func(f *flag.Flag) {
+					if f.Name == "from" || f.Name == "to" {
+						customDates = true
+					}
+				})
+				if customDates {
+					return errors.New("--period cannot be combined with --from or --to")
+				}
+				from, to, err := periodDates(*periodFlag, now)
+				if err != nil {
+					return err
+				}
+				*fromFlag, *toFlag = from, to
+			}
 			out, err := runLeaderboard(cfg, auth.TokensFromCache, *orgIDFlag, *tinaDirFlag, *toFlag, *fromFlag)
 			if *jsonFlag {
 				if !*allFlag {
@@ -81,6 +98,26 @@ func Command(cfg config.Config) *command.Command {
 			return nil
 		},
 	}
+}
+
+func periodDates(period string, now time.Time) (string, string, error) {
+	switch period {
+	case "this-month", "last-month", "3-months", "12-months":
+	default:
+		return "", "", fmt.Errorf("invalid leaderboard period %q: use this-month, last-month, 3-months, or 12-months", period)
+	}
+	start := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	end := now
+	switch domain.LeaderboardPeriodFromString(period) {
+	case domain.LastMonth:
+		end = start.AddDate(0, 0, -1)
+		start = start.AddDate(0, -1, 0)
+	case domain.ThreeMonths:
+		start = start.AddDate(0, -2, 0)
+	case domain.TwelveMonths:
+		start = start.AddDate(0, -11, 0)
+	}
+	return start.Format(time.DateOnly), end.Format(time.DateOnly), nil
 }
 
 func runLeaderboard(cfg config.Config, loadTokens auth.TokenLoader, orgID, tinaDir, to, from string) (leaderboardJSONOutput, error) {
