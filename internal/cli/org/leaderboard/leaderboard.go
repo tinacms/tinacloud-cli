@@ -60,6 +60,17 @@ func Command(cfg config.Config) *command.Command {
 			if fromSet != toSet {
 				return errors.New("--from and --to must be used together")
 			}
+			from, err := time.Parse(time.DateOnly, *fromFlag)
+			if err != nil {
+				return fmt.Errorf("invalid --from date %q: expected YYYY-MM-DD", *fromFlag)
+			}
+			to, err := time.Parse(time.DateOnly, *toFlag)
+			if err != nil {
+				return fmt.Errorf("invalid --to date %q: expected YYYY-MM-DD", *toFlag)
+			}
+			if from.After(to) {
+				return errors.New("--from must not be after --to")
+			}
 			out, err := runLeaderboard(cfg, auth.TokensFromCache, *orgIDFlag, *tinaDirFlag, *toFlag, *fromFlag)
 			if *jsonFlag {
 				if !*allFlag {

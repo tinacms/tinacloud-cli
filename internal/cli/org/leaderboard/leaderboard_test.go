@@ -84,6 +84,38 @@ func TestCommandRequiresBothDates(t *testing.T) {
 	}
 }
 
+func TestCommandRejectsInvalidDatesBeforeRequest(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	t.Setenv("AppData", dir)
+	if err := auth.SaveTokens(auth.TokenCache{AccessToken: "access-token", RefreshToken: "refresh-token", ExpiresAt: time.Now().Add(time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Error("unexpected HTTP request")
+	}))
+	defer server.Close()
+	cfg := config.Config{}
+	cfg.TinaCloud.ContentEndpoint = server.URL
+
+	for _, tc := range []struct {
+		name, from, to, want string
+	}{
+		{name: "invalid from", from: "2026-02-30", to: "2026-03-01", want: "invalid --from date"},
+		{name: "invalid to", from: "2026-02-01", to: "2026-02-30", want: "invalid --to date"},
+		{name: "reversed", from: "2026-03-01", to: "2026-02-28", want: "--from must not be after --to"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			args := []string{"--org-id", "org-123", "--from", tc.from, "--to", tc.to}
+			err := Command(cfg).Dispatch(args, nil)
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Errorf("Dispatch(%v) = %v, want error containing %q", args, err, tc.want)
+			}
+		})
+	}
+}
+
 func TestCommandDefaultDatesUseUTC(t *testing.T) {
 	original := time.Local
 	defer func() { time.Local = original }()
