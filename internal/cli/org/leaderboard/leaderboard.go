@@ -114,14 +114,13 @@ func Command(cfg config.Config) *command.Command {
 }
 
 func periodDates(period string, now time.Time) (string, string, error) {
-	switch period {
-	case "this-month", "last-month", "3-months", "12-months":
-	default:
-		return "", "", fmt.Errorf("invalid leaderboard period %q: use this-month, last-month, 3-months, or 12-months", period)
+	parsedPeriod, err := domain.LeaderboardPeriodFromString(period)
+	if err != nil {
+		return "", "", err
 	}
 	start := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
 	end := now
-	switch domain.LeaderboardPeriodFromString(period) {
+	switch parsedPeriod {
 	case domain.LastMonth:
 		end = start.AddDate(0, 0, -1)
 		start = start.AddDate(0, -1, 0)

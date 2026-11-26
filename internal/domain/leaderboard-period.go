@@ -1,5 +1,7 @@
 package domain
 
+import "fmt"
+
 type LeaderboardPeriod int
 
 const (
@@ -9,16 +11,16 @@ const (
 	TwelveMonths
 )
 
-func LeaderboardPeriodFromString(period string) LeaderboardPeriod {
+func LeaderboardPeriodFromString(period string) (LeaderboardPeriod, error) {
 	switch period {
 	case "this-month":
-		return ThisMonth
+		return ThisMonth, nil
 	case "last-month":
-		return LastMonth
+		return LastMonth, nil
 	case "3-months":
-		return ThreeMonths
+		return ThreeMonths, nil
 	case "12-months":
-		return TwelveMonths
+		return TwelveMonths, nil
 	}
-	return ThisMonth
+	return 0, fmt.Errorf("invalid leaderboard period %q: use this-month, last-month, 3-months, or 12-months", period)
 }
