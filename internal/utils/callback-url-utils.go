@@ -79,7 +79,7 @@ func waitForCallback(
 }
 
 func CallbackResponse(connection net.Conn, heading, detail string) error {
-	page := strings.NewReplacer("{{heading}}", html.EscapeString(heading), "{{detail}}", html.EscapeString(detail)).Replace(AuthCompleteHTML)
+	page := strings.NewReplacer("{{heading}}", html.EscapeString(heading), "{{detail}}", html.EscapeString(detail)).Replace(callbackPageHTML)
 	writer := bufio.NewWriter(connection)
 	_, err := writer.WriteString("HTTP/1.1 200 OK\r\n" +
 		"Content-Type: text/html; charset=utf-8\r\n" +
@@ -97,7 +97,7 @@ func CallbackResponse(connection net.Conn, heading, detail string) error {
 	return nil
 }
 
-const AuthCompleteHTML = `<!DOCTYPE html>
+const callbackPageHTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
