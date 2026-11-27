@@ -19,6 +19,14 @@ are not supplied explicitly.
   * `list`:
     List projects for an organisation.
 
+  * `leaderboard`:
+    Rank project users by activity count. Dates default to the current month
+    through today in UTC. Use `--project-id` to select a project, `--all` to
+    include users with zero activity, and `--json` for JSON output. Use
+    `--from` and `--to` together for a date range, or `--period` with
+    `this-month`, `last-month`, `3-months`, or `12-months`. `--tina-dir`
+    selects the tina folder used to find the configured project.
+
   * `status`:
     Display a project's status.
 

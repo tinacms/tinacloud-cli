@@ -2,6 +2,7 @@ package project
 
 import (
 	"tina.io/tinacloud-cli/internal/cli/project/create"
+	"tina.io/tinacloud-cli/internal/cli/project/leaderboard"
 	"tina.io/tinacloud-cli/internal/cli/project/list"
 	"tina.io/tinacloud-cli/internal/cli/project/status"
 	"tina.io/tinacloud-cli/internal/cli/project/update"
@@ -18,6 +19,7 @@ func Command(cfg config.Config) *command.Command {
 			create.Command(cfg),
 			status.Command(cfg),
 			update.Command(cfg),
+			leaderboard.Command(cfg),
 		},
 	}
 }

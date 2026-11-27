@@ -1,16 +1,19 @@
 package leaderboard
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"tina.io/tinacloud-cli/internal/auth"
 	"tina.io/tinacloud-cli/internal/config"
+	requestapi "tina.io/tinacloud-cli/internal/requests"
 )
 
 func TestCommandLeaderboard(t *testing.T) {
@@ -54,7 +57,7 @@ func TestCommandLeaderboard(t *testing.T) {
 			defer func() { os.Stdout = stdout }()
 
 			args := append([]string{"--org-id", "11111111-1111-4111-8111-111111111111", "--from", "2025-02-03", "--to", "2025-02-20"}, tc.flags...)
-			if err := Command(cfg).Dispatch(args, []string{"org", "leaderboard"}); err != nil {
+			if err := Command(cfg, requestapi.Organization).Dispatch(args, []string{"org", "leaderboard"}); err != nil {
 				t.Fatalf("Dispatch() = %v", err)
 			}
 			r := <-requests
@@ -77,7 +80,7 @@ func TestCommandLeaderboard(t *testing.T) {
 
 func TestCommandRequiresBothDates(t *testing.T) {
 	for _, flags := range [][]string{{"--from", "2025-01-01"}, {"--to", "2025-01-31"}} {
-		err := Command(config.Config{}).Dispatch(flags, nil)
+		err := Command(config.Config{}, requestapi.Organization).Dispatch(flags, nil)
 		if err == nil || err.Error() != "--from and --to must be used together" {
 			t.Errorf("Dispatch(%v) = %v, want paired date error", flags, err)
 		}
@@ -108,7 +111,7 @@ func TestCommandRejectsInvalidDatesBeforeRequest(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			args := []string{"--org-id", "11111111-1111-4111-8111-111111111111", "--from", tc.from, "--to", tc.to}
-			err := Command(cfg).Dispatch(args, nil)
+			err := Command(cfg, requestapi.Organization).Dispatch(args, nil)
 			if err == nil || !strings.Contains(err.Error(), tc.want) {
 				t.Errorf("Dispatch(%v) = %v, want error containing %q", args, err, tc.want)
 			}
@@ -125,7 +128,7 @@ func TestCommandDefaultDatesUseUTC(t *testing.T) {
 	}
 	time.Local = time.FixedZone("test", offset)
 	before := time.Now().UTC()
-	cmd := Command(config.Config{})
+	cmd := Command(config.Config{}, requestapi.Organization)
 	after := time.Now().UTC()
 	for _, tc := range []struct {
 		flag, before, after string
@@ -198,7 +201,7 @@ func TestCommandPeriod(t *testing.T) {
 	cfg := config.Config{}
 	cfg.TinaCloud.ContentEndpoint = server.URL
 
-	if err := Command(cfg).Dispatch([]string{"--org-id", "11111111-1111-4111-8111-111111111111", "--period", "last-month", "--json"}, nil); err != nil {
+	if err := Command(cfg, requestapi.Organization).Dispatch([]string{"--org-id", "11111111-1111-4111-8111-111111111111", "--period", "last-month", "--json"}, nil); err != nil {
 		t.Fatal(err)
 	}
 	r := <-requests
@@ -207,8 +210,115 @@ func TestCommandPeriod(t *testing.T) {
 		t.Errorf("request = %s, want from=%s and to=%s", r.URL, from, to)
 	}
 	for _, flags := range [][]string{{"--period", "invalid"}, {"--period", "this-month", "--from", "2025-01-01"}, {"--period", "this-month", "--to", "2025-01-01"}} {
-		if err := Command(cfg).Dispatch(flags, nil); err == nil {
+		if err := Command(cfg, requestapi.Organization).Dispatch(flags, nil); err == nil {
 			t.Errorf("Dispatch(%v) succeeded, want error", flags)
 		}
+	}
+}
+
+func TestProjectLeaderboard(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	t.Setenv("AppData", dir)
+	if err := auth.SaveTokens(auth.TokenCache{AccessToken: "access-token", RefreshToken: "refresh-token", ExpiresAt: time.Now().Add(time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(dir+"/tina", 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(dir+"/tina/tinacloud.json", []byte(`{"org_id":"22222222-2222-4222-8222-222222222222","project_id":"11111111-1111-4111-8111-111111111111"}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(dir)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/leaderboard/project/11111111-1111-4111-8111-111111111111" {
+			t.Errorf("request path = %q, want configured project leaderboard", r.URL.Path)
+		}
+		fmt.Fprint(w, `{"entries":[]}`)
+	}))
+	defer server.Close()
+	cfg := config.Config{}
+	cfg.TinaCloud.ContentEndpoint = server.URL
+	if err := Command(cfg, requestapi.Project).Dispatch([]string{"--json"}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(dir+"/tina/tinacloud.json", []byte(`{"org_id":"22222222-2222-4222-8222-222222222222"}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := Command(cfg, requestapi.Project).Dispatch(nil, nil); err == nil || err.Error() != "project ID is required" {
+		t.Errorf("Dispatch() = %v, want project ID required", err)
+	}
+}
+
+func TestProjectLeaderboardLanding(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	t.Setenv("AppData", dir)
+	if err := auth.SaveTokens(auth.TokenCache{AccessToken: "access-token", RefreshToken: "refresh-token", ExpiresAt: time.Now().Add(time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name, landing string
+		json          bool
+	}{
+		{name: "text", landing: `{"at":1735689600000,"branch":"feature","contributors":[{"userId":"1","name":"Alice","formerMember":false},{"userId":"2","name":null,"formerMember":true},{"userId":"3","name":null,"formerMember":false}]}`},
+		{name: "json", landing: `{"at":1735689600000,"branch":"feature","contributors":[{"userId":"1","name":"Alice","formerMember":false},{"userId":"2","name":null,"formerMember":true},{"userId":"3","name":null,"formerMember":false}]}`, json: true},
+		{name: "missing", landing: "null"},
+		{name: "missing json", landing: "null", json: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				fmt.Fprintf(w, `{"entries":[],"landing":%s}`, tc.landing)
+			}))
+			defer server.Close()
+			cfg := config.Config{}
+			cfg.TinaCloud.ContentEndpoint = server.URL
+			output, err := os.CreateTemp(t.TempDir(), "output")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer output.Close()
+			stdout := os.Stdout
+			os.Stdout = output
+			defer func() { os.Stdout = stdout }()
+			args := []string{"--project-id", "11111111-1111-4111-8111-111111111111"}
+			if tc.json {
+				args = append(args, "--json")
+			}
+			if err := Command(cfg, requestapi.Project).Dispatch(args, nil); err != nil {
+				t.Fatal(err)
+			}
+			data, err := os.ReadFile(output.Name())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tc.json {
+				var got map[string]json.RawMessage
+				if err := json.Unmarshal(data, &got); err != nil {
+					t.Fatal(err)
+				}
+				var actual, want any
+				if tc.landing != "null" {
+					if err := json.Unmarshal(got["landing"], &actual); err != nil {
+						t.Fatal(err)
+					}
+					if err := json.Unmarshal([]byte(tc.landing), &want); err != nil {
+						t.Fatal(err)
+					}
+					if !reflect.DeepEqual(actual, want) {
+						t.Errorf("landing = %s, want %s", got["landing"], tc.landing)
+					}
+				} else if _, ok := got["landing"]; ok {
+					t.Errorf("output = %s, want landing omitted", data)
+				}
+			} else {
+				want := "Last landed on default branch at 2025-01-01T00:00:00Z by Alice, Former member, No name set"
+				if (tc.landing != "null" && !strings.Contains(string(data), want)) || (tc.landing == "null" && strings.Contains(string(data), "Last landed")) {
+					t.Errorf("output = %s, want landing line present = %t", data, tc.landing != "null")
+				}
+			}
+		})
 	}
 }
