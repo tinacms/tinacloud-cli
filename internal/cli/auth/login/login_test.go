@@ -208,6 +208,21 @@ func TestLogin_Success(t *testing.T) {
 	}
 }
 
+func TestLogin_AuthorizationDenied(t *testing.T) {
+	for _, query := range []string{"error=access_denied%1B%5B31m", "error=access_denied%1B%5B31m&code=ignored"} {
+		t.Run(query, func(t *testing.T) {
+			callback := "GET /callback?" + query + " HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
+			_, err := driveLogin(t, func(http.ResponseWriter, *http.Request) {
+				t.Error("token endpoint called after authorization was denied")
+			}, callback)
+			want := `failed to login: "access_denied\x1b[31m"`
+			if err == nil || err.Error() != want {
+				t.Errorf("Login() = %v, want %s", err, want)
+			}
+		})
+	}
+}
+
 func TestLogin_Errors(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -216,18 +231,6 @@ func TestLogin_Errors(t *testing.T) {
 		wantErr         error
 		wantErrContains string
 	}{
-		{
-			name:            "missing code in callback",
-			tokenHandler:    fakeTokenHandler,
-			callbackReq:     "GET /callback HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n",
-			wantErrContains: "code is missing",
-		},
-		{
-			name:            "malformed callback request",
-			tokenHandler:    fakeTokenHandler,
-			callbackReq:     "this is not a valid http request\r\n\r\n",
-			wantErrContains: "failed to read auth callback",
-		},
 		{
 			name:         "token endpoint unauthorized",
 			tokenHandler: func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusUnauthorized) },

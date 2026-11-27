@@ -1,12 +1,10 @@
 package login
 
 import (
-	"bufio"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -77,35 +75,22 @@ func runLogin(cfg config.Config, openURL func(string) error) error {
 `, redirectURL)
 	}
 
-	// Read auth code from client
-	code := ""
-	{
-		conn, err := ln.Accept()
-		if err != nil {
-			return fmt.Errorf("failed to accept auth callback: %w", err)
+	params, err := utils.WaitForCallback(ln, "/callback", func(params url.Values) (string, string) {
+		if params.Get("error") != "" {
+			return "Sign-in was not completed", "Check your terminal for details."
 		}
-		defer conn.Close()
-
-		req, err := http.ReadRequest(bufio.NewReader(conn))
-		if err != nil {
-			return fmt.Errorf("failed to read auth callback: %w", err)
+		if params.Get("code") != "" {
+			return "Almost there!", "Return to your terminal to finish signing in."
 		}
-
-		err = utils.CallbackResponse(conn)
-		if err != nil {
-			return err
-		}
-
-		params, err := url.ParseQuery(req.URL.RawQuery)
-		if err != nil {
-			return fmt.Errorf("failed to read code from auth callback: %w", err)
-		}
-
-		code = params.Get("code")
-		if code == "" {
-			return errors.New("code is missing from client request")
-		}
+		return "", ""
+	})
+	if err != nil {
+		return fmt.Errorf("failed to receive auth callback: %w", err)
 	}
+	if authErr := params.Get("error"); authErr != "" {
+		return fmt.Errorf("failed to login: %q", authErr)
+	}
+	code := params.Get("code")
 
 	// Verify auth code
 	var tokens domain.AuthResponse
