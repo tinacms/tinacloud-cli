@@ -1,10 +1,12 @@
 package leaderboard
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -240,5 +242,77 @@ func TestProjectLeaderboard(t *testing.T) {
 	}
 	if err := Command(cfg, requestapi.Project).Dispatch([]string{"--tina-dir", t.TempDir()}, nil); err == nil || err.Error() != "project ID is required" {
 		t.Errorf("Dispatch() = %v, want project ID required", err)
+	}
+}
+
+func TestProjectLeaderboardLanding(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+	t.Setenv("XDG_CONFIG_HOME", dir)
+	t.Setenv("AppData", dir)
+	if err := auth.SaveTokens(auth.TokenCache{AccessToken: "access-token", RefreshToken: "refresh-token", ExpiresAt: time.Now().Add(time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name, landing string
+		json          bool
+	}{
+		{name: "text", landing: `{"at":1735689600000,"branch":"feature","contributors":[{"userId":"1","name":"Alice","formerMember":false},{"userId":"2","name":null,"formerMember":true},{"userId":"3","name":null,"formerMember":false}]}`},
+		{name: "json", landing: `{"at":1735689600000,"branch":"feature","contributors":[{"userId":"1","name":"Alice","formerMember":false},{"userId":"2","name":null,"formerMember":true},{"userId":"3","name":null,"formerMember":false}]}`, json: true},
+		{name: "missing", landing: "null"},
+		{name: "missing json", landing: "null", json: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				fmt.Fprintf(w, `{"entries":[],"landing":%s}`, tc.landing)
+			}))
+			defer server.Close()
+			cfg := config.Config{}
+			cfg.TinaCloud.ContentEndpoint = server.URL
+			output, err := os.CreateTemp(t.TempDir(), "output")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer output.Close()
+			stdout := os.Stdout
+			os.Stdout = output
+			defer func() { os.Stdout = stdout }()
+			args := []string{"--project-id", "11111111-1111-4111-8111-111111111111"}
+			if tc.json {
+				args = append(args, "--json")
+			}
+			if err := Command(cfg, requestapi.Project).Dispatch(args, nil); err != nil {
+				t.Fatal(err)
+			}
+			data, err := os.ReadFile(output.Name())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tc.json {
+				var got map[string]json.RawMessage
+				if err := json.Unmarshal(data, &got); err != nil {
+					t.Fatal(err)
+				}
+				var actual, want any
+				if tc.landing != "null" {
+					if err := json.Unmarshal(got["landing"], &actual); err != nil {
+						t.Fatal(err)
+					}
+					if err := json.Unmarshal([]byte(tc.landing), &want); err != nil {
+						t.Fatal(err)
+					}
+					if !reflect.DeepEqual(actual, want) {
+						t.Errorf("landing = %s, want %s", got["landing"], tc.landing)
+					}
+				} else if _, ok := got["landing"]; ok {
+					t.Errorf("output = %s, want landing omitted", data)
+				}
+			} else {
+				want := "Last landed on default branch at 2025-01-01T00:00:00Z by Alice, Former member, No name set"
+				if (tc.landing != "null" && !strings.Contains(string(data), want)) || (tc.landing == "null" && strings.Contains(string(data), "Last landed")) {
+					t.Errorf("output = %s, want landing line present = %t", data, tc.landing != "null")
+				}
+			}
+		})
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"strings"
 	"text/tabwriter"
 	"time"
 
@@ -23,6 +24,7 @@ import (
 type leaderboardJSONOutput struct {
 	LoggedIn bool                      `json:"loggedIn"`
 	Entries  []domain.LeaderboardEntry `json:"entries"`
+	Landing  *domain.Landing           `json:"landing,omitempty"`
 }
 
 func Command(cfg config.Config, target requests.LeaderboardTarget) *command.Command {
@@ -91,6 +93,19 @@ func Command(cfg config.Config, target requests.LeaderboardTarget) *command.Comm
 			writer := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 
 			fmt.Fprintf(writer, "Leaderboard %s to %s\n", *fromFlag, *toFlag)
+			if out.Landing != nil {
+				var names []string
+				for _, contributor := range out.Landing.Contributors {
+					name := "No name set"
+					if contributor.Name != nil {
+						name = *contributor.Name
+					} else if contributor.FormerMember {
+						name = "Former member"
+					}
+					names = append(names, name)
+				}
+				fmt.Fprintf(writer, "Last landed on default branch at %s by %s\n", time.UnixMilli(out.Landing.At).UTC().Format(time.RFC3339), strings.Join(names, ", "))
+			}
 			for _, entry := range out.Entries {
 				if !*allFlag && entry.Count == 0 {
 					continue
@@ -164,17 +179,18 @@ func runLeaderboard(cfg config.Config, loadTokens auth.TokenLoader, id, tinaDir,
 		return leaderboardJSONOutput{}, fmt.Errorf("failed to initialize auth client: %w", err)
 	}
 
-	entries, err := requests.GetLeaderboard(cfg.TinaCloud.ContentEndpoint, tokens.AccessToken, id, to, from, target)
+	leaderboard, err := requests.GetLeaderboard(cfg.TinaCloud.ContentEndpoint, tokens.AccessToken, id, to, from, target)
 	if err != nil {
 		return leaderboardJSONOutput{}, err
 	}
 
-	slices.SortFunc(entries, func(a, b domain.LeaderboardEntry) int {
+	slices.SortFunc(leaderboard.Entries, func(a, b domain.LeaderboardEntry) int {
 		return cmp.Compare(a.Rank, b.Rank)
 	})
 
 	return leaderboardJSONOutput{
 		LoggedIn: true,
-		Entries:  entries,
+		Entries:  leaderboard.Entries,
+		Landing:  leaderboard.Landing,
 	}, nil
 }
