@@ -224,7 +224,10 @@ func TestProjectLeaderboard(t *testing.T) {
 	if err := auth.SaveTokens(auth.TokenCache{AccessToken: "access-token", RefreshToken: "refresh-token", ExpiresAt: time.Now().Add(time.Hour)}); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(dir+"/tinacloud.json", []byte(`{"org_id":"22222222-2222-4222-8222-222222222222","project_id":"11111111-1111-4111-8111-111111111111"}`), 0600); err != nil {
+	if err := os.MkdirAll(dir+"/tina", 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(dir+"/tina/tinacloud.json", []byte(`{"org_id":"22222222-2222-4222-8222-222222222222","project_id":"11111111-1111-4111-8111-111111111111"}`), 0600); err != nil {
 		t.Fatal(err)
 	}
 	t.Chdir(dir)
@@ -237,10 +240,13 @@ func TestProjectLeaderboard(t *testing.T) {
 	defer server.Close()
 	cfg := config.Config{}
 	cfg.TinaCloud.ContentEndpoint = server.URL
-	if err := Command(cfg, requestapi.Project).Dispatch([]string{"--tina-dir", ".", "--json"}, nil); err != nil {
+	if err := Command(cfg, requestapi.Project).Dispatch([]string{"--json"}, nil); err != nil {
 		t.Fatal(err)
 	}
-	if err := Command(cfg, requestapi.Project).Dispatch([]string{"--tina-dir", t.TempDir()}, nil); err == nil || err.Error() != "project ID is required" {
+	if err := os.WriteFile(dir+"/tina/tinacloud.json", []byte(`{"org_id":"22222222-2222-4222-8222-222222222222"}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := Command(cfg, requestapi.Project).Dispatch(nil, nil); err == nil || err.Error() != "project ID is required" {
 		t.Errorf("Dispatch() = %v, want project ID required", err)
 	}
 }
