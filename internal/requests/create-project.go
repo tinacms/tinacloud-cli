@@ -16,6 +16,11 @@ import (
 var ErrMissingInstallationID error = errors.New("failed to retrieve installation ID")
 
 func CreateProject(endpoint, accessToken, orgID string, body domain.PostV2ProjectsBody) (domain.PostV2ProjectResponse, error) {
+	orgID, err := canonicalID(orgID)
+	if err != nil {
+		return domain.PostV2ProjectResponse{}, err
+	}
+
 	postBody, err := json.Marshal(body)
 	if err != nil {
 		return domain.PostV2ProjectResponse{}, fmt.Errorf("failed to marshal request body: %w", err)

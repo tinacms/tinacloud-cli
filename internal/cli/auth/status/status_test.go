@@ -57,13 +57,13 @@ func TestRunStatus_Unauthenticated(t *testing.T) {
 }
 
 func TestRunStatus_Success(t *testing.T) {
-	accessToken := makeJWT(t, "user-123")
+	accessToken := makeJWT(t, "33333333-3333-4333-a333-333333333333")
 	cfg := cfgWithServer(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		if r.URL.Path != "/v2/users/user-123" {
+		if r.URL.Path != "/v2/users/33333333-3333-4333-a333-333333333333" {
 			http.NotFound(w, r)
 			return
 		}
@@ -110,7 +110,7 @@ func TestRunStatus_APIErrors(t *testing.T) {
 				w.WriteHeader(tc.statusCode)
 			})
 
-			tokens := auth.TokenCache{AccessToken: makeJWT(t, "user-123")}
+			tokens := auth.TokenCache{AccessToken: makeJWT(t, "33333333-3333-4333-a333-333333333333")}
 			_, err := runStatus(cfg, stubTokenLoader(tokens, nil))
 			if tc.wantErr != nil {
 				if !errors.Is(err, tc.wantErr) {
@@ -153,7 +153,7 @@ func TestRunStatus_MalformedJSON(t *testing.T) {
 		_, _ = w.Write([]byte("{not json"))
 	})
 
-	tokens := auth.TokenCache{AccessToken: makeJWT(t, "user-123")}
+	tokens := auth.TokenCache{AccessToken: makeJWT(t, "33333333-3333-4333-a333-333333333333")}
 	_, err := runStatus(cfg, stubTokenLoader(tokens, nil))
 	if err == nil {
 		t.Fatal("runStatus() = nil error, want unmarshal error")

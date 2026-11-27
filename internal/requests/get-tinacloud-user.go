@@ -11,6 +11,11 @@ import (
 )
 
 func GetTinaCloudUser(endpoint, accessToken, userID string) (domain.TinaCloudUser, error) {
+	userID, err := canonicalID(userID)
+	if err != nil {
+		return domain.TinaCloudUser{}, err
+	}
+
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/v2/users/%s", endpoint, userID), nil)
 	if err != nil {
 		return domain.TinaCloudUser{}, fmt.Errorf("failed to initialize request: %w", err)

@@ -53,12 +53,12 @@ func TestCommandLeaderboard(t *testing.T) {
 			os.Stdout = output
 			defer func() { os.Stdout = stdout }()
 
-			args := append([]string{"--org-id", "org-123", "--from", "2025-02-03", "--to", "2025-02-20"}, tc.flags...)
+			args := append([]string{"--org-id", "11111111-1111-4111-8111-111111111111", "--from", "2025-02-03", "--to", "2025-02-20"}, tc.flags...)
 			if err := Command(cfg).Dispatch(args, []string{"org", "leaderboard"}); err != nil {
 				t.Fatalf("Dispatch() = %v", err)
 			}
 			r := <-requests
-			if r.Method != http.MethodGet || r.URL.Path != "/leaderboard/org/org-123" || r.URL.Query().Get("from") != "2025-02-03" || r.URL.Query().Get("to") != "2025-02-20" {
+			if r.Method != http.MethodGet || r.URL.Path != "/leaderboard/org/11111111-1111-4111-8111-111111111111" || r.URL.Query().Get("from") != "2025-02-03" || r.URL.Query().Get("to") != "2025-02-20" {
 				t.Errorf("request = %s %s, want leaderboard for 2025-02-03 through 2025-02-20", r.Method, r.URL.String())
 			}
 			if got := r.Header.Get("Authorization"); got != "Bearer access-token" {
@@ -107,7 +107,7 @@ func TestCommandRejectsInvalidDatesBeforeRequest(t *testing.T) {
 		{name: "reversed", from: "2026-03-01", to: "2026-02-28", want: "--from must not be after --to"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			args := []string{"--org-id", "org-123", "--from", tc.from, "--to", tc.to}
+			args := []string{"--org-id", "11111111-1111-4111-8111-111111111111", "--from", tc.from, "--to", tc.to}
 			err := Command(cfg).Dispatch(args, nil)
 			if err == nil || !strings.Contains(err.Error(), tc.want) {
 				t.Errorf("Dispatch(%v) = %v, want error containing %q", args, err, tc.want)
@@ -198,7 +198,7 @@ func TestCommandPeriod(t *testing.T) {
 	cfg := config.Config{}
 	cfg.TinaCloud.ContentEndpoint = server.URL
 
-	if err := Command(cfg).Dispatch([]string{"--org-id", "org-123", "--period", "last-month", "--json"}, nil); err != nil {
+	if err := Command(cfg).Dispatch([]string{"--org-id", "11111111-1111-4111-8111-111111111111", "--period", "last-month", "--json"}, nil); err != nil {
 		t.Fatal(err)
 	}
 	r := <-requests

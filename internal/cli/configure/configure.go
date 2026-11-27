@@ -37,7 +37,7 @@ func Command(cfg config.Config, track posthog.Tracker) *command.Command {
 	return &command.Command{
 		Name:        "configure",
 		Description: "Configure a local Tina project",
-		Example:     "tinacloud configure --org-id org-123 --project-id project-123",
+		Example:     "tinacloud configure --org-id 1e1d3398-8255-4812-9f67-388993734a01 --project-id 2e1d3398-8255-4812-9f67-388993734a01",
 		Flags:       flagSet,
 		Run: func(args []string) error {
 			if (*noInputFlag || !utils.IsTerminal(os.Stdin)) && *orgIDFlag == "" && *projectIDFlag == "" {

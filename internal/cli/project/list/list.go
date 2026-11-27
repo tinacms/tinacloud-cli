@@ -29,7 +29,7 @@ func Command(cfg config.Config) *command.Command {
 	return &command.Command{
 		Name:        "list",
 		Description: "List projects",
-		Example:     "tinacloud project list --org-id org-123",
+		Example:     "tinacloud project list --org-id 1e1d3398-8255-4812-9f67-388993734a01",
 		Flags:       flagSet,
 		Run: func(args []string) error {
 			out, err := runList(cfg, *orgIDFlag, *tinaDirFlag)

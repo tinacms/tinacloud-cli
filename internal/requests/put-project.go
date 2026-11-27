@@ -12,6 +12,15 @@ import (
 )
 
 func PutProject(endpoint, accessToken, orgID, projectID string, body domain.PutV2ProjectBody) error {
+	orgID, err := canonicalID(orgID)
+	if err != nil {
+		return err
+	}
+	projectID, err = canonicalID(projectID)
+	if err != nil {
+		return err
+	}
+
 	putBody, err := json.Marshal(body)
 	if err != nil {
 		return fmt.Errorf("failed to marshal request body: %w", err)
