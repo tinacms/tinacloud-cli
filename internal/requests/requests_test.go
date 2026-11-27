@@ -208,7 +208,7 @@ func TestRequestsRejectInvalidIDs(t *testing.T) {
 		"create":         func(id string) error { _, err := CreateProject("", "", id, domain.PostV2ProjectsBody{}); return err },
 		"update org":     func(id string) error { return PutProject("", "", id, validID, domain.PutV2ProjectBody{}) },
 		"update project": func(id string) error { return PutProject("", "", validID, id, domain.PutV2ProjectBody{}) },
-		"leaderboard":    func(id string) error { _, err := GetLeaderboard("", "", id, "", ""); return err },
+		"leaderboard":    func(id string) error { _, err := GetLeaderboard("", "", id, "", "", Organization); return err },
 	}
 	for name, call := range calls {
 		for _, id := range []string{"", "..", "../other", validID + "?admin=true", validID + "%2fother", "11111111-1111-1111-1111-11111111111g"} {
@@ -239,7 +239,10 @@ func TestRequestsCanonicalizeIDs(t *testing.T) {
 			return err
 		}},
 		{name: "update", path: "/v2/organizations/" + id + "/apps/" + id, call: func() error { return PutProject(server.URL, "token", alternate, alternate, domain.PutV2ProjectBody{}) }},
-		{name: "leaderboard", path: "/leaderboard/org/" + id, call: func() error { _, err := GetLeaderboard(server.URL, "token", alternate, "", ""); return err }},
+		{name: "leaderboard", path: "/leaderboard/org/" + id, call: func() error {
+			_, err := GetLeaderboard(server.URL, "token", alternate, "", "", Organization)
+			return err
+		}},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -265,7 +268,7 @@ func TestCanonicalID(t *testing.T) {
 
 func TestGetLeaderboardEncodesQuery(t *testing.T) {
 	server, rec := jsonServer(t, http.StatusOK, `{"entries":[]}`)
-	_, err := GetLeaderboard(server.URL, "token", "ABCDEFAB-1234-4234-B234-ABCDEFABCDEF", "today&extra=1", "start#fragment")
+	_, err := GetLeaderboard(server.URL, "token", "ABCDEFAB-1234-4234-B234-ABCDEFABCDEF", "today&extra=1", "start#fragment", Organization)
 	if err != nil {
 		t.Fatal(err)
 	}

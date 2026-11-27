@@ -11,8 +11,15 @@ import (
 	"tina.io/tinacloud-cli/internal/httpclient"
 )
 
-func GetLeaderboard(endpoint, accessToken, orgID, to, from string) ([]domain.LeaderboardEntry, error) {
-	orgID, err := canonicalID(orgID)
+type LeaderboardTarget string
+
+const (
+	Project      LeaderboardTarget = "project"
+	Organization LeaderboardTarget = "org"
+)
+
+func GetLeaderboard(endpoint, accessToken, id, to, from string, target LeaderboardTarget) ([]domain.LeaderboardEntry, error) {
+	id, err := canonicalID(id)
 	if err != nil {
 		return []domain.LeaderboardEntry{}, err
 	}
@@ -20,7 +27,7 @@ func GetLeaderboard(endpoint, accessToken, orgID, to, from string) ([]domain.Lea
 	query := url.Values{"to": {to}, "from": {from}}
 	req, err := http.NewRequest(
 		http.MethodGet,
-		fmt.Sprintf("%s/leaderboard/org/%s?%s", endpoint, orgID, query.Encode()),
+		fmt.Sprintf("%s/leaderboard/%s/%s?%s", endpoint, target, id, query.Encode()),
 		nil,
 	)
 	if err != nil {
